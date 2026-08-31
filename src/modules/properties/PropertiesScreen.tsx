@@ -1,12 +1,16 @@
 import React, { useCallback } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { ArrowRight, Building2, Plus } from 'lucide-react-native';
 
 import { AppButton } from '../../components/AppButton';
 import { Card } from '../../components/Card';
+import { EmptyState } from '../../components/EmptyState';
 import { Screen } from '../../components/Screen';
+import { SectionHeader } from '../../components/SectionHeader';
 import { Body, Muted, Title } from '../../components/Typography';
 import { useAppStore } from '../../store/appStore';
+import { colors } from '../../theme';
 
 export function PropertiesScreen({ navigation }: any) {
   const properties = useAppStore(state => state.properties);
@@ -17,14 +21,18 @@ export function PropertiesScreen({ navigation }: any) {
   return (
     <Screen>
       <Title>Properties</Title>
-      <AppButton title="Add property" onPress={() => navigation.navigate('AddProperty')} />
-      {properties.length === 0 ? <Muted>Add your first property, then create its units.</Muted> : null}
+      <Muted>Homes, shops and rooms in one place</Muted>
+      <AppButton icon={<Plus color={colors.surface} size={18} />} title="Add property" onPress={() => navigation.navigate('AddProperty')} />
+      <SectionHeader detail={`${properties.length} total`} title="Your properties" />
+      {properties.length === 0 ? <EmptyState message="Your properties will appear here." /> : null}
       {properties.map(property => (
         <Pressable key={property.id} onPress={() => navigation.navigate('PropertyDetail', { propertyId: property.id })}>
           <Card>
-            <Body style={styles.name}>{property.name}</Body>
-            <Muted>{property.type} {property.address ? `| ${property.address}` : ''}</Muted>
-            <Body>{property.occupied_units ?? 0} occupied / {property.total_units ?? 0} units</Body>
+            <View style={styles.row}>
+              <Building2 color={colors.primary} size={22} />
+              <View style={styles.info}><Body style={styles.name}>{property.name}</Body><Muted>{property.type} {property.address ? `· ${property.address}` : ''}</Muted><Body style={styles.occupancy}>{property.occupied_units ?? 0} occupied · {property.total_units ?? 0} units</Body></View>
+              <ArrowRight color={colors.muted} size={18} />
+            </View>
           </Card>
         </Pressable>
       ))}
@@ -32,4 +40,4 @@ export function PropertiesScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({ name: { fontWeight: '800' } });
+const styles = StyleSheet.create({ info: { flex: 1, gap: 3 }, name: { fontWeight: '700' }, occupancy: { color: colors.primary, fontSize: 13, fontWeight: '600', marginTop: 4 }, row: { alignItems: 'center', flexDirection: 'row', gap: 12 } });

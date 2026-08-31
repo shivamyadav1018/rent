@@ -1,17 +1,20 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, ViewStyle } from 'react-native';
 
-export function Card({ children }: { children: React.ReactNode }) {
-  return <View style={styles.card}>{children}</View>;
+import { colors, shadow } from '../theme';
+
+export function Card({ children, style }: { children: React.ReactNode; style?: ViewStyle }) {
+  return <View style={[styles.card, style]}>{children}</View>;
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#ffffff',
-    borderColor: '#dde4df',
+    ...shadow,
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
     borderRadius: 8,
     borderWidth: 1,
-    gap: 8,
-    padding: 14,
+    gap: 10,
+    padding: 16,
   },
 });

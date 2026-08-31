@@ -1,6 +1,8 @@
 import React from 'react';
 import { StyleSheet, Text, TextProps } from 'react-native';
 
+import { colors, fontFamily } from '../theme';
+
 export function Title({ style, ...props }: TextProps) {
   return <Text style={[styles.title, style]} {...props} />;
 }
@@ -15,18 +17,23 @@ export function Muted({ style, ...props }: TextProps) {
 
 const styles = StyleSheet.create({
   body: {
-    color: '#33413b',
+    color: colors.ink,
+    fontFamily,
     fontSize: 15,
     lineHeight: 21,
   },
   muted: {
-    color: '#68716d',
+    color: colors.muted,
+    fontFamily,
     fontSize: 13,
     lineHeight: 18,
   },
   title: {
-    color: '#17201d',
-    fontSize: 26,
-    fontWeight: '900',
+    color: colors.ink,
+    fontFamily,
+    fontSize: 28,
+    fontWeight: '700',
+    letterSpacing: 0,
+    lineHeight: 34,
   },
 });

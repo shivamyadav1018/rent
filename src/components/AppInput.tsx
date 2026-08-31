@@ -1,6 +1,8 @@
 import React from 'react';
 import { StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native';
 
+import { colors, fontFamily } from '../theme';
+
 type Props = TextInputProps & {
   label: string;
   error?: string;
@@ -10,7 +12,7 @@ export function AppInput({ label, error, style, ...props }: Props) {
   return (
     <View style={styles.wrap}>
       <Text style={styles.label}>{label}</Text>
-      <TextInput placeholderTextColor="#8b9691" style={[styles.input, error && styles.errorInput, style]} {...props} />
+      <TextInput placeholderTextColor="#8A9691" selectionColor={colors.primary} style={[styles.input, props.multiline && styles.multiline, error && styles.errorInput, style]} {...props} />
       {error ? <Text style={styles.error}>{error}</Text> : null}
     </View>
   );
@@ -18,29 +20,34 @@ export function AppInput({ label, error, style, ...props }: Props) {
 
 const styles = StyleSheet.create({
   error: {
-    color: '#b42318',
+    color: colors.danger,
+    fontFamily,
     fontSize: 12,
     marginTop: 4,
   },
   errorInput: {
-    borderColor: '#f04438',
+    borderColor: colors.danger,
   },
   input: {
-    backgroundColor: '#ffffff',
-    borderColor: '#cfd8d3',
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
     borderRadius: 8,
     borderWidth: 1,
-    color: '#17201d',
-    minHeight: 46,
-    paddingHorizontal: 12,
+    color: colors.ink,
+    fontFamily,
+    fontSize: 15,
+    minHeight: 50,
+    paddingHorizontal: 14,
   },
   label: {
-    color: '#33413b',
+    color: colors.ink,
+    fontFamily,
     fontSize: 13,
-    fontWeight: '700',
-    marginBottom: 6,
+    fontWeight: '600',
+    marginBottom: 7,
   },
+  multiline: { minHeight: 112, paddingTop: 14, textAlignVertical: 'top' },
   wrap: {
-    marginBottom: 14,
+    marginBottom: 4,
   },
 });

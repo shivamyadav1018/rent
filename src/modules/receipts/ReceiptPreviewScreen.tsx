@@ -12,6 +12,7 @@ import { receiptPdfService } from '../../services/receiptPdfService';
 import { LedgerItem, PaymentMode } from '../../types/models';
 import { formatCurrency } from '../../utils/currency';
 import { displayDate, monthLabel } from '../../utils/dates';
+import { fontFamily } from '../../theme';
 
 type ReceiptData = { amountPaid: number; paymentDate: string; paymentMode: PaymentMode; referenceNo?: string; notes?: string };
 
@@ -73,4 +74,4 @@ export function ReceiptPreviewScreen({ route }: any) {
   );
 }
 
-const styles = StyleSheet.create({ heading: { fontSize: 18, fontWeight: '900' } });
+const styles = StyleSheet.create({ heading: { fontFamily, fontSize: 18, fontWeight: '700' } });

@@ -10,6 +10,7 @@ import { Title } from '../../components/Typography';
 import { propertyRepo } from '../../database/repositories/propertyRepo';
 import { useAppStore } from '../../store/appStore';
 import { PropertyType } from '../../types/models';
+import { colors, fontFamily } from '../../theme';
 
 const schema = z.object({ name: z.string().trim().min(1, 'Property name is required'), address: z.string(), type: z.enum(['house', 'flat', 'room', 'shop', 'PG']) });
 type FormData = z.infer<typeof schema>;
@@ -58,10 +59,10 @@ export function AddEditPropertyScreen({ navigation, route }: any) {
 }
 
 const styles = StyleSheet.create({
-  label: { color: '#33413b', fontSize: 13, fontWeight: '700' },
-  option: { backgroundColor: '#e8eeeb', borderRadius: 8, paddingHorizontal: 14, paddingVertical: 10 },
-  optionText: { color: '#33413b', textTransform: 'capitalize' },
+  label: { color: colors.ink, fontFamily, fontSize: 13, fontWeight: '600' },
+  option: { backgroundColor: colors.surfaceMuted, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 10 },
+  optionText: { color: colors.ink, fontFamily, textTransform: 'capitalize' },
   options: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  selected: { backgroundColor: '#0f766e' },
-  selectedText: { color: '#fff', fontWeight: '700', textTransform: 'capitalize' },
+  selected: { backgroundColor: colors.primary },
+  selectedText: { color: colors.surface, fontFamily, fontWeight: '700', textTransform: 'capitalize' },
 });

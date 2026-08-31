@@ -1,17 +1,24 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
+import { Pressable, StyleSheet, Text, View, ViewStyle } from 'react-native';
+
+import { colors, fontFamily } from '../theme';
 
 type Props = {
   title: string;
   onPress: () => void;
   variant?: 'primary' | 'secondary' | 'danger';
   style?: ViewStyle;
+  icon?: React.ReactNode;
+  disabled?: boolean;
 };
 
-export function AppButton({ title, onPress, style, variant = 'primary' }: Props) {
+export function AppButton({ disabled, icon, title, onPress, style, variant = 'primary' }: Props) {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.base, styles[variant], pressed && styles.pressed, style]}>
-      <Text style={[styles.text, variant !== 'primary' && styles.secondaryText]}>{title}</Text>
+    <Pressable disabled={disabled} onPress={onPress} style={({ pressed }) => [styles.base, styles[variant], pressed && styles.pressed, disabled && styles.disabled, style]}>
+      <View style={styles.content}>
+        {icon}
+        <Text style={[styles.text, variant === 'secondary' && styles.secondaryText, variant === 'danger' && styles.dangerText]}>{title}</Text>
+      </View>
     </Pressable>
   );
 }
@@ -21,27 +28,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 8,
     justifyContent: 'center',
-    minHeight: 46,
-    paddingHorizontal: 16,
+    minHeight: 48,
+    paddingHorizontal: 18,
   },
+  content: { alignItems: 'center', flexDirection: 'row', gap: 8, justifyContent: 'center' },
   danger: {
-    backgroundColor: '#fee2e2',
+    backgroundColor: colors.dangerSoft,
   },
+  dangerText: { color: colors.danger },
+  disabled: { opacity: 0.5 },
   pressed: {
     opacity: 0.78,
   },
   primary: {
-    backgroundColor: '#0f766e',
+    backgroundColor: colors.primary,
   },
   secondary: {
-    backgroundColor: '#e8eeeb',
+    backgroundColor: colors.surfaceMuted,
   },
   secondaryText: {
-    color: '#17201d',
+    color: colors.primaryDark,
   },
   text: {
-    color: '#ffffff',
-    fontSize: 15,
+    color: colors.surface,
+    fontFamily,
+    fontSize: 14,
     fontWeight: '700',
   },
 });

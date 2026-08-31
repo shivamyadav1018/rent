@@ -14,6 +14,7 @@ import { TenantDetailScreen } from '../modules/tenants/TenantDetailScreen';
 import { RecordPaymentScreen } from '../modules/payments/RecordPaymentScreen';
 import { ReminderPreviewScreen } from '../modules/reminders/ReminderPreviewScreen';
 import { ReceiptPreviewScreen } from '../modules/receipts/ReceiptPreviewScreen';
+import { colors, fontFamily } from '../theme';
 
 export type RootStackParamList = {
   Welcome: undefined;
@@ -36,7 +37,16 @@ export function AppNavigator() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName={onboardingDone ? 'MainTabs' : 'Welcome'}>
+      <Stack.Navigator
+        initialRouteName={onboardingDone ? 'MainTabs' : 'Welcome'}
+        screenOptions={{
+          contentStyle: { backgroundColor: colors.background },
+          headerBackTitle: 'Back',
+          headerShadowVisible: false,
+          headerStyle: { backgroundColor: colors.background },
+          headerTintColor: colors.ink,
+          headerTitleStyle: { fontFamily, fontSize: 18, fontWeight: '700' },
+        }}>
         {!onboardingDone ? (
           <>
             <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />

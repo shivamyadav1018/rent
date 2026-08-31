@@ -11,6 +11,7 @@ import { tenantRepo } from '../../database/repositories/tenantRepo';
 import { unitRepo } from '../../database/repositories/unitRepo';
 import { rentCycleService } from '../../services/rentCycleService';
 import { useAppStore } from '../../store/appStore';
+import { colors, fontFamily } from '../../theme';
 
 const schema = z.object({
   dueDay: z.coerce.number().int().min(1).max(31),
@@ -86,4 +87,4 @@ export function AddEditTenantScreen({ navigation, route }: any) {
   );
 }
 
-const styles = StyleSheet.create({ error: { color: '#b42318' }, label: { color: '#33413b', fontSize: 13, fontWeight: '700' }, selected: { backgroundColor: '#0f766e', borderColor: '#0f766e' }, selectedText: { color: '#fff', fontWeight: '700' }, unit: { backgroundColor: '#fff', borderColor: '#cfd8d3', borderRadius: 8, borderWidth: 1, padding: 12 }, unitText: { color: '#33413b' }, units: { gap: 8 } });
+const styles = StyleSheet.create({ error: { color: colors.danger }, label: { color: colors.ink, fontFamily, fontSize: 13, fontWeight: '600' }, selected: { backgroundColor: colors.primary, borderColor: colors.primary }, selectedText: { color: colors.surface, fontFamily, fontWeight: '700' }, unit: { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: 8, borderWidth: 1, padding: 13 }, unitText: { color: colors.ink, fontFamily }, units: { gap: 8 } });

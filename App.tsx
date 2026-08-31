@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppNavigator } from './src/app/AppNavigator';
 import { initializeDatabase } from './src/database/db';
 import { useAppStore } from './src/store/appStore';
+import { colors } from './src/theme';
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
@@ -28,7 +29,7 @@ function App() {
         <AppNavigator />
       ) : (
         <View style={styles.loading}>
-          <ActivityIndicator size="large" color="#0f766e" />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       )}
     </SafeAreaProvider>
@@ -38,7 +39,7 @@ function App() {
 const styles = StyleSheet.create({
   loading: {
     alignItems: 'center',
-    backgroundColor: '#f7f7f2',
+    backgroundColor: colors.background,
     flex: 1,
     justifyContent: 'center',
   },

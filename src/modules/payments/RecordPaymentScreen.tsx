@@ -13,6 +13,7 @@ import { useAppStore } from '../../store/appStore';
 import { PaymentMode, RentCycle } from '../../types/models';
 import { formatCurrency } from '../../utils/currency';
 import { currentMonthYear, monthLabel } from '../../utils/dates';
+import { colors, fontFamily } from '../../theme';
 
 const modes: PaymentMode[] = ['cash', 'upi', 'bank_transfer', 'cheque', 'other'];
 const paymentSchema = z.coerce.number().positive('Amount must be greater than zero');
@@ -94,4 +95,4 @@ export function RecordPaymentScreen({ navigation, route }: any) {
   );
 }
 
-const styles = StyleSheet.create({ label: { color: '#33413b', fontSize: 13, fontWeight: '700' }, month: { flex: 1, fontWeight: '800', textAlign: 'center' }, monthRow: { alignItems: 'center', flexDirection: 'row', gap: 8 }, option: { backgroundColor: '#e8eeeb', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10 }, optionText: { color: '#33413b', textTransform: 'capitalize' }, options: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, selected: { backgroundColor: '#0f766e' }, selectedText: { color: '#fff', fontWeight: '700', textTransform: 'capitalize' } });
+const styles = StyleSheet.create({ label: { color: colors.ink, fontFamily, fontSize: 13, fontWeight: '600' }, month: { flex: 1, fontWeight: '700', textAlign: 'center' }, monthRow: { alignItems: 'center', flexDirection: 'row', gap: 8 }, option: { backgroundColor: colors.surfaceMuted, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10 }, optionText: { color: colors.ink, fontFamily, textTransform: 'capitalize' }, options: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, selected: { backgroundColor: colors.primary }, selectedText: { color: colors.surface, fontFamily, fontWeight: '700', textTransform: 'capitalize' } });

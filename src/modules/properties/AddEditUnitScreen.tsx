@@ -10,6 +10,7 @@ import { Title } from '../../components/Typography';
 import { unitRepo } from '../../database/repositories/unitRepo';
 import { useAppStore } from '../../store/appStore';
 import { UnitStatus } from '../../types/models';
+import { colors, fontFamily } from '../../theme';
 
 const schema = z.object({ name: z.string().trim().min(1, 'Unit name is required'), monthlyRent: z.coerce.number().min(0), status: z.enum(['vacant', 'occupied']) });
 type FormData = { name: string; monthlyRent: string; status: UnitStatus };
@@ -45,4 +46,4 @@ export function AddEditUnitScreen({ navigation, route }: any) {
   );
 }
 
-const styles = StyleSheet.create({ label: { color: '#33413b', fontSize: 13, fontWeight: '700' }, option: { backgroundColor: '#e8eeeb', borderRadius: 8, paddingHorizontal: 16, paddingVertical: 10 }, optionText: { color: '#33413b', textTransform: 'capitalize' }, options: { flexDirection: 'row', gap: 8 }, selected: { backgroundColor: '#0f766e' }, selectedText: { color: '#fff', fontWeight: '700', textTransform: 'capitalize' } });
+const styles = StyleSheet.create({ label: { color: colors.ink, fontFamily, fontSize: 13, fontWeight: '600' }, option: { backgroundColor: colors.surfaceMuted, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 10 }, optionText: { color: colors.ink, fontFamily, textTransform: 'capitalize' }, options: { flexDirection: 'row', gap: 8 }, selected: { backgroundColor: colors.primary }, selectedText: { color: colors.surface, fontFamily, fontWeight: '700', textTransform: 'capitalize' } });
