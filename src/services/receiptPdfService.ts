@@ -1,0 +1,66 @@
+import RNHTMLtoPDF from 'react-native-html-to-pdf';
+import Share from 'react-native-share';
+
+import { paymentRepo } from '../database/repositories/paymentRepo';
+import { settingsRepo } from '../database/repositories/settingsRepo';
+import { LedgerItem, PaymentMode } from '../types/models';
+import { displayDate, monthLabel } from '../utils/dates';
+import { createReceiptNumber } from '../utils/ids';
+import { formatCurrency } from '../utils/currency';
+
+export const receiptPdfService = {
+  async buildHtml(input: {
+    cycle: LedgerItem;
+    amountPaid: number;
+    paymentDate: string;
+    paymentMode: PaymentMode;
+    referenceNo?: string;
+    notes?: string;
+  }) {
+    const settings = await settingsRepo.getAll();
+    const countRows = await paymentRepo.count();
+    const receiptNumber = createReceiptNumber(Math.max(countRows[0]?.count ?? 0, 1), new Date().getFullYear());
+    const landlordName = settings.landlordName ?? 'Landlord';
+
+    return `
+      <html>
+        <body style="font-family: Arial, sans-serif; padding: 28px; color: #17201d;">
+          <h1 style="color: #0f766e; margin-bottom: 4px;">Rent Khata Receipt</h1>
+          <p style="margin-top: 0;">Receipt No: ${receiptNumber}</p>
+          <hr />
+          <p><strong>Date:</strong> ${displayDate(input.paymentDate)}</p>
+          <p><strong>Landlord:</strong> ${landlordName}</p>
+          <p><strong>Tenant:</strong> ${input.cycle.tenant_name}</p>
+          <p><strong>Property / Unit:</strong> ${input.cycle.property_name} / ${input.cycle.unit_name}</p>
+          <p><strong>Rent Month:</strong> ${monthLabel(input.cycle.month, input.cycle.year)}</p>
+          <p><strong>Amount Paid:</strong> ${formatCurrency(input.amountPaid)}</p>
+          <p><strong>Balance:</strong> ${formatCurrency(Math.max(input.cycle.balance, 0))}</p>
+          <p><strong>Payment Mode:</strong> ${input.paymentMode.replace('_', ' ')}</p>
+          <p><strong>Reference:</strong> ${input.referenceNo || '-'}</p>
+          <p><strong>Notes:</strong> ${input.notes || '-'}</p>
+          <hr />
+          <p style="font-size: 12px; color: #68716d;">Generated offline by Rent Khata.</p>
+        </body>
+      </html>
+    `;
+  },
+
+  async generate(html: string) {
+    const pdf = await RNHTMLtoPDF.convert({
+      fileName: `rent-khata-receipt-${Date.now()}`,
+      html,
+    });
+
+    return pdf.filePath as string | undefined;
+  },
+
+  async share(filePath: string) {
+    await Share.open({ type: 'application/pdf', url: `file://${filePath}` });
+  },
+
+  async generateAndShare(html: string) {
+    const filePath = await this.generate(html);
+    if (filePath) await this.share(filePath);
+    return filePath;
+  },
+};
