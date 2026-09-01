@@ -74,7 +74,7 @@ export function SettingsScreen() {
               </View>
             </View>
             <AppButton
-              icon={<LogOut color={colors.primaryDark} size={18} />}
+              icon={<LogOut color={authColors.primary} size={18} />}
               title="Sign out"
               variant="secondary"
               onPress={confirmSignOut}

@@ -1,20 +1,20 @@
 import React from 'react';
 import { StyleSheet, Text } from 'react-native';
 
-import { fontFamily } from '../theme';
+import { colors, fontFamily } from '../theme';
 
-const colors = {
-  occupied: ['#E3F1EB', '#126B54'],
-  overdue: ['#FDE8E5', '#B42318'],
-  paid: ['#E3F1EB', '#126B54'],
-  partial: ['#FFF0D6', '#A15C00'],
-  unpaid: ['#E9EEEB', '#52605A'],
-  vacant: ['#E8EEF8', '#35598A'],
+const statusColors = {
+  occupied: [colors.primarySoft, colors.primary],
+  overdue:  [colors.dangerSoft, colors.danger],
+  paid:     [colors.primarySoft, colors.primary],
+  partial:  [colors.warningSoft, colors.warning],
+  unpaid:   [colors.surfaceMuted, colors.muted],
+  vacant:   ['#E8EEF8', '#35598A'],
 };
 
 export function StatusBadge({ status }: { status?: string }) {
-  const normalized = (status ?? 'unpaid').toLowerCase() as keyof typeof colors;
-  const [backgroundColor, color] = colors[normalized] ?? colors.unpaid;
+  const normalized = (status ?? 'unpaid').toLowerCase() as keyof typeof statusColors;
+  const [backgroundColor, color] = statusColors[normalized] ?? statusColors.unpaid;
   return <Text style={[styles.badge, { backgroundColor, color }]}>{normalized.toUpperCase()}</Text>;
 }
 

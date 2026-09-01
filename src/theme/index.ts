@@ -27,10 +27,25 @@ export const authColors = {
 
 export const fontFamily = 'Inter';
 
+export const radius = {
+  sm: 8,
+  md: 12,
+  lg: 16,
+  pill: 20,
+};
+
 export const shadow = {
-  elevation: 2,
+  elevation: 3,
   shadowColor: '#173A2F',
-  shadowOffset: { height: 2, width: 0 },
-  shadowOpacity: 0.06,
-  shadowRadius: 8,
+  shadowOffset: { height: 3, width: 0 },
+  shadowOpacity: 0.08,
+  shadowRadius: 12,
+};
+
+export const authShadow = {
+  elevation: 4,
+  shadowColor: '#263BAA',
+  shadowOffset: { height: 4, width: 0 },
+  shadowOpacity: 0.10,
+  shadowRadius: 16,
 };

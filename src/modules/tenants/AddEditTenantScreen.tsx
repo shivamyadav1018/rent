@@ -87,4 +87,4 @@ export function AddEditTenantScreen({ navigation, route }: any) {
   );
 }
 
-const styles = StyleSheet.create({ error: { color: colors.danger }, label: { color: colors.ink, fontFamily, fontSize: 13, fontWeight: '600' }, selected: { backgroundColor: colors.primary, borderColor: colors.primary }, selectedText: { color: colors.surface, fontFamily, fontWeight: '700' }, unit: { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: 8, borderWidth: 1, padding: 13 }, unitText: { color: colors.ink, fontFamily }, units: { gap: 8 } });
+const styles = StyleSheet.create({ error: { color: colors.danger }, label: { color: colors.ink, fontFamily, fontSize: 13, fontWeight: '600' }, selected: { backgroundColor: colors.primary, borderColor: colors.primary }, selectedText: { color: colors.surface, fontFamily, fontWeight: '700' }, unit: { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: 12, borderWidth: 1, padding: 13 }, unitText: { color: colors.ink, fontFamily }, units: { gap: 8 } });

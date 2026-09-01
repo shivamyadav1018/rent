@@ -12,6 +12,11 @@ import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { GOOGLE_WEB_CLIENT_ID, isFirebaseConfigured } from '../config/firebase';
 import { firebaseService } from './firebaseService';
 
+// ⚠️ iOS: For Google Sign-in to work on iOS, you must add `GoogleService-Info.plist`
+// to the ios/<AppName>/ folder and include it in the Xcode project.
+// Download it from Firebase Console → Project Settings → Your Apps → iOS app.
+// Without it, the app will build but authentication will silently fail on iOS.
+
 let configured = false;
 
 const configure = () => {

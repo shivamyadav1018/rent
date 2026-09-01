@@ -60,7 +60,7 @@ export function AddEditPropertyScreen({ navigation, route }: any) {
 
 const styles = StyleSheet.create({
   label: { color: colors.ink, fontFamily, fontSize: 13, fontWeight: '600' },
-  option: { backgroundColor: colors.surfaceMuted, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 10 },
+  option: { backgroundColor: colors.surfaceMuted, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 10 },
   optionText: { color: colors.ink, fontFamily, textTransform: 'capitalize' },
   options: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   selected: { backgroundColor: colors.primary },

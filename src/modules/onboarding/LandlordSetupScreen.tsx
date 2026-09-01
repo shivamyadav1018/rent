@@ -9,7 +9,7 @@ import { Screen } from '../../components/Screen';
 import { Body, Muted, Title } from '../../components/Typography';
 import { settingsRepo } from '../../database/repositories/settingsRepo';
 import { useAppStore } from '../../store/appStore';
-import { colors } from '../../theme';
+import { authColors, authShadow, fontFamily, radius } from '../../theme';
 
 const schema = z.object({
   landlordName: z.string().min(2, 'Enter landlord name'),
@@ -38,24 +38,104 @@ export function LandlordSetupScreen({ navigation }: any) {
   };
 
   return (
-    <Screen>
-      <View style={styles.intro}>
-        <View style={styles.icon}><UserRound color={colors.primary} size={24} /></View>
-        <View style={styles.introText}><Title style={styles.title}>Your details</Title><Muted>These details appear on reminders and receipts.</Muted></View>
+    <Screen backgroundColor={authColors.background} style={styles.screen}>
+
+      {/* ── Step indicator ── */}
+      <View style={styles.steps}>
+        <View style={styles.stepDone} />
+        <View style={styles.stepActive} />
       </View>
-      <AppInput label="Landlord name" value={landlordName} onChangeText={setLandlordName} />
-      <AppInput keyboardType="phone-pad" label="Phone number optional" value={landlordPhone} onChangeText={setLandlordPhone} />
-      <AppInput editable={false} label="Default currency" value="INR" />
-      <Body style={styles.privacy}>Stored privately on this device</Body>
-      <AppButton icon={<ArrowRight color={colors.surface} size={18} />} title="Save and continue" onPress={save} />
+      <Muted style={styles.stepLabel}>Step 2 of 2 — Profile setup</Muted>
+
+      {/* ── Header ── */}
+      <View style={styles.header}>
+        <View style={styles.iconWrap}>
+          <UserRound color={authColors.primary} size={26} />
+        </View>
+        <Title style={styles.title}>Your details</Title>
+        <Muted style={styles.subtitle}>
+          These details appear on rent reminders and receipts sent to tenants.
+        </Muted>
+      </View>
+
+      {/* ── Form card ── */}
+      <View style={styles.card}>
+        <AppInput
+          variant="auth"
+          label="Landlord name"
+          placeholder="e.g. Rahul Sharma"
+          value={landlordName}
+          onChangeText={setLandlordName}
+        />
+        <AppInput
+          variant="auth"
+          keyboardType="phone-pad"
+          label="Phone number (optional)"
+          placeholder="e.g. 9876543210"
+          value={landlordPhone}
+          onChangeText={setLandlordPhone}
+        />
+        <AppInput
+          variant="auth"
+          editable={false}
+          label="Default currency"
+          value="INR — Indian Rupee"
+        />
+      </View>
+
+      <Body style={styles.privacy}>🔒 Stored privately on this device only</Body>
+
+      <AppButton
+        icon={<ArrowRight color={authColors.background} size={18} />}
+        title="Save and continue"
+        onPress={save}
+        style={styles.button}
+      />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  icon: { alignItems: 'center', backgroundColor: colors.primarySoft, borderRadius: 8, height: 48, justifyContent: 'center', width: 48 },
-  intro: { alignItems: 'center', flexDirection: 'row', gap: 14, marginBottom: 10 },
-  introText: { flex: 1, gap: 2 },
-  privacy: { color: colors.muted, fontSize: 12, marginBottom: 2 },
-  title: { fontSize: 23, lineHeight: 29 },
+  button: { backgroundColor: authColors.primary, marginTop: 4 },
+  card: {
+    ...authShadow,
+    backgroundColor: authColors.background,
+    borderColor: authColors.border,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    gap: 14,
+    padding: 20,
+  },
+  header: { alignItems: 'center', gap: 8, paddingVertical: 8 },
+  iconWrap: {
+    alignItems: 'center',
+    backgroundColor: authColors.primarySoft,
+    borderRadius: radius.md,
+    height: 56,
+    justifyContent: 'center',
+    width: 56,
+  },
+  privacy: {
+    color: authColors.muted,
+    fontFamily,
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  screen: { flexGrow: 1, gap: 20, paddingHorizontal: 24 },
+  stepActive: {
+    backgroundColor: authColors.primary,
+    borderRadius: 4,
+    flex: 1,
+    height: 5,
+  },
+  stepDone: {
+    backgroundColor: authColors.primarySoft,
+    borderRadius: 4,
+    flex: 1,
+    height: 5,
+  },
+  stepLabel: { color: authColors.muted, fontSize: 12, textAlign: 'center', marginTop: -12 },
+  steps: { flexDirection: 'row', gap: 6, marginTop: 8 },
+  subtitle: { color: authColors.muted, fontSize: 14, lineHeight: 21, textAlign: 'center' },
+  title: { color: authColors.ink, fontSize: 24, fontWeight: '800', lineHeight: 30, marginTop: 4 },
 });
