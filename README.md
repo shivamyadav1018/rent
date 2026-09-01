@@ -26,6 +26,17 @@ cd android
 
 The APK is written to `android/app/build/outputs/apk/debug/app-debug.apk`.
 
+## Signed release APK
+
+Release builds require a private `android/rent-khata-release.keystore` and an ignored `android/keystore.properties` file containing `storeFile`, `storePassword`, `keyAlias`, and `keyPassword`.
+
+```sh
+cd android
+./gradlew assembleRelease
+```
+
+The standalone, minified APK is written to `android/app/build/outputs/apk/release/app-release.apk`. Keep the release keystore and its credentials backed up securely; future app updates must use the same key.
+
 ## Checks
 
 ```sh
