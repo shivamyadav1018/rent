@@ -31,15 +31,30 @@ export const unitRepo = {
   }) {
     const timestamp = nowIso();
     const id = input.id ?? createId('unit');
-    await executeWrite(
-      `INSERT OR REPLACE INTO units (id, property_id, name, monthly_rent, status, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, COALESCE((SELECT created_at FROM units WHERE id = ?), ?), ?)`,
-      [id, input.property_id, input.name, input.monthly_rent, input.status, id, timestamp, timestamp],
-    );
+    if (input.id && await this.find(input.id)) {
+      await executeWrite(
+        `UPDATE units
+         SET property_id = ?, name = ?, monthly_rent = ?, status = ?, updated_at = ?,
+             sync_status = 'pending', version = version + 1
+         WHERE id = ?`,
+        [input.property_id, input.name, input.monthly_rent, input.status, timestamp, id],
+      );
+    } else {
+      await executeWrite(
+        `INSERT INTO units (id, property_id, name, monthly_rent, status, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [id, input.property_id, input.name, input.monthly_rent, input.status, timestamp, timestamp],
+      );
+    }
     return id;
   },
 
   markOccupied(unitId: string) {
-    return executeWrite('UPDATE units SET status = ?, updated_at = ? WHERE id = ?', ['occupied', nowIso(), unitId]);
+    return executeWrite(
+      `UPDATE units
+       SET status = ?, updated_at = ?, sync_status = 'pending', version = version + 1
+       WHERE id = ?`,
+      ['occupied', nowIso(), unitId],
+    );
   },
 };

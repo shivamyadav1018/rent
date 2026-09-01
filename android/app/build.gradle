@@ -2,6 +2,11 @@ apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 
+if (file("google-services.json").exists()) {
+    apply plugin: "com.google.gms.google-services"
+    apply plugin: "com.google.firebase.crashlytics"
+}
+
 def keystoreProperties = new Properties()
 def keystorePropertiesFile = rootProject.file("keystore.properties")
 if (keystorePropertiesFile.exists()) {
@@ -83,9 +88,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.rentkhata"
+    namespace "com.kirayabahi.landlord"
     defaultConfig {
-        applicationId "com.rentkhata"
+        applicationId "com.kirayabahi.landlord"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

@@ -33,7 +33,7 @@ export function DashboardScreen({ navigation }: any) {
   return (
     <Screen>
       <View style={styles.header}>
-        <View><Muted>{monthLabel(month, year)}</Muted><Title>{settings.landlordName ? `Hello, ${settings.landlordName}` : 'Rent Khata'}</Title></View>
+        <View><Muted>{monthLabel(month, year)}</Muted><Title>{settings.landlordName ? `Hello, ${settings.landlordName}` : 'KirayaBahi'}</Title></View>
         <View style={styles.logo}><BookOpen color={colors.surface} size={22} /></View>
       </View>
       <View style={styles.summaryRow}>

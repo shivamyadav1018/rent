@@ -86,7 +86,9 @@ export const rentRepo = {
 
   async updateTotals(id: string, totalPaid: number, balance: number, status: RentStatus) {
     await executeWrite(
-      'UPDATE rent_cycles SET total_paid = ?, balance = ?, status = ?, updated_at = ? WHERE id = ?',
+      `UPDATE rent_cycles
+       SET total_paid = ?, balance = ?, status = ?, updated_at = ?, sync_status = 'pending', version = version + 1
+       WHERE id = ?`,
       [totalPaid, balance, status, nowIso(), id],
     );
   },

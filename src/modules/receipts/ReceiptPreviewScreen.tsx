@@ -55,7 +55,7 @@ export function ReceiptPreviewScreen({ route }: any) {
     <Screen>
       <Title>Receipt preview</Title>
       <Card>
-        <Body style={styles.heading}>Rent Khata Receipt</Body>
+        <Body style={styles.heading}>KirayaBahi Receipt</Body>
         <Muted>Date: {displayDate(data.paymentDate)}</Muted>
         <Body>Landlord: {landlordName}</Body>
         <Body>Tenant: {cycle.tenant_name}</Body>

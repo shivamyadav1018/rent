@@ -15,6 +15,10 @@ jest.mock('../src/store/appStore', () => ({
   useAppStore: (selector: (state: { bootstrap: () => Promise<void> }) => unknown) =>
     selector({ bootstrap: jest.fn().mockResolvedValue(undefined) }),
 }));
+jest.mock('../src/store/authStore', () => ({
+  useAuthStore: (selector: (state: { initialize: () => () => void }) => unknown) =>
+    selector({ initialize: jest.fn(() => jest.fn()) }),
+}));
 
 import App from '../App';
 

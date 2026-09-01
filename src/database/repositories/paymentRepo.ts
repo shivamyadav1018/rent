@@ -14,10 +14,11 @@ export const paymentRepo = {
     notes?: string;
   }) {
     const id = createId('pay');
+    const timestamp = nowIso();
     await executeWrite(
       `INSERT INTO payments
-       (id, rent_cycle_id, tenant_id, amount, payment_date, payment_mode, reference_no, notes, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (id, rent_cycle_id, tenant_id, amount, payment_date, payment_mode, reference_no, notes, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         input.rent_cycle_id,
@@ -27,7 +28,8 @@ export const paymentRepo = {
         input.payment_mode,
         input.reference_no ?? null,
         input.notes ?? null,
-        nowIso(),
+        timestamp,
+        timestamp,
       ],
     );
     return id;

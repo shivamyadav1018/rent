@@ -1,6 +1,6 @@
-# Rent Khata
+# KirayaBahi
 
-Rent Khata is an offline-first React Native app for landlords to manage properties, units, tenants, monthly rent, payments, WhatsApp reminders, and PDF receipts. Phase 1 stores all data locally in SQLite and has no login, backend, cloud sync, or online payments.
+KirayaBahi is an offline-first React Native rent manager for landlords to manage properties, units, tenants, monthly rent, payments, WhatsApp reminders, and PDF receipts. Firebase sign-in establishes cloud ownership while SQLite keeps rent records available offline.
 
 ## Run on Android
 

@@ -1,4 +1,4 @@
-package com.rentkhata
+package com.kirayabahi.landlord
 
 import android.app.Application
 import com.facebook.react.PackageList

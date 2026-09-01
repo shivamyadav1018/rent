@@ -55,25 +55,32 @@ export const tenantRepo = {
   }) {
     const timestamp = nowIso();
     const id = input.id ?? createId('tenant');
-    await executeWrite(
-      `INSERT OR REPLACE INTO tenants
-       (id, unit_id, name, phone, monthly_rent, due_day, move_in_date, security_deposit, status, notes, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, COALESCE((SELECT created_at FROM tenants WHERE id = ?), ?), ?)`,
-      [
-        id,
-        input.unit_id,
-        input.name,
-        input.phone,
-        input.monthly_rent,
-        input.due_day,
-        input.move_in_date,
-        input.security_deposit,
-        input.notes ?? null,
-        id,
-        timestamp,
-        timestamp,
-      ],
-    );
+    const values = [
+      input.unit_id,
+      input.name,
+      input.phone,
+      input.monthly_rent,
+      input.due_day,
+      input.move_in_date,
+      input.security_deposit,
+      input.notes ?? null,
+    ];
+    if (input.id && await this.find(input.id)) {
+      await executeWrite(
+        `UPDATE tenants
+         SET unit_id = ?, name = ?, phone = ?, monthly_rent = ?, due_day = ?, move_in_date = ?,
+             security_deposit = ?, notes = ?, updated_at = ?, sync_status = 'pending', version = version + 1
+         WHERE id = ?`,
+        [...values, timestamp, id],
+      );
+    } else {
+      await executeWrite(
+        `INSERT INTO tenants
+         (id, unit_id, name, phone, monthly_rent, due_day, move_in_date, security_deposit, status, notes, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)`,
+        [id, ...values, timestamp, timestamp],
+      );
+    }
     await unitRepo.markOccupied(input.unit_id);
     return id;
   },

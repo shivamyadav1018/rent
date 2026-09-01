@@ -28,11 +28,20 @@ export const propertyRepo = {
   async save(input: { id?: string; name: string; type: PropertyType; address?: string }) {
     const timestamp = nowIso();
     const id = input.id ?? createId('prop');
-    await executeWrite(
-      `INSERT OR REPLACE INTO properties (id, name, type, address, created_at, updated_at)
-       VALUES (?, ?, ?, ?, COALESCE((SELECT created_at FROM properties WHERE id = ?), ?), ?)`,
-      [id, input.name, input.type, input.address ?? null, id, timestamp, timestamp],
-    );
+    if (input.id && await this.find(input.id)) {
+      await executeWrite(
+        `UPDATE properties
+         SET name = ?, type = ?, address = ?, updated_at = ?, sync_status = 'pending', version = version + 1
+         WHERE id = ?`,
+        [input.name, input.type, input.address ?? null, timestamp, id],
+      );
+    } else {
+      await executeWrite(
+        `INSERT INTO properties (id, name, type, address, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [id, input.name, input.type, input.address ?? null, timestamp, timestamp],
+      );
+    }
     return id;
   },
 };

@@ -5,22 +5,27 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppNavigator } from './src/app/AppNavigator';
 import { initializeDatabase } from './src/database/db';
 import { useAppStore } from './src/store/appStore';
+import { useAuthStore } from './src/store/authStore';
 import { colors } from './src/theme';
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
   const [ready, setReady] = useState(false);
   const bootstrap = useAppStore(state => state.bootstrap);
+  const initializeAuth = useAuthStore(state => state.initialize);
 
   useEffect(() => {
+    let unsubscribeAuth: () => void = () => {};
     const start = async () => {
       await initializeDatabase();
       await bootstrap();
+      unsubscribeAuth = initializeAuth();
       setReady(true);
     };
 
     start();
-  }, [bootstrap]);
+    return () => unsubscribeAuth();
+  }, [bootstrap, initializeAuth]);
 
   return (
     <SafeAreaProvider>

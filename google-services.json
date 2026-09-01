@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "188147067656",
+    "project_id": "rentingkhata",
+    "storage_bucket": "rentingkhata.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:188147067656:android:300f9454aa42fccd30dabd",
+        "android_client_info": {
+          "package_name": "com.kirayabahi.landlord"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "188147067656-h7gsmlnsq91erqfifhd4ef81q1aa8le3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCzlT9tSyrIGYEvOG2CpccPXhW5rHO3b7k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "188147067656-h7gsmlnsq91erqfifhd4ef81q1aa8le3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

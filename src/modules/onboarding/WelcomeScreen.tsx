@@ -12,7 +12,7 @@ export function WelcomeScreen({ navigation }: any) {
     <Screen style={styles.screen}>
       <View style={styles.brand}>
         <View style={styles.mark}><BookOpenCheck color={colors.surface} size={30} strokeWidth={2.2} /></View>
-        <Title style={styles.title}>Rent Khata</Title>
+        <Title style={styles.title}>KirayaBahi</Title>
         <Body style={styles.subtitle}>Your simple, private rent book.</Body>
       </View>
       <View style={styles.footer}>
