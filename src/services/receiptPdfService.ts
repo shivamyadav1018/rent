@@ -19,7 +19,10 @@ export const receiptPdfService = {
   }) {
     const settings = await settingsRepo.getAll();
     const countRows = await paymentRepo.count();
-    const receiptNumber = createReceiptNumber(Math.max(countRows[0]?.count ?? 0, 1), new Date().getFullYear());
+    const totalPayments = countRows[0]?.count ?? 0;
+    // Use total count + last 4 digits of timestamp to prevent duplicate numbers on deletion
+    const sequence = totalPayments * 10 + (Date.now() % 10);
+    const receiptNumber = createReceiptNumber(sequence, new Date().getFullYear());
     const landlordName = settings.landlordName ?? 'Landlord';
 
     return `

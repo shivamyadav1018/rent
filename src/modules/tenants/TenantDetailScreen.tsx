@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
 import { AppButton } from '../../components/AppButton';
@@ -13,6 +13,7 @@ import { rentCycleService } from '../../services/rentCycleService';
 import { Payment, RentCycle, Tenant } from '../../types/models';
 import { formatCurrency } from '../../utils/currency';
 import { displayDate, monthLabel } from '../../utils/dates';
+import { colors } from '../../theme';
 
 type TenantDetail = Tenant & { unit_name: string; property_name: string };
 type HistoryPayment = Payment & { month: number; year: number };
@@ -44,6 +45,27 @@ export function TenantDetailScreen({ navigation, route }: any) {
         <AppButton title="Record payment" onPress={() => navigation.navigate('RecordPayment', { tenantId, cycleId: cycle?.id })} />
         {cycle ? <AppButton title="Send reminder" variant="secondary" onPress={() => navigation.navigate('ReminderPreview', { cycleId: cycle.id })} /> : null}
         <AppButton title="Edit tenant" variant="secondary" onPress={() => navigation.navigate('AddTenant', { tenantId })} />
+        <AppButton
+          title="Move out"
+          variant="danger"
+          onPress={() =>
+            Alert.alert(
+              'Mark as moved out?',
+              `This will mark ${tenant.name} as inactive and free their unit. This cannot be undone.`,
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Move out',
+                  style: 'destructive',
+                  onPress: async () => {
+                    await tenantRepo.deactivate(tenantId);
+                    navigation.goBack();
+                  },
+                },
+              ],
+            )
+          }
+        />
       </View>
       <Body style={styles.heading}>Current rent</Body>
       {cycle ? <Card><Body>{formatCurrency(cycle.total_paid)} paid of {formatCurrency(cycle.rent_amount)}</Body><Body>{formatCurrency(cycle.balance)} balance</Body><StatusBadge status={cycle.status} /></Card> : <Muted>No cycle available.</Muted>}

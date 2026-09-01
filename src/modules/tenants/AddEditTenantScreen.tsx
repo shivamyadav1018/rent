@@ -56,7 +56,8 @@ export function AddEditTenantScreen({ navigation, route }: any) {
     try {
       const id = await tenantRepo.save({
         due_day: parsed.data.dueDay, id: tenantId, monthly_rent: parsed.data.monthlyRent,
-        move_in_date: new Date(`${parsed.data.moveInDate}T00:00:00`).toISOString(), name: parsed.data.name,
+        move_in_date: parsed.data.moveInDate, // stored as plain YYYY-MM-DD, no UTC conversion
+        name: parsed.data.name,
         notes: parsed.data.notes, phone: parsed.data.phone, security_deposit: parsed.data.securityDeposit,
         unit_id: parsed.data.unitId,
       });

@@ -66,6 +66,11 @@ export const tenantRepo = {
       input.notes ?? null,
     ];
     if (input.id && await this.find(input.id)) {
+      // Release old unit if tenant is moving to a different unit
+      const existing = await this.find(input.id);
+      if (existing && existing.unit_id !== input.unit_id) {
+        await unitRepo.markVacant(existing.unit_id);
+      }
       await executeWrite(
         `UPDATE tenants
          SET unit_id = ?, name = ?, phone = ?, monthly_rent = ?, due_day = ?, move_in_date = ?,
@@ -83,5 +88,18 @@ export const tenantRepo = {
     }
     await unitRepo.markOccupied(input.unit_id);
     return id;
+  },
+
+  async deactivate(tenantId: string) {
+    const tenant = await this.find(tenantId);
+    if (!tenant) return;
+    const timestamp = nowIso();
+    await executeWrite(
+      `UPDATE tenants
+       SET status = 'inactive', updated_at = ?, sync_status = 'pending', version = version + 1
+       WHERE id = ?`,
+      [timestamp, tenantId],
+    );
+    await unitRepo.markVacant(tenant.unit_id);
   },
 };
