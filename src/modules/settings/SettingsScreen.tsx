@@ -1,7 +1,8 @@
 import React, { useCallback, useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, StyleSheet, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { Cloud, LogOut } from 'lucide-react-native';
+import { GoogleSigninButton } from '@react-native-google-signin/google-signin';
+import { CheckCircle2, Cloud, LogOut } from 'lucide-react-native';
 
 import { AppButton } from '../../components/AppButton';
 import { Card } from '../../components/Card';
@@ -34,6 +35,13 @@ export function SettingsScreen() {
     Alert.alert('Settings saved');
   };
 
+  const confirmSignOut = () => {
+    Alert.alert('Sign out?', 'Your rent records will remain on this device.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Sign out', style: 'destructive', onPress: signOut },
+    ]);
+  };
+
   return (
     <Screen>
       <Title>Settings</Title>
@@ -53,17 +61,38 @@ export function SettingsScreen() {
         </View>
         {authError ? <Body style={styles.error}>{authError}</Body> : null}
         {authStatus === 'signedIn' ? (
-          <AppButton
-            icon={<LogOut color={colors.primaryDark} size={18} />}
-            title="Sign out"
-            variant="secondary"
-            onPress={signOut}
-          />
+          <>
+            <View style={styles.accountRow}>
+              {authUser?.photoURL ? (
+                <Image source={{ uri: authUser.photoURL }} style={styles.avatar} />
+              ) : (
+                <View style={styles.avatarFallback}><CheckCircle2 color={colors.primary} size={20} /></View>
+              )}
+              <View style={styles.accountDetails}>
+                {authUser?.displayName ? <Body style={styles.accountName}>{authUser.displayName}</Body> : null}
+                {authUser?.email ? <Muted>{authUser.email}</Muted> : null}
+              </View>
+            </View>
+            <AppButton
+              icon={<LogOut color={colors.primaryDark} size={18} />}
+              title="Sign out"
+              variant="secondary"
+              onPress={confirmSignOut}
+            />
+          </>
+        ) : authStatus === 'loading' ? (
+          <View style={styles.loading}>
+            <ActivityIndicator color={colors.primary} />
+            <Muted>Connecting...</Muted>
+          </View>
+        ) : authStatus === 'disabled' ? (
+          <Muted>Google sign-in is unavailable in this build.</Muted>
         ) : (
-          <AppButton
-            disabled={authStatus === 'disabled' || authStatus === 'loading'}
-            title={authStatus === 'loading' ? 'Connecting...' : 'Continue with Google'}
+          <GoogleSigninButton
+            color={GoogleSigninButton.Color.Light}
             onPress={signInWithGoogle}
+            size={GoogleSigninButton.Size.Wide}
+            style={styles.googleButton}
           />
         )}
       </Card>
@@ -77,6 +106,11 @@ export function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
+  accountDetails: { flex: 1 },
+  accountName: { fontWeight: '700' },
+  accountRow: { alignItems: 'center', flexDirection: 'row', gap: 12 },
+  avatar: { borderRadius: 22, height: 44, width: 44 },
+  avatarFallback: { alignItems: 'center', backgroundColor: colors.primarySoft, borderRadius: 22, height: 44, justifyContent: 'center', width: 44 },
   cloudCard: { marginTop: 4 },
   cloudHeader: { alignItems: 'center', flexDirection: 'row', gap: 12 },
   cloudIcon: {
@@ -90,4 +124,6 @@ const styles = StyleSheet.create({
   cloudText: { flex: 1 },
   cloudTitle: { fontWeight: '700' },
   error: { color: colors.danger, fontSize: 13 },
+  googleButton: { alignSelf: 'stretch', height: 48, width: '100%' },
+  loading: { alignItems: 'center', flexDirection: 'row', gap: 10, minHeight: 48 },
 });

@@ -14,6 +14,22 @@
       },
       "oauth_client": [
         {
+          "client_id": "188147067656-trlv88p19lr6lguckgk9t41nq481s2et.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.kirayabahi.landlord",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "188147067656-vspsteqhleaqob0nrgdt88eet6b08shn.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.kirayabahi.landlord",
+            "certificate_hash": "81f912f147b4a29deb63a493f65e98a4fa65b4cc"
+          }
+        },
+        {
           "client_id": "188147067656-h7gsmlnsq91erqfifhd4ef81q1aa8le3.apps.googleusercontent.com",
           "client_type": 3
         }
