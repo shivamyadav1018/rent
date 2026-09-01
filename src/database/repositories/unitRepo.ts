@@ -66,14 +66,4 @@ export const unitRepo = {
       ['vacant', nowIso(), unitId],
     );
   },
-
-  async deactivateTenantUnits(tenantId: string) {
-    // Find the unit currently linked to this tenant and mark it vacant
-    const rows = await executeSql<{ unit_id: string }>(
-      'SELECT unit_id FROM tenants WHERE id = ?',
-      [tenantId],
-    );
-    const unitId = rows[0]?.unit_id;
-    if (unitId) await this.markVacant(unitId);
-  },
 };

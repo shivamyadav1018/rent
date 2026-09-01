@@ -8,9 +8,10 @@ import { Card } from '../../components/Card';
 import { Screen } from '../../components/Screen';
 import { Body, Muted, Title } from '../../components/Typography';
 import { rentRepo } from '../../database/repositories/rentRepo';
+import { tenantRepo } from '../../database/repositories/tenantRepo';
 import { rentCycleService } from '../../services/rentCycleService';
 import { useAppStore } from '../../store/appStore';
-import { PaymentMode, RentCycle } from '../../types/models';
+import { PaymentMode, RentCycle, Tenant } from '../../types/models';
 import { formatCurrency } from '../../utils/currency';
 import { currentMonthYear, monthLabel } from '../../utils/dates';
 import { colors, fontFamily } from '../../theme';
@@ -22,6 +23,7 @@ export function RecordPaymentScreen({ navigation, route }: any) {
   const current = currentMonthYear();
   const tenants = useAppStore(state => state.tenants);
   const refreshAll = useAppStore(state => state.refreshAll);
+  const [activeTenants, setActiveTenants] = useState<(Tenant & { unit_name?: string })[]>([]);
   const [tenantId, setTenantId] = useState(route.params?.tenantId ?? '');
   const [cycle, setCycle] = useState<RentCycle | null>(null);
   const [month, setMonth] = useState(current.month);
@@ -33,6 +35,9 @@ export function RecordPaymentScreen({ navigation, route }: any) {
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [savedCycleId, setSavedCycleId] = useState<string | null>(null);
+
+  // Load only active tenants for the selector
+  useEffect(() => { tenantRepo.active().then(setActiveTenants); }, []);
 
   useEffect(() => {
     const cycleId = route.params?.cycleId as string | undefined;
@@ -60,7 +65,8 @@ export function RecordPaymentScreen({ navigation, route }: any) {
     if (!parsedAmount.success) return Alert.alert('Check amount', parsedAmount.error.issues[0]?.message);
     setSaving(true);
     try {
-      const updated = await rentCycleService.recordPayment({ amount: parsedAmount.data, month, notes, paymentDate: new Date(`${paymentDate}T12:00:00`).toISOString(), paymentMode: mode, referenceNo, tenantId, year });
+      // paymentDate stored as plain YYYY-MM-DD (no UTC conversion) consistent with dates.ts fix
+      const updated = await rentCycleService.recordPayment({ amount: parsedAmount.data, month, notes, paymentDate, paymentMode: mode, referenceNo, tenantId, year });
       await refreshAll();
       if (updated) { setCycle(updated); setSavedCycleId(updated.id); }
     } catch (error) {
@@ -72,7 +78,7 @@ export function RecordPaymentScreen({ navigation, route }: any) {
     <Screen>
       <Title>Payment saved</Title>
       <Card><Body>{formatCurrency(Number(amount))} recorded</Body><Muted>{monthLabel(month, year)} | {mode.replace('_', ' ')}</Muted></Card>
-      <AppButton title="Generate / share receipt" onPress={() => navigation.navigate('ReceiptPreview', { amountPaid: Number(amount), cycleId: savedCycleId, notes, paymentDate: new Date(`${paymentDate}T12:00:00`).toISOString(), paymentMode: mode, referenceNo })} />
+      <AppButton title="Generate / share receipt" onPress={() => navigation.navigate('ReceiptPreview', { amountPaid: Number(amount), cycleId: savedCycleId, notes, paymentDate, paymentMode: mode, referenceNo })} />
       <AppButton title="Back to dashboard" variant="secondary" onPress={() => navigation.navigate('MainTabs')} />
     </Screen>
   );
@@ -81,7 +87,7 @@ export function RecordPaymentScreen({ navigation, route }: any) {
     <Screen>
       <Title>Record payment</Title>
       <Text style={styles.label}>Tenant</Text>
-      <View style={styles.options}>{tenants.map(tenant => <Pressable key={tenant.id} onPress={() => setTenantId(tenant.id)} style={[styles.option, tenantId === tenant.id && styles.selected]}><Text style={tenantId === tenant.id ? styles.selectedText : styles.optionText}>{tenant.name} | {tenant.unit_name}</Text></Pressable>)}</View>
+      <View style={styles.options}>{activeTenants.map(tenant => <Pressable key={tenant.id} onPress={() => setTenantId(tenant.id)} style={[styles.option, tenantId === tenant.id && styles.selected]}><Text style={tenantId === tenant.id ? styles.selectedText : styles.optionText}>{tenant.name}</Text></Pressable>)}</View>
       <View style={styles.monthRow}><AppButton title="Previous" variant="secondary" onPress={() => changeMonth(-1)} /><Body style={styles.month}>{monthLabel(month, year)}</Body><AppButton title="Next" variant="secondary" onPress={() => changeMonth(1)} /></View>
       {cycle ? <Muted>Rent {formatCurrency(cycle.rent_amount)} | Current balance {formatCurrency(cycle.balance)}</Muted> : null}
       <AppInput label="Amount received" keyboardType="numeric" value={amount} onChangeText={setAmount} />

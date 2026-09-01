@@ -25,7 +25,8 @@ function App() {
 
     start();
     return () => unsubscribeAuth();
-  }, [bootstrap, initializeAuth]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // intentionally empty — runs once on mount; bootstrap/initializeAuth are stable Zustand refs
 
   return (
     <SafeAreaProvider>

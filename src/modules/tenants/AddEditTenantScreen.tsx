@@ -34,7 +34,12 @@ export function AddEditTenantScreen({ navigation, route }: any) {
     defaultValues: { dueDay: '5', monthlyRent: '', moveInDate: new Date().toISOString().slice(0, 10), name: '', notes: '', phone: '', securityDeposit: '0', unitId: initialUnitId ?? '' },
   });
   const unitId = watch('unitId');
-  const availableUnits = useMemo(() => units.filter(unit => unit.status === 'vacant' || unit.id === unitId), [unitId, units]);
+  // Show: (a) vacant units OR (b) the tenant's own current unit (even if marked occupied)
+  // This prevents showing units occupied by OTHER tenants
+  const availableUnits = useMemo(
+    () => units.filter(unit => unit.status === 'vacant' || unit.id === unitId),
+    [unitId, units],
+  );
 
   useEffect(() => { refreshAll(); }, [refreshAll]);
   useEffect(() => {

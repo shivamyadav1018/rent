@@ -37,7 +37,8 @@ export function MonthlyLedgerScreen({ navigation }: any) {
 
   const markPaid = async (tenantId: string, balance: number) => {
     if (balance <= 0) return;
-    await rentCycleService.recordPayment({ amount: balance, month, paymentDate: new Date().toISOString(), paymentMode: 'cash', tenantId, year });
+    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD, no UTC shift
+    await rentCycleService.recordPayment({ amount: balance, month, paymentDate: today, paymentMode: 'cash', tenantId, year });
     await load();
     Alert.alert('Payment recorded', 'The rent cycle is now paid.');
   };

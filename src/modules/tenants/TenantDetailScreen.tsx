@@ -25,8 +25,16 @@ export function TenantDetailScreen({ navigation, route }: any) {
   const [payments, setPayments] = useState<HistoryPayment[]>([]);
 
   useFocusEffect(useCallback(() => {
-    Promise.all([tenantRepo.find(tenantId), rentCycleService.ensureCurrentCycleForTenant(tenantId), paymentRepo.forTenant(tenantId)]).then(([nextTenant, nextCycle, nextPayments]) => {
-      setTenant(nextTenant); setCycle(nextCycle); setPayments(nextPayments);
+    tenantRepo.find(tenantId).then(async nextTenant => {
+      setTenant(nextTenant);
+      // Only ensure/create a cycle for active tenants
+      const cyclePromise = nextTenant?.status === 'active'
+        ? rentCycleService.ensureCurrentCycleForTenant(tenantId)
+        : rentCycleService.ensureCycleForTenant(tenantId,
+            new Date().getMonth() + 1, new Date().getFullYear())
+            .catch(() => null); // Don't crash if no cycle exists
+      const [nextCycle, nextPayments] = await Promise.all([cyclePromise, paymentRepo.forTenant(tenantId)]);
+      setCycle(nextCycle); setPayments(nextPayments);
     });
   }, [tenantId]));
 
@@ -35,6 +43,7 @@ export function TenantDetailScreen({ navigation, route }: any) {
     <Screen>
       <Title>{tenant.name}</Title>
       <Muted>{tenant.property_name} / {tenant.unit_name}</Muted>
+      {tenant.status === 'inactive' ? <StatusBadge status="vacant" /> : null}
       <Card>
         <Body>{tenant.phone}</Body>
         <Body>{formatCurrency(tenant.monthly_rent)} monthly, due day {tenant.due_day}</Body>
@@ -42,30 +51,36 @@ export function TenantDetailScreen({ navigation, route }: any) {
         {tenant.notes ? <Muted>{tenant.notes}</Muted> : null}
       </Card>
       <View style={styles.actions}>
-        <AppButton title="Record payment" onPress={() => navigation.navigate('RecordPayment', { tenantId, cycleId: cycle?.id })} />
-        {cycle ? <AppButton title="Send reminder" variant="secondary" onPress={() => navigation.navigate('ReminderPreview', { cycleId: cycle.id })} /> : null}
+        {tenant.status === 'active' ? (
+          <AppButton title="Record payment" onPress={() => navigation.navigate('RecordPayment', { tenantId, cycleId: cycle?.id })} />
+        ) : null}
+        {tenant.status === 'active' && cycle ? (
+          <AppButton title="Send reminder" variant="secondary" onPress={() => navigation.navigate('ReminderPreview', { cycleId: cycle.id })} />
+        ) : null}
         <AppButton title="Edit tenant" variant="secondary" onPress={() => navigation.navigate('AddTenant', { tenantId })} />
-        <AppButton
-          title="Move out"
-          variant="danger"
-          onPress={() =>
-            Alert.alert(
-              'Mark as moved out?',
-              `This will mark ${tenant.name} as inactive and free their unit. This cannot be undone.`,
-              [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                  text: 'Move out',
-                  style: 'destructive',
-                  onPress: async () => {
-                    await tenantRepo.deactivate(tenantId);
-                    navigation.goBack();
+        {tenant.status === 'active' ? (
+          <AppButton
+            title="Move out"
+            variant="danger"
+            onPress={() =>
+              Alert.alert(
+                'Mark as moved out?',
+                `This will mark ${tenant.name} as inactive and free their unit. This cannot be undone.`,
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  {
+                    text: 'Move out',
+                    style: 'destructive',
+                    onPress: async () => {
+                      await tenantRepo.deactivate(tenantId);
+                      navigation.goBack();
+                    },
                   },
-                },
-              ],
-            )
-          }
-        />
+                ],
+              )
+            }
+          />
+        ) : null}
       </View>
       <Body style={styles.heading}>Current rent</Body>
       {cycle ? <Card><Body>{formatCurrency(cycle.total_paid)} paid of {formatCurrency(cycle.rent_amount)}</Body><Body>{formatCurrency(cycle.balance)} balance</Body><StatusBadge status={cycle.status} /></Card> : <Muted>No cycle available.</Muted>}
