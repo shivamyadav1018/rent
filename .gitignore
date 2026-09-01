@@ -31,9 +31,9 @@ build/
 *.iml
 *.hprof
 .cxx/
-# *.keystore
-# !debug.keystore
-# android/keystore.properties
+*.keystore
+!debug.keystore
+android/keystore.properties
 .kotlin/
 
 # node.js
