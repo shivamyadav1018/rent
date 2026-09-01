@@ -56,7 +56,10 @@ yarn-error.log
 
 # Bundle artifact
 *.jsbundle
-/dist/
+/dist/*
+!/dist/
+!/dist/*.apk
+!/dist/*.sha256
 
 # Ruby / CocoaPods
 **/Pods/
