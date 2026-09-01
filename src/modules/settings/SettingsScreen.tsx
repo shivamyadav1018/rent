@@ -12,7 +12,7 @@ import { Body, Muted, Title } from '../../components/Typography';
 import { settingsRepo } from '../../database/repositories/settingsRepo';
 import { useAppStore } from '../../store/appStore';
 import { useAuthStore } from '../../store/authStore';
-import { colors } from '../../theme';
+import { authColors, colors } from '../../theme';
 
 export function SettingsScreen() {
   const [name, setName] = useState('');
@@ -47,7 +47,7 @@ export function SettingsScreen() {
       <Title>Settings</Title>
       <Card style={styles.cloudCard}>
         <View style={styles.cloudHeader}>
-          <View style={styles.cloudIcon}><Cloud color={colors.primary} size={22} /></View>
+          <View style={styles.cloudIcon}><Cloud color={authColors.primary} size={22} /></View>
           <View style={styles.cloudText}>
             <Body style={styles.cloudTitle}>Cloud account</Body>
             <Muted>
@@ -66,7 +66,7 @@ export function SettingsScreen() {
               {authUser?.photoURL ? (
                 <Image source={{ uri: authUser.photoURL }} style={styles.avatar} />
               ) : (
-                <View style={styles.avatarFallback}><CheckCircle2 color={colors.primary} size={20} /></View>
+                <View style={styles.avatarFallback}><CheckCircle2 color={authColors.primary} size={20} /></View>
               )}
               <View style={styles.accountDetails}>
                 {authUser?.displayName ? <Body style={styles.accountName}>{authUser.displayName}</Body> : null}
@@ -82,7 +82,7 @@ export function SettingsScreen() {
           </>
         ) : authStatus === 'loading' ? (
           <View style={styles.loading}>
-            <ActivityIndicator color={colors.primary} />
+            <ActivityIndicator color={authColors.primary} />
             <Muted>Connecting...</Muted>
           </View>
         ) : authStatus === 'disabled' ? (
@@ -110,12 +110,12 @@ const styles = StyleSheet.create({
   accountName: { fontWeight: '700' },
   accountRow: { alignItems: 'center', flexDirection: 'row', gap: 12 },
   avatar: { borderRadius: 22, height: 44, width: 44 },
-  avatarFallback: { alignItems: 'center', backgroundColor: colors.primarySoft, borderRadius: 22, height: 44, justifyContent: 'center', width: 44 },
+  avatarFallback: { alignItems: 'center', backgroundColor: authColors.primarySoft, borderRadius: 22, height: 44, justifyContent: 'center', width: 44 },
   cloudCard: { marginTop: 4 },
   cloudHeader: { alignItems: 'center', flexDirection: 'row', gap: 12 },
   cloudIcon: {
     alignItems: 'center',
-    backgroundColor: colors.primarySoft,
+    backgroundColor: authColors.primarySoft,
     borderRadius: 8,
     height: 44,
     justifyContent: 'center',

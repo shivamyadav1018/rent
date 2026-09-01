@@ -4,10 +4,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { colors } from '../theme';
 
-export function Screen({ children, style }: { children: React.ReactNode; style?: ViewStyle }) {
+export function Screen({ children, style, backgroundColor }: { children: React.ReactNode; style?: ViewStyle; backgroundColor?: string }) {
   return (
-    <SafeAreaView edges={['top']} style={styles.safe}>
-      <ScrollView contentContainerStyle={[styles.content, style]} keyboardShouldPersistTaps="handled">
+    <SafeAreaView edges={['top']} style={[styles.safe, backgroundColor ? { backgroundColor } : null]}>
+      <ScrollView contentContainerStyle={[styles.content, backgroundColor ? { backgroundColor } : null, style]} keyboardShouldPersistTaps="handled">
         {children}
       </ScrollView>
     </SafeAreaView>

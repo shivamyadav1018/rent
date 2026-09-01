@@ -15,6 +15,16 @@ export const colors = {
   warningSoft: '#FFF0D6',
 };
 
+export const authColors = {
+  background: '#FFFFFF',
+  border: '#E7E9F2',
+  ink: '#171B2C',
+  muted: '#74798A',
+  primary: '#263BAA',
+  primaryDark: '#1D2F91',
+  primarySoft: '#EEF1FF',
+};
+
 export const fontFamily = 'Inter';
 
 export const shadow = {

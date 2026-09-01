@@ -7,7 +7,7 @@ import { AppButton } from '../../components/AppButton';
 import { Screen } from '../../components/Screen';
 import { Body, Muted, Title } from '../../components/Typography';
 import { useAuthStore } from '../../store/authStore';
-import { colors } from '../../theme';
+import { authColors, colors } from '../../theme';
 
 export function WelcomeScreen({ navigation }: any) {
   const error = useAuthStore(state => state.error);
@@ -18,30 +18,47 @@ export function WelcomeScreen({ navigation }: any) {
   const continueToSetup = () => navigation.navigate('LandlordSetup');
 
   return (
-    <Screen style={styles.screen}>
+    <Screen backgroundColor={authColors.background} style={styles.screen}>
       <View style={styles.brand}>
-        <View style={styles.mark}><BookOpenCheck color={colors.surface} size={30} strokeWidth={2.2} /></View>
-        <Title style={styles.title}>KirayaBahi</Title>
-        <Body style={styles.subtitle}>Your simple, private rent book.</Body>
+        <View style={styles.mark}><BookOpenCheck color={authColors.primary} size={27} strokeWidth={2.2} /></View>
+        <Title style={styles.brandName}>KirayaBahi</Title>
       </View>
-      <View style={styles.footer}>
+      <View style={styles.login}>
+        <Title style={styles.heading}>{status === 'signedIn' ? 'Account connected' : 'Sign in to your account'}</Title>
+        <Muted style={styles.subtitle}>
+          {status === 'signedIn'
+            ? 'Continue with your connected Google account.'
+            : 'Use your Google account to continue to KirayaBahi.'}
+        </Muted>
         {error ? <Body style={styles.error}>{error}</Body> : null}
         {status === 'loading' ? (
           <View style={styles.loading}>
-            <ActivityIndicator color={colors.primary} />
+            <ActivityIndicator color={authColors.primary} />
             <Muted>Checking your account...</Muted>
           </View>
         ) : status === 'signedIn' ? (
           <>
             <View style={styles.account}>
-              <CheckCircle2 color={colors.primary} size={22} />
+              <CheckCircle2 color={authColors.primary} size={22} />
               <View style={styles.accountText}>
                 <Body style={styles.accountName}>{user?.displayName ?? 'Google account connected'}</Body>
                 {user?.email ? <Muted>{user.email}</Muted> : null}
               </View>
             </View>
-            <AppButton icon={<ArrowRight color={colors.surface} size={18} />} title="Continue" onPress={continueToSetup} />
-            <AppButton icon={<LogOut color={colors.primaryDark} size={18} />} title="Use another account" variant="secondary" onPress={signOut} />
+            <AppButton
+              icon={<ArrowRight color={colors.surface} size={18} />}
+              title="Continue"
+              onPress={continueToSetup}
+              style={styles.primaryButton}
+            />
+            <AppButton
+              icon={<LogOut color={authColors.primary} size={18} />}
+              title="Use another account"
+              variant="secondary"
+              onPress={signOut}
+              style={styles.outlineButton}
+              textStyle={styles.outlineButtonText}
+            />
           </>
         ) : (
           <>
@@ -55,28 +72,47 @@ export function WelcomeScreen({ navigation }: any) {
                 style={styles.googleButton}
               />
             )}
-            <AppButton icon={<WifiOff color={colors.primaryDark} size={18} />} title="Continue offline" variant="secondary" onPress={continueToSetup} />
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Muted style={styles.dividerText}>or</Muted>
+              <View style={styles.dividerLine} />
+            </View>
+            <AppButton
+              icon={<WifiOff color={authColors.primary} size={18} />}
+              title="Continue offline"
+              variant="secondary"
+              onPress={continueToSetup}
+              style={styles.outlineButton}
+              textStyle={styles.outlineButtonText}
+            />
           </>
         )}
-        <Muted style={styles.privacy}>Your rent records remain available on this device.</Muted>
       </View>
+      <Muted style={styles.privacy}>Your rent records remain available on this device.</Muted>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  account: { alignItems: 'center', backgroundColor: colors.primarySoft, borderRadius: 8, flexDirection: 'row', gap: 12, minHeight: 64, padding: 14 },
+  account: { alignItems: 'center', backgroundColor: authColors.primarySoft, borderRadius: 8, flexDirection: 'row', gap: 12, minHeight: 64, padding: 14 },
   accountName: { fontWeight: '700' },
   accountText: { flex: 1 },
-  brand: { alignItems: 'center', flex: 1, justifyContent: 'center', minHeight: 260 },
+  brand: { alignItems: 'center', gap: 10, marginTop: 38 },
+  brandName: { color: authColors.primaryDark, fontSize: 25, lineHeight: 30 },
+  divider: { alignItems: 'center', flexDirection: 'row', gap: 12, marginVertical: 2 },
+  dividerLine: { backgroundColor: authColors.border, flex: 1, height: 1 },
+  dividerText: { color: authColors.muted },
   error: { backgroundColor: colors.dangerSoft, borderRadius: 8, color: colors.danger, fontSize: 13, padding: 12 },
-  footer: { gap: 10, paddingBottom: 12 },
   googleButton: { alignSelf: 'stretch', height: 48, width: '100%' },
-  loading: { alignItems: 'center', flexDirection: 'row', gap: 10, justifyContent: 'center', minHeight: 48 },
-  mark: { alignItems: 'center', backgroundColor: colors.primary, borderRadius: 8, height: 64, justifyContent: 'center', marginBottom: 22, width: 64 },
+  heading: { color: authColors.ink, fontSize: 22, lineHeight: 28 },
+  loading: { alignItems: 'center', flexDirection: 'row', gap: 10, justifyContent: 'center', minHeight: 52 },
+  login: { gap: 14, marginTop: 58 },
+  mark: { alignItems: 'center', backgroundColor: authColors.primarySoft, borderRadius: 8, height: 54, justifyContent: 'center', width: 54 },
   offlineNote: { textAlign: 'center' },
-  privacy: { marginTop: 2, textAlign: 'center' },
-  screen: { flexGrow: 1 },
-  subtitle: { color: colors.muted, fontSize: 16, marginTop: 8, textAlign: 'center' },
-  title: { fontSize: 34, lineHeight: 40 },
+  outlineButton: { backgroundColor: authColors.background, borderColor: authColors.primary, borderWidth: 1 },
+  outlineButtonText: { color: authColors.primary },
+  primaryButton: { backgroundColor: authColors.primary },
+  privacy: { color: authColors.muted, marginTop: 'auto', paddingTop: 48, textAlign: 'center' },
+  screen: { flexGrow: 1, paddingHorizontal: 28 },
+  subtitle: { color: authColors.muted, fontSize: 14, lineHeight: 20, marginBottom: 8 },
 });

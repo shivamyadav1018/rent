@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View, ViewStyle } from 'react-native';
+import { Pressable, StyleSheet, Text, TextStyle, View, ViewStyle } from 'react-native';
 
 import { colors, fontFamily } from '../theme';
 
@@ -10,14 +10,15 @@ type Props = {
   style?: ViewStyle;
   icon?: React.ReactNode;
   disabled?: boolean;
+  textStyle?: TextStyle;
 };
 
-export function AppButton({ disabled, icon, title, onPress, style, variant = 'primary' }: Props) {
+export function AppButton({ disabled, icon, title, onPress, style, textStyle, variant = 'primary' }: Props) {
   return (
     <Pressable disabled={disabled} onPress={onPress} style={({ pressed }) => [styles.base, styles[variant], pressed && styles.pressed, disabled && styles.disabled, style]}>
       <View style={styles.content}>
         {icon}
-        <Text style={[styles.text, variant === 'secondary' && styles.secondaryText, variant === 'danger' && styles.dangerText]}>{title}</Text>
+        <Text style={[styles.text, variant === 'secondary' && styles.secondaryText, variant === 'danger' && styles.dangerText, textStyle]}>{title}</Text>
       </View>
     </Pressable>
   );
