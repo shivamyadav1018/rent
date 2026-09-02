@@ -1,5 +1,6 @@
 import React from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { Badge } from 'react-native-elements';
 
 import { colors, fontFamily } from '../theme';
 
@@ -15,18 +16,27 @@ const statusColors = {
 export function StatusBadge({ status }: { status?: string }) {
   const normalized = (status ?? 'unpaid').toLowerCase() as keyof typeof statusColors;
   const [backgroundColor, color] = statusColors[normalized] ?? statusColors.unpaid;
-  return <Text style={[styles.badge, { backgroundColor, color }]}>{normalized.toUpperCase()}</Text>;
+  return (
+    <Badge
+      badgeStyle={[styles.badge, { backgroundColor }]}
+      containerStyle={styles.container}
+      textStyle={[styles.text, { color }]}
+      value={normalized.toUpperCase()}
+    />
+  );
 }
 
 const styles = StyleSheet.create({
   badge: {
-    alignSelf: 'flex-start',
+    borderColor: 'transparent',
     borderRadius: 6,
+    height: 25,
+    paddingHorizontal: 8,
+  },
+  container: { alignSelf: 'flex-start' },
+  text: {
     fontFamily,
     fontSize: 10,
     fontWeight: '700',
-    overflow: 'hidden',
-    paddingHorizontal: 8,
-    paddingVertical: 5,
   },
 });

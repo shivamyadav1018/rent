@@ -1,13 +1,14 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { Inbox } from 'lucide-react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from 'react-native-elements';
 
+import { AppIcon } from './AppIcon';
 import { colors, fontFamily } from '../theme';
 
 export function EmptyState({ message }: { message: string }) {
   return (
     <View style={styles.container}>
-      <View style={styles.icon}><Inbox color={colors.primary} size={20} strokeWidth={2} /></View>
+      <View style={styles.icon}><AppIcon color={colors.primary} name="inbox-outline" size={20} /></View>
       <Text style={styles.text}>{message}</Text>
     </View>
   );

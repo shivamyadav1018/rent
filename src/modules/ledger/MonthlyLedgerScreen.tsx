@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
 import { AppButton } from '../../components/AppButton';
+import { AppChip } from '../../components/AppChip';
 import { Card } from '../../components/Card';
 import { Screen } from '../../components/Screen';
 import { StatusBadge } from '../../components/StatusBadge';
@@ -12,7 +13,6 @@ import { useAppStore } from '../../store/appStore';
 import { RentStatus } from '../../types/models';
 import { formatCurrency } from '../../utils/currency';
 import { currentMonthYear, displayDate, monthLabel } from '../../utils/dates';
-import { colors, fontFamily } from '../../theme';
 
 const statuses: Array<'all' | RentStatus> = ['all', 'paid', 'unpaid', 'partial', 'overdue'];
 
@@ -51,12 +51,12 @@ export function MonthlyLedgerScreen({ navigation }: any) {
         <Body style={styles.month}>{monthLabel(month, year)}</Body>
         <AppButton title="Next" variant="secondary" onPress={() => changeMonth(1)} />
       </View>
-      <Text style={styles.label}>Status</Text>
-      <View style={styles.filters}>{statuses.map(item => <Pressable key={item} onPress={() => setStatus(item)} style={[styles.filter, status === item && styles.selected]}><Text style={status === item ? styles.selectedText : styles.filterText}>{item}</Text></Pressable>)}</View>
-      <Text style={styles.label}>Property</Text>
+      <Body style={styles.label}>Status</Body>
+      <View style={styles.filters}>{statuses.map(item => <AppChip key={item} label={item} selected={status === item} onPress={() => setStatus(item)} />)}</View>
+      <Body style={styles.label}>Property</Body>
       <View style={styles.filters}>
-        <Pressable onPress={() => setPropertyId(undefined)} style={[styles.filter, !propertyId && styles.selected]}><Text style={!propertyId ? styles.selectedText : styles.filterText}>all</Text></Pressable>
-        {properties.map(property => <Pressable key={property.id} onPress={() => setPropertyId(property.id)} style={[styles.filter, propertyId === property.id && styles.selected]}><Text style={propertyId === property.id ? styles.selectedText : styles.filterText}>{property.name}</Text></Pressable>)}
+        <AppChip label="all" selected={!propertyId} onPress={() => setPropertyId(undefined)} />
+        {properties.map(property => <AppChip key={property.id} label={property.name} selected={propertyId === property.id} onPress={() => setPropertyId(property.id)} />)}
       </View>
       {ledger.length === 0 ? <Muted>No rent cycles match these filters.</Muted> : ledger.map(item => (
         <Card key={item.id}>
@@ -76,4 +76,4 @@ export function MonthlyLedgerScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({ actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, filter: { backgroundColor: colors.surfaceMuted, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 9 }, filterText: { color: colors.ink, fontFamily, textTransform: 'capitalize' }, filters: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, label: { color: colors.ink, fontFamily, fontSize: 13, fontWeight: '600' }, month: { flex: 1, fontWeight: '700', textAlign: 'center' }, monthRow: { alignItems: 'center', flexDirection: 'row', gap: 8 }, name: { fontWeight: '700' }, selected: { backgroundColor: colors.primary }, selectedText: { color: colors.surface, fontFamily, fontWeight: '700', textTransform: 'capitalize' } });
+const styles = StyleSheet.create({ actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, filters: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, label: { fontSize: 13, fontWeight: '600' }, month: { flex: 1, fontWeight: '700', textAlign: 'center' }, monthRow: { alignItems: 'center', flexDirection: 'row', gap: 8 }, name: { fontWeight: '700' } });

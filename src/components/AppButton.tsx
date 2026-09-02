@@ -1,7 +1,8 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, TextStyle, View, ViewStyle } from 'react-native';
+import { TextStyle, ViewStyle } from 'react-native';
+import { Button } from 'react-native-elements';
 
-import { colors, fontFamily, radius } from '../theme';
+import { colors, radius } from '../theme';
 
 type Props = {
   title: string;
@@ -14,61 +15,39 @@ type Props = {
 };
 
 export function AppButton({ disabled, icon, title, onPress, style, textStyle, variant = 'primary' }: Props) {
+  const secondary = variant === 'secondary';
+  const danger = variant === 'danger';
+
   return (
-    <Pressable
-      disabled={disabled}
-      onPress={onPress}
-      style={({ pressed }) => [
+    <Button
+      buttonStyle={[
         styles.base,
-        styles[variant],
-        pressed && styles.pressed,
-        disabled && styles.disabled,
-        style,
+        secondary ? styles.secondary : danger ? styles.danger : styles.primary,
       ]}
-    >
-      <View style={styles.content}>
-        {icon}
-        <Text style={[styles.text, variant === 'secondary' && styles.secondaryText, variant === 'danger' && styles.dangerText, textStyle]}>
-          {title}
-        </Text>
-      </View>
-    </Pressable>
+      containerStyle={style}
+      disabled={disabled}
+      disabledStyle={styles.disabled}
+      icon={icon as React.ReactElement<object>}
+      iconContainerStyle={styles.icon}
+      onPress={onPress}
+      title={title}
+      titleStyle={[
+        secondary ? styles.secondaryText : danger ? styles.dangerText : styles.primaryText,
+        textStyle,
+      ]}
+      type={secondary || danger ? 'outline' : 'solid'}
+    />
   );
 }
 
-const styles = StyleSheet.create({
-  base: {
-    alignItems: 'center',
-    borderRadius: radius.md,
-    justifyContent: 'center',
-    minHeight: 50,
-    paddingHorizontal: 18,
-  },
-  content: { alignItems: 'center', flexDirection: 'row', gap: 8, justifyContent: 'center' },
-  danger: {
-    backgroundColor: colors.dangerSoft,
-  },
+const styles = {
+  base: { borderRadius: radius.md, minHeight: 50, paddingHorizontal: 18 },
+  danger: { backgroundColor: colors.dangerSoft, borderColor: colors.dangerSoft },
   dangerText: { color: colors.danger },
   disabled: { opacity: 0.5 },
-  pressed: {
-    opacity: 0.76,
-  },
-  primary: {
-    backgroundColor: colors.primary,
-  },
-  secondary: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-  },
-  secondaryText: {
-    color: colors.primaryDark,
-  },
-  text: {
-    color: colors.surface,
-    fontFamily,
-    fontSize: 14,
-    fontWeight: '700',
-    letterSpacing: 0.2,
-  },
-});
+  icon: { marginRight: 8 },
+  primary: { backgroundColor: colors.primary },
+  primaryText: { color: colors.surface },
+  secondary: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 },
+  secondaryText: { color: colors.primaryDark },
+} satisfies Record<string, ViewStyle | TextStyle>;

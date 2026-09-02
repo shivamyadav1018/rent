@@ -1,10 +1,10 @@
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, Image, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, StyleSheet, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { GoogleSigninButton } from '@react-native-google-signin/google-signin';
-import { CheckCircle2, Cloud, LogOut } from 'lucide-react-native';
+import { Avatar } from 'react-native-elements';
 
 import { AppButton } from '../../components/AppButton';
+import { AppIcon } from '../../components/AppIcon';
 import { Card } from '../../components/Card';
 import { AppInput } from '../../components/AppInput';
 import { Screen } from '../../components/Screen';
@@ -47,7 +47,7 @@ export function SettingsScreen() {
       <Title>Settings</Title>
       <Card style={styles.cloudCard}>
         <View style={styles.cloudHeader}>
-          <View style={styles.cloudIcon}><Cloud color={authColors.primary} size={22} /></View>
+          <View style={styles.cloudIcon}><AppIcon color={authColors.primary} name="cloud-outline" size={23} /></View>
           <View style={styles.cloudText}>
             <Body style={styles.cloudTitle}>Cloud account</Body>
             <Muted>
@@ -63,18 +63,20 @@ export function SettingsScreen() {
         {authStatus === 'signedIn' ? (
           <>
             <View style={styles.accountRow}>
-              {authUser?.photoURL ? (
-                <Image source={{ uri: authUser.photoURL }} style={styles.avatar} />
-              ) : (
-                <View style={styles.avatarFallback}><CheckCircle2 color={authColors.primary} size={20} /></View>
-              )}
+              <Avatar
+                icon={authUser?.photoURL ? undefined : { color: authColors.primary, name: 'check-circle-outline', type: 'material-community' }}
+                overlayContainerStyle={styles.avatarFallback}
+                rounded
+                size={44}
+                source={authUser?.photoURL ? { uri: authUser.photoURL } : undefined}
+              />
               <View style={styles.accountDetails}>
                 {authUser?.displayName ? <Body style={styles.accountName}>{authUser.displayName}</Body> : null}
                 {authUser?.email ? <Muted>{authUser.email}</Muted> : null}
               </View>
             </View>
             <AppButton
-              icon={<LogOut color={authColors.primary} size={18} />}
+              icon={<AppIcon color={authColors.primary} name="logout" size={19} />}
               title="Sign out"
               variant="secondary"
               onPress={confirmSignOut}
@@ -88,11 +90,11 @@ export function SettingsScreen() {
         ) : authStatus === 'disabled' ? (
           <Muted>Google sign-in is unavailable in this build.</Muted>
         ) : (
-          <GoogleSigninButton
-            color={GoogleSigninButton.Color.Light}
+          <AppButton
+            icon={<AppIcon color="#4285F4" name="google" size={19} />}
             onPress={signInWithGoogle}
-            size={GoogleSigninButton.Size.Wide}
-            style={styles.googleButton}
+            title="Connect with Google"
+            variant="secondary"
           />
         )}
       </Card>
@@ -109,7 +111,6 @@ const styles = StyleSheet.create({
   accountDetails: { flex: 1 },
   accountName: { fontWeight: '700' },
   accountRow: { alignItems: 'center', flexDirection: 'row', gap: 12 },
-  avatar: { borderRadius: 22, height: 44, width: 44 },
   avatarFallback: { alignItems: 'center', backgroundColor: authColors.primarySoft, borderRadius: 22, height: 44, justifyContent: 'center', width: 44 },
   cloudCard: { marginTop: 4 },
   cloudHeader: { alignItems: 'center', flexDirection: 'row', gap: 12 },
@@ -124,6 +125,5 @@ const styles = StyleSheet.create({
   cloudText: { flex: 1 },
   cloudTitle: { fontWeight: '700' },
   error: { color: colors.danger, fontSize: 13 },
-  googleButton: { alignSelf: 'stretch', height: 48, width: '100%' },
   loading: { alignItems: 'center', flexDirection: 'row', gap: 10, minHeight: 48 },
 });

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
-import { ArrowRight, BookOpenCheck, CheckCircle2, LogOut, WifiOff } from 'lucide-react-native';
 
 import { AppButton } from '../../components/AppButton';
+import { AppIcon } from '../../components/AppIcon';
 import { AppInput } from '../../components/AppInput';
 import { Screen } from '../../components/Screen';
 import { Body, Muted, Title } from '../../components/Typography';
@@ -59,7 +59,7 @@ export function WelcomeScreen({ navigation }: any) {
     <Screen backgroundColor={authColors.background} style={styles.screen}>
       <View style={styles.brandSection}>
         <View style={styles.logoMark}>
-          <BookOpenCheck color={authColors.background} size={28} strokeWidth={2.3} />
+          <AppIcon color={authColors.background} name="book-check-outline" size={30} />
         </View>
         <Title style={styles.brandName}>KirayaBahi</Title>
         <Muted style={styles.tagline}>Smart rent management for landlords</Muted>
@@ -88,15 +88,15 @@ export function WelcomeScreen({ navigation }: any) {
           <>
             <View style={styles.account}>
               <View style={styles.accountAvatar}>
-                <CheckCircle2 color={authColors.primary} size={21} />
+                <AppIcon color={authColors.primary} name="check-circle-outline" size={22} />
               </View>
               <View style={styles.accountText}>
                 <Body style={styles.accountName}>{user?.displayName ?? 'Account connected'}</Body>
                 {user?.email ? <Muted style={styles.accountEmail}>{user.email}</Muted> : null}
               </View>
             </View>
-            <AppButton icon={<ArrowRight color={authColors.background} size={18} />} title="Continue" onPress={continueToSetup} />
-            <AppButton icon={<LogOut color={authColors.primary} size={18} />} title="Use another account" variant="secondary" onPress={signOut} />
+            <AppButton icon={<AppIcon color={authColors.background} name="arrow-right" size={19} />} title="Continue" onPress={continueToSetup} />
+            <AppButton icon={<AppIcon color={authColors.primary} name="logout" size={19} />} title="Use another account" variant="secondary" onPress={signOut} />
           </>
         ) : (
           <>
@@ -114,7 +114,7 @@ export function WelcomeScreen({ navigation }: any) {
                   <Muted style={styles.dividerText}>or continue with</Muted>
                   <View style={styles.dividerLine} />
                 </View>
-                <AppButton icon={<Body style={styles.googleMark}>G</Body>} title="Google" variant="secondary" onPress={signInWithGoogle} />
+                <AppButton icon={<AppIcon color="#4285F4" name="google" size={19} />} title="Google" variant="secondary" onPress={signInWithGoogle} />
               </>
             ) : (
               <Muted style={styles.offlineNote}>Online sign-in is unavailable in this build.</Muted>
@@ -127,7 +127,7 @@ export function WelcomeScreen({ navigation }: any) {
               </Pressable>
             </View>
             <Pressable onPress={continueToSetup} style={styles.offlineAction}>
-              <WifiOff color={authColors.muted} size={15} />
+              <AppIcon color={authColors.muted} name="wifi-off" size={16} />
               <Muted style={styles.offlineActionText}>Continue offline</Muted>
             </Pressable>
           </>
@@ -152,7 +152,6 @@ const styles = StyleSheet.create({
   dividerText: { color: authColors.muted, fontSize: 12 },
   error: { backgroundColor: colors.dangerSoft, borderColor: '#F6C7C1', borderRadius: radius.sm, borderWidth: 1, color: colors.danger, fontSize: 13, padding: 12 },
   form: { ...authShadow, backgroundColor: authColors.background, borderColor: authColors.border, borderRadius: radius.lg, borderWidth: 1, gap: 14, marginTop: 28, padding: 22 },
-  googleMark: { color: '#4285F4', fontSize: 17, fontWeight: '800' },
   heading: { color: authColors.ink, fontSize: 22, lineHeight: 28 },
   loading: { alignItems: 'center', flexDirection: 'row', gap: 10, paddingVertical: 18 },
   loadingText: { color: authColors.muted },

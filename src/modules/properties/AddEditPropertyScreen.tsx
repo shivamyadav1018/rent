@@ -1,16 +1,16 @@
 import React, { useEffect } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 import { AppButton } from '../../components/AppButton';
+import { AppChip } from '../../components/AppChip';
 import { AppInput } from '../../components/AppInput';
 import { Screen } from '../../components/Screen';
-import { Title } from '../../components/Typography';
+import { Body, Title } from '../../components/Typography';
 import { propertyRepo } from '../../database/repositories/propertyRepo';
 import { useAppStore } from '../../store/appStore';
 import { PropertyType } from '../../types/models';
-import { colors, fontFamily } from '../../theme';
 
 const schema = z.object({ name: z.string().trim().min(1, 'Property name is required'), address: z.string(), type: z.enum(['house', 'flat', 'room', 'shop', 'PG']) });
 type FormData = z.infer<typeof schema>;
@@ -48,9 +48,9 @@ export function AddEditPropertyScreen({ navigation, route }: any) {
     <Screen>
       <Title>{propertyId ? 'Edit property' : 'New property'}</Title>
       <Controller control={control} name="name" render={({ field }) => <AppInput label="Property name" value={field.value} onChangeText={field.onChange} error={errors.name?.message} />} />
-      <Text style={styles.label}>Property type</Text>
+      <Body style={styles.label}>Property type</Body>
       <View style={styles.options}>
-        {types.map(type => <Pressable key={type} onPress={() => setValue('type', type)} style={[styles.option, selectedType === type && styles.selected]}><Text style={selectedType === type ? styles.selectedText : styles.optionText}>{type}</Text></Pressable>)}
+        {types.map(type => <AppChip key={type} label={type} selected={selectedType === type} onPress={() => setValue('type', type)} />)}
       </View>
       <Controller control={control} name="address" render={({ field }) => <AppInput label="Address (optional)" value={field.value} onChangeText={field.onChange} multiline />} />
       <AppButton title={isSubmitting ? 'Saving...' : 'Save property'} onPress={save} />
@@ -59,10 +59,6 @@ export function AddEditPropertyScreen({ navigation, route }: any) {
 }
 
 const styles = StyleSheet.create({
-  label: { color: colors.ink, fontFamily, fontSize: 13, fontWeight: '600' },
-  option: { backgroundColor: colors.surfaceMuted, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 10 },
-  optionText: { color: colors.ink, fontFamily, textTransform: 'capitalize' },
+  label: { fontSize: 13, fontWeight: '600' },
   options: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  selected: { backgroundColor: colors.primary },
-  selectedText: { color: colors.surface, fontFamily, fontWeight: '700', textTransform: 'capitalize' },
 });

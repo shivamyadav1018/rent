@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
-import { ArrowRight, UserRound } from 'lucide-react-native';
 import { z } from 'zod';
 
 import { AppButton } from '../../components/AppButton';
+import { AppIcon } from '../../components/AppIcon';
 import { AppInput } from '../../components/AppInput';
 import { Screen } from '../../components/Screen';
 import { Body, Muted, Title } from '../../components/Typography';
@@ -50,7 +50,7 @@ export function LandlordSetupScreen({ navigation }: any) {
       {/* ── Header ── */}
       <View style={styles.header}>
         <View style={styles.iconWrap}>
-          <UserRound color={authColors.primary} size={26} />
+          <AppIcon color={authColors.primary} name="account-outline" size={28} />
         </View>
         <Title style={styles.title}>Your details</Title>
         <Muted style={styles.subtitle}>
@@ -83,10 +83,13 @@ export function LandlordSetupScreen({ navigation }: any) {
         />
       </View>
 
-      <Body style={styles.privacy}>🔒 Stored privately on this device only</Body>
+      <View style={styles.privacyRow}>
+        <AppIcon color={authColors.muted} name="lock-outline" size={15} />
+        <Body style={styles.privacy}>Stored privately on this device only</Body>
+      </View>
 
       <AppButton
-        icon={<ArrowRight color={authColors.background} size={18} />}
+        icon={<AppIcon color={authColors.background} name="arrow-right" size={19} />}
         title="Save and continue"
         onPress={save}
         style={styles.button}
@@ -119,8 +122,8 @@ const styles = StyleSheet.create({
     color: authColors.muted,
     fontFamily,
     fontSize: 12,
-    textAlign: 'center',
   },
+  privacyRow: { alignItems: 'center', flexDirection: 'row', gap: 5, justifyContent: 'center' },
   screen: { flexGrow: 1, gap: 20, paddingHorizontal: 24 },
   stepActive: {
     backgroundColor: authColors.primary,

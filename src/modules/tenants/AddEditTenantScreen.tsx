@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 import { AppButton } from '../../components/AppButton';
+import { AppChip } from '../../components/AppChip';
 import { AppInput } from '../../components/AppInput';
 import { Screen } from '../../components/Screen';
 import { Body, Muted, Title } from '../../components/Typography';
@@ -11,7 +12,7 @@ import { tenantRepo } from '../../database/repositories/tenantRepo';
 import { unitRepo } from '../../database/repositories/unitRepo';
 import { rentCycleService } from '../../services/rentCycleService';
 import { useAppStore } from '../../store/appStore';
-import { colors, fontFamily } from '../../theme';
+import { colors } from '../../theme';
 
 const schema = z.object({
   dueDay: z.coerce.number().int().min(1).max(31),
@@ -80,8 +81,8 @@ export function AddEditTenantScreen({ navigation, route }: any) {
       {units.length === 0 ? <><Body>Create a property and unit first.</Body><AppButton title="Add property" onPress={() => navigation.navigate('AddProperty')} /></> : null}
       <Controller control={control} name="name" render={({ field }) => <AppInput label="Tenant name" value={field.value} onChangeText={field.onChange} error={errors.name?.message} />} />
       <Controller control={control} name="phone" render={({ field }) => <AppInput label="Phone number" keyboardType="phone-pad" value={field.value} onChangeText={field.onChange} error={errors.phone?.message} />} />
-      <Text style={styles.label}>Property / unit</Text>
-      <View style={styles.units}>{availableUnits.map(unit => <Pressable key={unit.id} onPress={() => chooseUnit(unit.id)} style={[styles.unit, unitId === unit.id && styles.selected]}><Text style={unitId === unit.id ? styles.selectedText : styles.unitText}>{unit.property_name} / {unit.name}</Text></Pressable>)}</View>
+      <Body style={styles.label}>Property / unit</Body>
+      <View style={styles.units}>{availableUnits.map(unit => <AppChip key={unit.id} label={`${unit.property_name} / ${unit.name}`} selected={unitId === unit.id} onPress={() => chooseUnit(unit.id)} />)}</View>
       {errors.unitId?.message ? <Muted style={styles.error}>{errors.unitId.message}</Muted> : null}
       <Controller control={control} name="monthlyRent" render={({ field }) => <AppInput label="Monthly rent" keyboardType="numeric" value={field.value} onChangeText={field.onChange} />} />
       <Controller control={control} name="dueDay" render={({ field }) => <AppInput label="Due day (1-31)" keyboardType="number-pad" value={field.value} onChangeText={field.onChange} />} />
@@ -93,4 +94,4 @@ export function AddEditTenantScreen({ navigation, route }: any) {
   );
 }
 
-const styles = StyleSheet.create({ error: { color: colors.danger }, label: { color: colors.ink, fontFamily, fontSize: 13, fontWeight: '600' }, selected: { backgroundColor: colors.primary, borderColor: colors.primary }, selectedText: { color: colors.surface, fontFamily, fontWeight: '700' }, unit: { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: 12, borderWidth: 1, padding: 13 }, unitText: { color: colors.ink, fontFamily }, units: { gap: 8 } });
+const styles = StyleSheet.create({ error: { color: colors.danger }, label: { fontSize: 13, fontWeight: '600' }, units: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 } });

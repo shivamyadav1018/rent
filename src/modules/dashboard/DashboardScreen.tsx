@@ -1,9 +1,9 @@
 import React, { useCallback } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { ArrowRight, BookOpen, IndianRupee, MessageCircle, UserPlus } from 'lucide-react-native';
 
 import { AppButton } from '../../components/AppButton';
+import { AppIcon } from '../../components/AppIcon';
 import { Card } from '../../components/Card';
 import { EmptyState } from '../../components/EmptyState';
 import { Screen } from '../../components/Screen';
@@ -36,13 +36,16 @@ export function DashboardScreen({ navigation }: any) {
       <View style={styles.headerCard}>
         <View style={styles.headerTop}>
           <View style={styles.headerLogoWrap}>
-            <BookOpen color={colors.surface} size={20} strokeWidth={2.2} />
+            <AppIcon color={colors.surface} name="book-open-page-variant-outline" size={21} />
           </View>
           <Muted style={styles.headerMonth}>{monthLabel(month, year)}</Muted>
         </View>
-        <Title style={styles.headerName}>
-          {settings.landlordName ? `Hello, ${settings.landlordName} 👋` : 'KirayaBahi'}
-        </Title>
+        <View style={styles.headerGreeting}>
+          <Title style={styles.headerName}>
+            {settings.landlordName ? `Hello, ${settings.landlordName}` : 'KirayaBahi'}
+          </Title>
+          {settings.landlordName ? <AppIcon color={colors.surface} name="hand-wave-outline" size={21} /> : null}
+        </View>
         <Muted style={styles.headerSub}>Here's your rent summary for this month</Muted>
       </View>
 
@@ -60,20 +63,20 @@ export function DashboardScreen({ navigation }: any) {
       <SectionHeader title="Quick actions" />
       <View style={styles.actions}>
         <AppButton
-          icon={<UserPlus color={colors.surface} size={17} />}
+          icon={<AppIcon color={colors.surface} name="account-plus-outline" size={19} />}
           style={styles.action}
           title="Add tenant"
           onPress={() => navigation.navigate('AddTenant')}
         />
         <AppButton
-          icon={<IndianRupee color={colors.primaryDark} size={17} />}
+          icon={<AppIcon color={colors.primaryDark} name="currency-inr" size={19} />}
           style={styles.action}
           title="Record payment"
           onPress={() => navigation.navigate('RecordPayment')}
           variant="secondary"
         />
         <AppButton
-          icon={<BookOpen color={colors.primaryDark} size={17} />}
+          icon={<AppIcon color={colors.primaryDark} name="book-open-page-variant-outline" size={19} />}
           style={styles.action}
           title="Ledger"
           onPress={() => navigation.navigate('Ledger')}
@@ -102,7 +105,7 @@ export function DashboardScreen({ navigation }: any) {
               <Muted>Due {displayDate(item.due_date)}</Muted>
             </View>
             <AppButton
-              icon={<MessageCircle color={colors.primaryDark} size={17} />}
+              icon={<AppIcon color={colors.primaryDark} name="message-text-outline" size={19} />}
               title="Send reminder"
               onPress={() => navigation.navigate('ReminderPreview', { cycleId: item.id })}
               variant="secondary"
@@ -125,7 +128,7 @@ export function DashboardScreen({ navigation }: any) {
             </View>
             <View style={styles.paidRow}>
               <Body style={styles.paidAmount}>{formatCurrency(item.total_paid)}</Body>
-              <ArrowRight color={colors.muted} size={17} />
+              <AppIcon color={colors.muted} name="arrow-right" size={19} />
             </View>
           </Card>
         ))}
@@ -147,6 +150,7 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 22,
   },
+  headerGreeting: { alignItems: 'center', flexDirection: 'row', gap: 7 },
   headerLogoWrap: {
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.18)',
@@ -156,7 +160,7 @@ const styles = StyleSheet.create({
     width: 36,
   },
   headerMonth: { color: 'rgba(255,255,255,0.75)', fontFamily, fontSize: 13 },
-  headerName: { color: colors.surface, fontSize: 22, fontWeight: '800', lineHeight: 28 },
+  headerName: { color: colors.surface, flexShrink: 1, fontSize: 22, fontWeight: '800', lineHeight: 28 },
   headerSub: { color: 'rgba(255,255,255,0.65)', fontSize: 13 },
   headerTop: { alignItems: 'center', flexDirection: 'row', gap: 10, justifyContent: 'space-between', marginBottom: 8 },
   name: { fontWeight: '700' },

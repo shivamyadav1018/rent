@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 import { z } from 'zod';
 
 import { AppButton } from '../../components/AppButton';
+import { AppChip } from '../../components/AppChip';
 import { AppInput } from '../../components/AppInput';
 import { Card } from '../../components/Card';
 import { Screen } from '../../components/Screen';
@@ -14,7 +15,6 @@ import { useAppStore } from '../../store/appStore';
 import { PaymentMode, RentCycle, Tenant } from '../../types/models';
 import { formatCurrency } from '../../utils/currency';
 import { currentMonthYear, monthLabel } from '../../utils/dates';
-import { colors, fontFamily } from '../../theme';
 
 const modes: PaymentMode[] = ['cash', 'upi', 'bank_transfer', 'cheque', 'other'];
 const paymentSchema = z.coerce.number().positive('Amount must be greater than zero');
@@ -85,14 +85,14 @@ export function RecordPaymentScreen({ navigation, route }: any) {
   return (
     <Screen>
       <Title>Record payment</Title>
-      <Text style={styles.label}>Tenant</Text>
-      <View style={styles.options}>{activeTenants.map(tenant => <Pressable key={tenant.id} onPress={() => setTenantId(tenant.id)} style={[styles.option, tenantId === tenant.id && styles.selected]}><Text style={tenantId === tenant.id ? styles.selectedText : styles.optionText}>{tenant.name}</Text></Pressable>)}</View>
+      <Body style={styles.label}>Tenant</Body>
+      <View style={styles.options}>{activeTenants.map(tenant => <AppChip key={tenant.id} label={tenant.name} selected={tenantId === tenant.id} onPress={() => setTenantId(tenant.id)} />)}</View>
       <View style={styles.monthRow}><AppButton title="Previous" variant="secondary" onPress={() => changeMonth(-1)} /><Body style={styles.month}>{monthLabel(month, year)}</Body><AppButton title="Next" variant="secondary" onPress={() => changeMonth(1)} /></View>
       {cycle ? <Muted>Rent {formatCurrency(cycle.rent_amount)} | Current balance {formatCurrency(cycle.balance)}</Muted> : null}
       <AppInput label="Amount received" keyboardType="numeric" value={amount} onChangeText={setAmount} />
       <AppInput label="Payment date (YYYY-MM-DD)" value={paymentDate} onChangeText={setPaymentDate} />
-      <Text style={styles.label}>Payment mode</Text>
-      <View style={styles.options}>{modes.map(item => <Pressable key={item} onPress={() => setMode(item)} style={[styles.option, mode === item && styles.selected]}><Text style={mode === item ? styles.selectedText : styles.optionText}>{item.replace('_', ' ')}</Text></Pressable>)}</View>
+      <Body style={styles.label}>Payment mode</Body>
+      <View style={styles.options}>{modes.map(item => <AppChip key={item} label={item.replace('_', ' ')} selected={mode === item} onPress={() => setMode(item)} />)}</View>
       <AppInput label="Reference number (optional)" value={referenceNo} onChangeText={setReferenceNo} />
       <AppInput label="Notes (optional)" value={notes} onChangeText={setNotes} multiline />
       <AppButton title={saving ? 'Saving...' : 'Save payment'} onPress={save} />
@@ -100,4 +100,4 @@ export function RecordPaymentScreen({ navigation, route }: any) {
   );
 }
 
-const styles = StyleSheet.create({ label: { color: colors.ink, fontFamily, fontSize: 13, fontWeight: '600' }, month: { flex: 1, fontWeight: '700', textAlign: 'center' }, monthRow: { alignItems: 'center', flexDirection: 'row', gap: 8 }, option: { backgroundColor: colors.surfaceMuted, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 10 }, optionText: { color: colors.ink, fontFamily, textTransform: 'capitalize' }, options: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, selected: { backgroundColor: colors.primary }, selectedText: { color: colors.surface, fontFamily, fontWeight: '700', textTransform: 'capitalize' } });
+const styles = StyleSheet.create({ label: { fontSize: 13, fontWeight: '600' }, month: { flex: 1, fontWeight: '700', textAlign: 'center' }, monthRow: { alignItems: 'center', flexDirection: 'row', gap: 8 }, options: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 } });

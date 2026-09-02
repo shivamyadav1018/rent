@@ -1,6 +1,8 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from 'react-native-elements';
 
+import { Card } from './Card';
 import { colors, fontFamily, radius, shadow } from '../theme';
 
 type Props = {
@@ -18,13 +20,13 @@ const toneColors = {
 
 export function SummaryCard({ label, tone = 'ink', value }: Props) {
   return (
-    <View style={styles.card}>
+    <Card style={styles.card}>
       <View style={[styles.marker, { backgroundColor: toneColors[tone] }]} />
       <Text style={styles.label}>{label}</Text>
       <Text adjustsFontSizeToFit numberOfLines={1} style={[styles.value, { color: toneColors[tone] }]}>
         {value}
       </Text>
-    </View>
+    </Card>
   );
 }
 
@@ -36,6 +38,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     borderWidth: 1,
     flex: 1,
+    margin: 0,
     minHeight: 108,
     overflow: 'hidden',
     padding: 16,

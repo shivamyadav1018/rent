@@ -1,3 +1,5 @@
+import type { Theme } from 'react-native-elements';
+
 export const colors = {
   accent: '#4B61D1',
   background: '#F6F7FC',
@@ -48,4 +50,28 @@ export const authShadow = {
   shadowOffset: { height: 4, width: 0 },
   shadowOpacity: 0.10,
   shadowRadius: 16,
+};
+
+export const elementsTheme: Theme = {
+  colors: {
+    primary: colors.primary,
+    secondary: colors.accent,
+    grey0: colors.ink,
+    grey1: colors.muted,
+    grey5: colors.border,
+    white: colors.surface,
+    error: colors.danger,
+    warning: colors.warning,
+  },
+  Text: {
+    style: { color: colors.ink, fontFamily },
+  },
+  Button: {
+    buttonStyle: { borderRadius: radius.md, minHeight: 50, paddingHorizontal: 18 },
+    titleStyle: { fontFamily, fontSize: 14, fontWeight: '700', letterSpacing: 0.2 },
+  },
+  Input: {
+    inputStyle: { color: colors.ink, fontFamily, fontSize: 15 },
+    labelStyle: { color: colors.ink, fontFamily, fontSize: 13, fontWeight: '600' },
+  },
 };

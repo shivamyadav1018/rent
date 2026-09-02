@@ -1,7 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Building2, LayoutDashboard, ReceiptText, Settings, Users } from 'lucide-react-native';
 
+import { AppIcon } from '../components/AppIcon';
 import { DashboardScreen } from '../modules/dashboard/DashboardScreen';
 import { TenantsScreen } from '../modules/tenants/TenantsScreen';
 import { MonthlyLedgerScreen } from '../modules/ledger/MonthlyLedgerScreen';
@@ -20,21 +20,21 @@ export type MainTabParamList = {
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 const icons = {
-  Dashboard: LayoutDashboard,
-  Ledger: ReceiptText,
-  Properties: Building2,
-  Settings,
-  Tenants: Users,
+  Dashboard: 'view-dashboard-outline',
+  Ledger: 'receipt',
+  Properties: 'office-building-outline',
+  Settings: 'cog-outline',
+  Tenants: 'account-group-outline',
 };
 
 const screenOptions = ({ route }: any) => {
-  const Icon = icons[route.name as keyof typeof icons];
+  const icon = icons[route.name as keyof typeof icons];
   return {
     headerShown: false,
     tabBarActiveBackgroundColor: colors.primarySoft,
     tabBarActiveTintColor: colors.primary,
     tabBarInactiveTintColor: colors.muted,
-    tabBarIcon: ({ color, size }: { color: string; size: number }) => <Icon color={color} size={size} strokeWidth={2.1} />,
+    tabBarIcon: ({ color, size }: { color: string; size: number }) => <AppIcon color={color} name={icon} size={size} />,
     tabBarLabelStyle: { fontFamily, fontSize: 11, fontWeight: '600' as const },
     tabBarItemStyle: { borderRadius: 8, marginHorizontal: 3 },
     tabBarHideOnKeyboard: true,
