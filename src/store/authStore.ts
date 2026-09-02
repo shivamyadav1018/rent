@@ -18,6 +18,8 @@ type AuthState = {
   user: AuthUser | null;
   error: string | null;
   initialize: () => () => void;
+  signInWithEmail: (email: string, password: string) => Promise<void>;
+  createAccount: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   clearError: () => void;
@@ -39,10 +41,19 @@ const messageForError = (error: unknown) => {
       return 'No internet connection. Your offline records are still available.';
     }
     if (code === 'auth/operation-not-allowed') {
-      return 'Google sign-in is not enabled in Firebase Authentication.';
+      return 'This sign-in method is not enabled in Firebase Authentication.';
     }
     if (code === 'auth/invalid-credential') {
-      return 'Google sign-in configuration is invalid. Check the Firebase app and SHA-1.';
+      return 'The sign-in credentials are invalid. Please try again.';
+    }
+    if (code === 'auth/email-already-in-use') {
+      return 'An account already exists for this email.';
+    }
+    if (code === 'auth/invalid-email') {
+      return 'Enter a valid email address.';
+    }
+    if (code === 'auth/weak-password') {
+      return 'Use a password with at least 6 characters.';
     }
   }
 
@@ -111,6 +122,24 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (!result) {
         set({ status: 'signedOut' });
       }
+    } catch (error) {
+      set({ error: messageForError(error), status: 'signedOut' });
+    }
+  },
+
+  async signInWithEmail(email, password) {
+    set({ error: null, status: 'loading' });
+    try {
+      await authService.signInWithEmail(email, password);
+    } catch (error) {
+      set({ error: messageForError(error), status: 'signedOut' });
+    }
+  },
+
+  async createAccount(email, password) {
+    set({ error: null, status: 'loading' });
+    try {
+      await authService.createAccount(email, password);
     } catch (error) {
       set({ error: messageForError(error), status: 'signedOut' });
     }

@@ -1,28 +1,28 @@
 export const colors = {
-  accent: '#E86F51',
-  background: '#F3F6F4',
-  border: '#DDE5E0',
+  accent: '#4B61D1',
+  background: '#F6F7FC',
+  border: '#DDE1EE',
   danger: '#B42318',
   dangerSoft: '#FDE8E5',
-  ink: '#17231F',
-  muted: '#68756F',
-  primary: '#126B54',
-  primaryDark: '#0B513E',
-  primarySoft: '#E3F1EB',
+  ink: '#171B2C',
+  muted: '#6F7587',
+  primary: '#263BAA',
+  primaryDark: '#1D2F91',
+  primarySoft: '#EEF1FF',
   surface: '#FFFFFF',
-  surfaceMuted: '#EAF0ED',
+  surfaceMuted: '#F1F3F9',
   warning: '#A15C00',
   warningSoft: '#FFF0D6',
 };
 
 export const authColors = {
-  background: '#FFFFFF',
-  border: '#E7E9F2',
-  ink: '#171B2C',
-  muted: '#74798A',
-  primary: '#263BAA',
-  primaryDark: '#1D2F91',
-  primarySoft: '#EEF1FF',
+  background: colors.surface,
+  border: colors.border,
+  ink: colors.ink,
+  muted: colors.muted,
+  primary: colors.primary,
+  primaryDark: colors.primaryDark,
+  primarySoft: colors.primarySoft,
 };
 
 export const fontFamily = 'Inter';
@@ -36,7 +36,7 @@ export const radius = {
 
 export const shadow = {
   elevation: 3,
-  shadowColor: '#173A2F',
+  shadowColor: '#1D2F91',
   shadowOffset: { height: 3, width: 0 },
   shadowOpacity: 0.08,
   shadowRadius: 12,

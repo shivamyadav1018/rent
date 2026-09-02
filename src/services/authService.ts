@@ -2,7 +2,9 @@ import { Platform } from 'react-native';
 import {
   getAuth,
   GoogleAuthProvider,
+  createUserWithEmailAndPassword,
   onAuthStateChanged,
+  signInWithEmailAndPassword,
   signInWithCredential,
   signOut,
   type User,
@@ -67,6 +69,22 @@ export const authService = {
 
     const credential = GoogleAuthProvider.credential(idToken);
     return signInWithCredential(getAuth(), credential);
+  },
+
+  async signInWithEmail(email: string, password: string) {
+    if (!isFirebaseConfigured) {
+      throw new Error('Firebase configuration is not installed yet.');
+    }
+    configure();
+    return signInWithEmailAndPassword(getAuth(), email.trim(), password);
+  },
+
+  async createAccount(email: string, password: string) {
+    if (!isFirebaseConfigured) {
+      throw new Error('Firebase configuration is not installed yet.');
+    }
+    configure();
+    return createUserWithEmailAndPassword(getAuth(), email.trim(), password);
   },
 
   async signOut() {

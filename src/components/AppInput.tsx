@@ -17,7 +17,7 @@ export function AppInput({ label, error, style, variant = 'default', ...props }:
     <View style={styles.wrap}>
       <Text style={[styles.label, isAuth && styles.labelAuth]}>{label}</Text>
       <TextInput
-        placeholderTextColor={isAuth ? authColors.muted : '#8A9691'}
+        placeholderTextColor={isAuth ? authColors.muted : colors.muted}
         selectionColor={isAuth ? authColors.primary : colors.primary}
         onFocus={e => { setFocused(true); props.onFocus?.(e); }}
         onBlur={e => { setFocused(false); props.onBlur?.(e); }}
@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderColor: colors.border,
     borderRadius: 10,
-    borderWidth: 1,
+    borderWidth: 1.25,
     color: colors.ink,
     fontFamily,
     fontSize: 15,
@@ -69,6 +69,7 @@ const styles = StyleSheet.create({
     backgroundColor: authColors.background,
     borderColor: authColors.border,
     color: authColors.ink,
+    minHeight: 52,
   },
   label: {
     color: colors.ink,

@@ -1,110 +1,135 @@
-import React from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { GoogleSigninButton } from '@react-native-google-signin/google-signin';
+import React, { useState } from 'react';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { ArrowRight, BookOpenCheck, CheckCircle2, LogOut, WifiOff } from 'lucide-react-native';
 
 import { AppButton } from '../../components/AppButton';
+import { AppInput } from '../../components/AppInput';
 import { Screen } from '../../components/Screen';
 import { Body, Muted, Title } from '../../components/Typography';
 import { useAuthStore } from '../../store/authStore';
 import { authColors, authShadow, colors, fontFamily, radius } from '../../theme';
 
 export function WelcomeScreen({ navigation }: any) {
+  const [mode, setMode] = useState<'signIn' | 'signUp'>('signIn');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [formError, setFormError] = useState<string | null>(null);
   const error = useAuthStore(state => state.error);
+  const clearError = useAuthStore(state => state.clearError);
+  const createAccount = useAuthStore(state => state.createAccount);
+  const signInWithEmail = useAuthStore(state => state.signInWithEmail);
   const signInWithGoogle = useAuthStore(state => state.signInWithGoogle);
   const signOut = useAuthStore(state => state.signOut);
   const status = useAuthStore(state => state.status);
   const user = useAuthStore(state => state.user);
   const continueToSetup = () => navigation.navigate('LandlordSetup');
 
+  const changeMode = (nextMode: 'signIn' | 'signUp') => {
+    setMode(nextMode);
+    setFormError(null);
+    setPassword('');
+    setConfirmPassword('');
+    clearError();
+  };
+
+  const submit = async () => {
+    const cleanEmail = email.trim();
+    if (!cleanEmail || !password) {
+      setFormError('Enter your email and password.');
+      return;
+    }
+    if (password.length < 6) {
+      setFormError('Password must be at least 6 characters.');
+      return;
+    }
+    if (mode === 'signUp' && password !== confirmPassword) {
+      setFormError('Passwords do not match.');
+      return;
+    }
+    setFormError(null);
+    if (mode === 'signUp') {
+      await createAccount(cleanEmail, password);
+    } else {
+      await signInWithEmail(cleanEmail, password);
+    }
+  };
+
   return (
     <Screen backgroundColor={authColors.background} style={styles.screen}>
-
-      {/* ── Brand section ── */}
       <View style={styles.brandSection}>
-        <View style={styles.logoWrap}>
-          <View style={styles.logoMark}>
-            <BookOpenCheck color={authColors.primary} size={30} strokeWidth={2.2} />
-          </View>
+        <View style={styles.logoMark}>
+          <BookOpenCheck color={authColors.background} size={28} strokeWidth={2.3} />
         </View>
         <Title style={styles.brandName}>KirayaBahi</Title>
         <Muted style={styles.tagline}>Smart rent management for landlords</Muted>
       </View>
 
-      {/* ── Login card ── */}
-      <View style={styles.card}>
+      <View style={styles.form}>
         <Title style={styles.heading}>
-          {status === 'signedIn' ? 'Account connected' : 'Sign in to your account'}
+          {status === 'signedIn' ? 'Account connected' : mode === 'signUp' ? 'Create your account' : 'Sign in to your account'}
         </Title>
         <Muted style={styles.subtitle}>
           {status === 'signedIn'
-            ? 'Continue with your connected Google account.'
-            : 'Use your Google account to continue to KirayaBahi.'}
+            ? 'Your records can now stay connected to this account.'
+            : mode === 'signUp'
+              ? 'Create an account to keep your rent records connected.'
+              : 'Welcome back. Enter your details to continue.'}
         </Muted>
 
-        {error ? <Body style={styles.error}>{error}</Body> : null}
+        {error || formError ? <Body style={styles.error}>{formError ?? error}</Body> : null}
 
         {status === 'loading' ? (
           <View style={styles.loading}>
             <ActivityIndicator color={authColors.primary} size="small" />
-            <Muted style={styles.loadingText}>Checking your account…</Muted>
+            <Muted style={styles.loadingText}>Connecting your account…</Muted>
           </View>
         ) : status === 'signedIn' ? (
           <>
             <View style={styles.account}>
               <View style={styles.accountAvatar}>
-                <CheckCircle2 color={authColors.primary} size={20} />
+                <CheckCircle2 color={authColors.primary} size={21} />
               </View>
               <View style={styles.accountText}>
-                <Body style={styles.accountName}>{user?.displayName ?? 'Google account connected'}</Body>
+                <Body style={styles.accountName}>{user?.displayName ?? 'Account connected'}</Body>
                 {user?.email ? <Muted style={styles.accountEmail}>{user.email}</Muted> : null}
               </View>
             </View>
-            <AppButton
-              icon={<ArrowRight color={authColors.background} size={18} />}
-              title="Continue"
-              onPress={continueToSetup}
-              style={styles.primaryButton}
-            />
-            <AppButton
-              icon={<LogOut color={authColors.primary} size={18} />}
-              title="Use another account"
-              variant="secondary"
-              onPress={signOut}
-              style={styles.outlineButton}
-              textStyle={styles.outlineButtonText}
-            />
+            <AppButton icon={<ArrowRight color={authColors.background} size={18} />} title="Continue" onPress={continueToSetup} />
+            <AppButton icon={<LogOut color={authColors.primary} size={18} />} title="Use another account" variant="secondary" onPress={signOut} />
           </>
         ) : (
           <>
-            {status === 'disabled' ? (
-              <View style={styles.disabledWrap}>
-                <Muted style={styles.offlineNote}>Google sign-in is unavailable in this build.</Muted>
-              </View>
+            {status !== 'disabled' ? (
+              <>
+                <AppInput variant="auth" autoCapitalize="none" autoComplete="email" keyboardType="email-address" label="Email" placeholder="you@example.com" value={email} onChangeText={setEmail} />
+                <AppInput variant="auth" autoCapitalize="none" autoComplete={mode === 'signUp' ? 'new-password' : 'current-password'} label="Password" placeholder="Enter your password" secureTextEntry value={password} onChangeText={setPassword} />
+                {mode === 'signUp' ? (
+                  <AppInput variant="auth" autoCapitalize="none" autoComplete="new-password" label="Confirm password" placeholder="Re-enter your password" secureTextEntry value={confirmPassword} onChangeText={setConfirmPassword} />
+                ) : null}
+                <AppButton title={mode === 'signUp' ? 'Create account' : 'Sign in'} onPress={submit} />
+
+                <View style={styles.divider}>
+                  <View style={styles.dividerLine} />
+                  <Muted style={styles.dividerText}>or continue with</Muted>
+                  <View style={styles.dividerLine} />
+                </View>
+                <AppButton icon={<Body style={styles.googleMark}>G</Body>} title="Google" variant="secondary" onPress={signInWithGoogle} />
+              </>
             ) : (
-              <GoogleSigninButton
-                color={GoogleSigninButton.Color.Light}
-                onPress={signInWithGoogle}
-                size={GoogleSigninButton.Size.Wide}
-                style={styles.googleButton}
-              />
+              <Muted style={styles.offlineNote}>Online sign-in is unavailable in this build.</Muted>
             )}
 
-            {/* Divider */}
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Muted style={styles.dividerText}>or</Muted>
-              <View style={styles.dividerLine} />
+            <View style={styles.modeRow}>
+              <Muted>{mode === 'signUp' ? 'Already have an account?' : "Don't have an account?"}</Muted>
+              <Pressable onPress={() => changeMode(mode === 'signUp' ? 'signIn' : 'signUp')}>
+                <Body style={styles.modeLink}>{mode === 'signUp' ? 'Sign in' : 'Sign up'}</Body>
+              </Pressable>
             </View>
-
-            <AppButton
-              icon={<WifiOff color={authColors.primary} size={18} />}
-              title="Continue offline"
-              variant="secondary"
-              onPress={continueToSetup}
-              style={styles.outlineButton}
-              textStyle={styles.outlineButtonText}
-            />
+            <Pressable onPress={continueToSetup} style={styles.offlineAction}>
+              <WifiOff color={authColors.muted} size={15} />
+              <Muted style={styles.offlineActionText}>Continue offline</Muted>
+            </Pressable>
           </>
         )}
       </View>
@@ -115,81 +140,30 @@ export function WelcomeScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  account: {
-    alignItems: 'center',
-    backgroundColor: authColors.primarySoft,
-    borderRadius: radius.md,
-    flexDirection: 'row',
-    gap: 12,
-    padding: 14,
-  },
-  accountAvatar: {
-    alignItems: 'center',
-    backgroundColor: authColors.background,
-    borderRadius: 20,
-    height: 40,
-    justifyContent: 'center',
-    width: 40,
-  },
+  account: { alignItems: 'center', backgroundColor: authColors.primarySoft, borderColor: authColors.border, borderRadius: radius.md, borderWidth: 1, flexDirection: 'row', gap: 12, padding: 14 },
+  accountAvatar: { alignItems: 'center', backgroundColor: authColors.background, borderRadius: 20, height: 40, justifyContent: 'center', width: 40 },
   accountEmail: { color: authColors.muted, fontSize: 12, marginTop: 1 },
   accountName: { color: authColors.ink, fontWeight: '700' },
   accountText: { flex: 1 },
-  brandName: {
-    color: authColors.primaryDark,
-    fontFamily,
-    fontSize: 28,
-    fontWeight: '800',
-    letterSpacing: -0.5,
-    marginTop: 14,
-  },
-  brandSection: { alignItems: 'center', paddingTop: 48 },
-  card: {
-    ...authShadow,
-    backgroundColor: authColors.background,
-    borderColor: authColors.border,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    gap: 14,
-    marginTop: 36,
-    padding: 24,
-  },
-  disabledWrap: { alignItems: 'center', paddingVertical: 8 },
-  divider: { alignItems: 'center', flexDirection: 'row', gap: 12 },
+  brandName: { color: authColors.primaryDark, fontFamily, fontSize: 27, fontWeight: '800', letterSpacing: -0.5, marginTop: 12 },
+  brandSection: { alignItems: 'center', paddingTop: 22 },
+  divider: { alignItems: 'center', flexDirection: 'row', gap: 12, marginVertical: 2 },
   dividerLine: { backgroundColor: authColors.border, flex: 1, height: 1 },
   dividerText: { color: authColors.muted, fontSize: 12 },
-  error: {
-    backgroundColor: colors.dangerSoft,
-    borderRadius: radius.sm,
-    color: colors.danger,
-    fontSize: 13,
-    padding: 12,
-  },
-  googleButton: { alignSelf: 'stretch', height: 50, width: '100%' },
-  heading: { color: authColors.ink, fontSize: 21, lineHeight: 27 },
-  loading: { alignItems: 'center', flexDirection: 'row', gap: 10, paddingVertical: 6 },
+  error: { backgroundColor: colors.dangerSoft, borderColor: '#F6C7C1', borderRadius: radius.sm, borderWidth: 1, color: colors.danger, fontSize: 13, padding: 12 },
+  form: { ...authShadow, backgroundColor: authColors.background, borderColor: authColors.border, borderRadius: radius.lg, borderWidth: 1, gap: 14, marginTop: 28, padding: 22 },
+  googleMark: { color: '#4285F4', fontSize: 17, fontWeight: '800' },
+  heading: { color: authColors.ink, fontSize: 22, lineHeight: 28 },
+  loading: { alignItems: 'center', flexDirection: 'row', gap: 10, paddingVertical: 18 },
   loadingText: { color: authColors.muted },
-  logoMark: {
-    alignItems: 'center',
-    backgroundColor: authColors.primarySoft,
-    borderRadius: radius.lg,
-    height: 72,
-    justifyContent: 'center',
-    width: 72,
-  },
-  logoWrap: {
-    ...authShadow,
-    borderRadius: radius.lg,
-  },
-  offlineNote: { color: authColors.muted, textAlign: 'center' },
-  outlineButton: {
-    backgroundColor: authColors.background,
-    borderColor: authColors.primary,
-    borderWidth: 1.5,
-  },
-  outlineButtonText: { color: authColors.primary },
-  primaryButton: { backgroundColor: authColors.primary },
-  privacy: { color: authColors.muted, marginTop: 'auto', paddingTop: 32, paddingBottom: 8, textAlign: 'center' },
+  logoMark: { ...authShadow, alignItems: 'center', backgroundColor: authColors.primary, borderRadius: radius.lg, height: 64, justifyContent: 'center', width: 64 },
+  modeLink: { color: authColors.primary, fontSize: 13, fontWeight: '700' },
+  modeRow: { alignItems: 'center', flexDirection: 'row', gap: 5, justifyContent: 'center', marginTop: 4 },
+  offlineAction: { alignItems: 'center', alignSelf: 'center', flexDirection: 'row', gap: 6, padding: 6 },
+  offlineActionText: { color: authColors.muted, textDecorationLine: 'underline' },
+  offlineNote: { color: authColors.muted, paddingVertical: 8, textAlign: 'center' },
+  privacy: { color: authColors.muted, marginTop: 'auto', paddingBottom: 8, paddingTop: 24, textAlign: 'center' },
   screen: { flexGrow: 1, paddingHorizontal: 24 },
-  subtitle: { color: authColors.muted, fontSize: 14, lineHeight: 21 },
-  tagline: { color: authColors.muted, fontSize: 14, marginTop: 6 },
+  subtitle: { color: authColors.muted, fontSize: 14, lineHeight: 21, marginBottom: 2 },
+  tagline: { color: authColors.muted, fontSize: 14, marginTop: 4 },
 });

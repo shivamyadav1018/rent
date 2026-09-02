@@ -28,7 +28,7 @@ export const receiptPdfService = {
     return `
       <html>
         <body style="font-family: Arial, sans-serif; padding: 28px; color: #17201d;">
-          <h1 style="color: #0f766e; margin-bottom: 4px;">KirayaBahi Receipt</h1>
+          <h1 style="color: #263BAA; margin-bottom: 4px;">KirayaBahi Receipt</h1>
           <p style="margin-top: 0;">Receipt No: ${receiptNumber}</p>
           <hr />
           <p><strong>Date:</strong> ${displayDate(input.paymentDate)}</p>

@@ -33,7 +33,7 @@ const screenOptions = ({ route }: any) => {
     headerShown: false,
     tabBarActiveBackgroundColor: colors.primarySoft,
     tabBarActiveTintColor: colors.primary,
-    tabBarInactiveTintColor: '#7C8983',
+    tabBarInactiveTintColor: colors.muted,
     tabBarIcon: ({ color, size }: { color: string; size: number }) => <Icon color={color} size={size} strokeWidth={2.1} />,
     tabBarLabelStyle: { fontFamily, fontSize: 11, fontWeight: '600' as const },
     tabBarItemStyle: { borderRadius: 8, marginHorizontal: 3 },

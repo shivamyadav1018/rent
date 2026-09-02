@@ -57,7 +57,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   secondary: {
-    backgroundColor: colors.surfaceMuted,
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderWidth: 1,
   },
   secondaryText: {
     color: colors.primaryDark,

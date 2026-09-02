@@ -13,7 +13,6 @@ import { rentCycleService } from '../../services/rentCycleService';
 import { Payment, RentCycle, Tenant } from '../../types/models';
 import { formatCurrency } from '../../utils/currency';
 import { displayDate, monthLabel } from '../../utils/dates';
-import { colors } from '../../theme';
 
 type TenantDetail = Tenant & { unit_name: string; property_name: string };
 type HistoryPayment = Payment & { month: number; year: number };

@@ -21,7 +21,6 @@ const paymentSchema = z.coerce.number().positive('Amount must be greater than ze
 
 export function RecordPaymentScreen({ navigation, route }: any) {
   const current = currentMonthYear();
-  const tenants = useAppStore(state => state.tenants);
   const refreshAll = useAppStore(state => state.refreshAll);
   const [activeTenants, setActiveTenants] = useState<(Tenant & { unit_name?: string })[]>([]);
   const [tenantId, setTenantId] = useState(route.params?.tenantId ?? '');
