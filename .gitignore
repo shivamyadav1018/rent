@@ -36,6 +36,17 @@ build/
 android/keystore.properties
 .kotlin/
 
+# Keep generated files ignored, but allow the production release APK on GitHub.
+!android/app/build/
+android/app/build/*
+!android/app/build/outputs/
+android/app/build/outputs/*
+!android/app/build/outputs/apk/
+android/app/build/outputs/apk/*
+!android/app/build/outputs/apk/release/
+android/app/build/outputs/apk/release/*
+!android/app/build/outputs/apk/release/app-release.apk
+
 # node.js
 #
 node_modules/
