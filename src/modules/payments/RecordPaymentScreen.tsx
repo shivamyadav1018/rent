@@ -53,17 +53,24 @@ export function RecordPaymentScreen({ navigation, route }: any) {
   useEffect(() => {
     const cycleId = route.params?.cycleId as string | undefined;
     if (!cycleId) return;
+    let isActive = true;
     rentRepo.findLedgerItem(cycleId).then(item => {
-      if (!item) return;
+      if (!isActive || !item) return;
       setCycle(item); setTenantId(item.tenant_id); setMonth(item.month); setYear(item.year); setAmount(String(Math.max(item.balance, 0)));
     });
+    return () => { isActive = false; };
   }, [route.params?.cycleId]);
 
   useEffect(() => {
     if (!tenantId || route.params?.cycleId) return;
+    let isActive = true;
     rentCycleService.ensureCycleForTenant(tenantId, month, year).then(next => {
+      if (!isActive) return;
       setCycle(next); if (next) setAmount(String(Math.max(next.balance, 0)));
+    }).catch(() => {
+      if (isActive) setCycle(null);
     });
+    return () => { isActive = false; };
   }, [month, route.params?.cycleId, tenantId, year]);
 
   const changeMonth = (delta: number) => {

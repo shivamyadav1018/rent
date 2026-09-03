@@ -17,10 +17,10 @@ type AppState = {
   tenants: Array<Tenant & { unit_name?: string; property_name?: string; current_status?: string }>;
   ledger: LedgerItem[];
   summary: DashboardSummary;
-  bootstrap: () => Promise<void>;
+  bootstrap: () => Promise<boolean>;
   resetSession: () => void;
-  refreshAll: () => Promise<void>;
-  refreshLedger: (month?: number, year?: number, status?: string, propertyId?: string) => Promise<void>;
+  refreshAll: () => Promise<boolean>;
+  refreshLedger: (month?: number, year?: number, status?: string, propertyId?: string) => Promise<boolean>;
 };
 
 const emptySummary = {
@@ -29,6 +29,10 @@ const emptySummary = {
   overdueCount: 0,
   pendingRent: 0,
 };
+
+let sessionGeneration = 0;
+let allRequestId = 0;
+let ledgerRequestId = 0;
 
 export const useAppStore = create<AppState>((set, get) => ({
   ledger: [],
@@ -40,12 +44,17 @@ export const useAppStore = create<AppState>((set, get) => ({
   units: [],
 
   async bootstrap() {
+    const generation = sessionGeneration;
     const settings = await settingsRepo.getAll();
+    if (generation !== sessionGeneration) return false;
     set({ onboardingDone: settings.onboardingDone === 'true', settings });
-    await get().refreshAll();
+    return get().refreshAll();
   },
 
   resetSession() {
+    sessionGeneration += 1;
+    allRequestId += 1;
+    ledgerRequestId += 1;
     set({
       ledger: [],
       onboardingDone: false,
@@ -58,20 +67,26 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   async refreshAll() {
+    const generation = sessionGeneration;
+    const requestId = ++allRequestId;
     const [properties, units, tenants] = await Promise.all([
       propertyRepo.listWithCounts(),
       unitRepo.allWithProperty(),
       tenantRepo.list(),
     ]);
+    if (generation !== sessionGeneration || requestId !== allRequestId) return false;
     set({ properties, tenants, units });
     const { month, year } = currentMonthYear();
-    await get().refreshLedger(month, year);
+    return get().refreshLedger(month, year);
   },
 
   async refreshLedger(month, year, status = 'all', propertyId) {
+    const generation = sessionGeneration;
+    const requestId = ++ledgerRequestId;
     const selected = month && year ? { month, year } : currentMonthYear();
     await rentCycleService.ensureCyclesForMonth(selected.month, selected.year);
     const ledger = await rentRepo.ledger(selected.month, selected.year, status, propertyId);
+    if (generation !== sessionGeneration || requestId !== ledgerRequestId) return false;
     const summary = ledger.reduce<DashboardSummary>((acc, item) => {
       acc.expectedRent += item.rent_amount;
       acc.collectedRent += item.total_paid;
@@ -83,5 +98,6 @@ export const useAppStore = create<AppState>((set, get) => ({
     }, { ...emptySummary });
 
     set({ ledger, summary });
+    return true;
   },
 }));

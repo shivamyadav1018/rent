@@ -8,6 +8,7 @@ import { Screen } from '../../components/Screen';
 import { StatusBadge } from '../../components/StatusBadge';
 import { Body, Muted, Title } from '../../components/Typography';
 import { paymentRepo } from '../../database/repositories/paymentRepo';
+import { rentRepo } from '../../database/repositories/rentRepo';
 import { tenantRepo } from '../../database/repositories/tenantRepo';
 import { rentCycleService } from '../../services/rentCycleService';
 import { Payment, RentCycle, Tenant } from '../../types/models';
@@ -24,17 +25,30 @@ export function TenantDetailScreen({ navigation, route }: any) {
   const [payments, setPayments] = useState<HistoryPayment[]>([]);
 
   useFocusEffect(useCallback(() => {
-    tenantRepo.find(tenantId).then(async nextTenant => {
-      setTenant(nextTenant);
-      // Only ensure/create a cycle for active tenants
-      const cyclePromise = nextTenant?.status === 'active'
-        ? rentCycleService.ensureCurrentCycleForTenant(tenantId)
-        : rentCycleService.ensureCycleForTenant(tenantId,
-            new Date().getMonth() + 1, new Date().getFullYear())
-            .catch(() => null); // Don't crash if no cycle exists
-      const [nextCycle, nextPayments] = await Promise.all([cyclePromise, paymentRepo.forTenant(tenantId)]);
-      setCycle(nextCycle); setPayments(nextPayments);
-    });
+    let isActive = true;
+    const load = async () => {
+      try {
+        const nextTenant = await tenantRepo.find(tenantId);
+        if (!isActive) return;
+        setTenant(nextTenant);
+        const now = new Date();
+        // Inactive tenants may have an existing final cycle, but must never get
+        // a new rent cycle simply because their details screen was opened.
+        const cyclePromise = nextTenant?.status === 'active'
+          ? rentCycleService.ensureCurrentCycleForTenant(tenantId)
+          : rentRepo.findCycle(tenantId, now.getMonth() + 1, now.getFullYear());
+        const [nextCycle, nextPayments] = await Promise.all([cyclePromise, paymentRepo.forTenant(tenantId)]);
+        if (!isActive) return;
+        setCycle(nextCycle);
+        setPayments(nextPayments);
+      } catch {
+        if (!isActive) return;
+        setCycle(null);
+        setPayments([]);
+      }
+    };
+    load();
+    return () => { isActive = false; };
   }, [tenantId]));
 
   if (!tenant) return <Screen><Muted>Loading tenant...</Muted></Screen>;

@@ -24,11 +24,16 @@ export function ReceiptPreviewScreen({ route }: any) {
   const [working, setWorking] = useState(false);
 
   useEffect(() => {
+    let isActive = true;
     Promise.all([rentRepo.findLedgerItem(route.params.cycleId), paymentRepo.latestForCycle(route.params.cycleId), settingsRepo.getAll()]).then(([nextCycle, payment, settings]) => {
+      if (!isActive) return;
       setCycle(nextCycle); setLandlordName(settings.landlordName ?? 'Landlord');
       const paymentMode = route.params.paymentMode as PaymentMode | undefined;
       if (route.params.amountPaid || payment) setData({ amountPaid: route.params.amountPaid ?? payment?.amount ?? 0, notes: route.params.notes ?? payment?.notes ?? undefined, paymentDate: route.params.paymentDate ?? payment?.payment_date ?? new Date().toISOString(), paymentMode: paymentMode ?? payment?.payment_mode ?? 'cash', referenceNo: route.params.referenceNo ?? payment?.reference_no ?? undefined });
+    }).catch(() => {
+      if (isActive) setCycle(null);
     });
+    return () => { isActive = false; };
   }, [route.params]);
 
   const buildAndGenerate = async () => {

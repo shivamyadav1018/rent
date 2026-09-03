@@ -25,7 +25,13 @@ export function SettingsScreen() {
   const signOut = useAuthStore(state => state.signOut);
 
   useFocusEffect(useCallback(() => {
-    settingsRepo.getAll().then(settings => { setName(settings.landlordName ?? ''); setPhone(settings.landlordPhone ?? ''); });
+    let isActive = true;
+    settingsRepo.getAll().then(settings => {
+      if (!isActive) return;
+      setName(settings.landlordName ?? '');
+      setPhone(settings.landlordPhone ?? '');
+    });
+    return () => { isActive = false; };
   }, []));
 
   const save = async () => {

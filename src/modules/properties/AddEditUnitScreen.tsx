@@ -23,7 +23,11 @@ export function AddEditUnitScreen({ navigation, route }: any) {
 
   useEffect(() => {
     if (!unitId) return;
-    unitRepo.find(unitId).then(unit => { if (unit) reset({ monthlyRent: String(unit.monthly_rent), name: unit.name, status: unit.status }); });
+    let isActive = true;
+    unitRepo.find(unitId).then(unit => {
+      if (isActive && unit) reset({ monthlyRent: String(unit.monthly_rent), name: unit.name, status: unit.status });
+    });
+    return () => { isActive = false; };
   }, [reset, unitId]);
 
   const save = handleSubmit(async values => {

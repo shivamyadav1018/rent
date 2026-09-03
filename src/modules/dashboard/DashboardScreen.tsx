@@ -24,7 +24,7 @@ export function DashboardScreen({ navigation }: any) {
   const settings = useAppStore(state => state.settings);
 
   useFocusEffect(useCallback(() => {
-    refreshAll();
+    refreshAll().catch(() => undefined);
   }, [refreshAll]));
 
   const due = ledger.filter(item => item.status !== 'paid').slice(0, 5);

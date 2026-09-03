@@ -56,9 +56,11 @@ export function AddEditTenantScreen({ navigation, route }: any) {
   }, [refreshAll]));
   useEffect(() => {
     if (!tenantId) return;
+    let isActive = true;
     tenantRepo.find(tenantId).then(tenant => {
-      if (tenant) reset({ dueDay: String(tenant.due_day), monthlyRent: String(tenant.monthly_rent), moveInDate: tenant.move_in_date.slice(0, 10), name: tenant.name, notes: tenant.notes ?? '', phone: tenant.phone, securityDeposit: String(tenant.security_deposit), unitId: tenant.unit_id });
+      if (isActive && tenant) reset({ dueDay: String(tenant.due_day), monthlyRent: String(tenant.monthly_rent), moveInDate: tenant.move_in_date.slice(0, 10), name: tenant.name, notes: tenant.notes ?? '', phone: tenant.phone, securityDeposit: String(tenant.security_deposit), unitId: tenant.unit_id });
     });
+    return () => { isActive = false; };
   }, [reset, tenantId]);
 
   const chooseUnit = async (id: string) => {

@@ -23,10 +23,15 @@ export function ReminderPreviewScreen({ route }: any) {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
+    let isActive = true;
     Promise.all([rentRepo.findLedgerItem(route.params.cycleId), settingsRepo.getAll()]).then(([nextCycle, settings]) => {
+      if (!isActive) return;
       setCycle(nextCycle);
       if (nextCycle) setMessage(createMessage(nextCycle, settings.landlordName ?? 'Landlord'));
+    }).catch(() => {
+      if (isActive) setCycle(null);
     });
+    return () => { isActive = false; };
   }, [route.params.cycleId]);
 
   if (!cycle) return <Screen><Muted>Loading reminder...</Muted></Screen>;

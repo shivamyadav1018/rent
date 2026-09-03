@@ -101,7 +101,8 @@ export const useAuthStore = create<AuthState>((set) => ({
           }
 
           await syncRepo.claimLocalData(firebaseUser.uid);
-          await useAppStore.getState().bootstrap();
+          const bootstrapped = await useAppStore.getState().bootstrap();
+          if (!bootstrapped) return;
           set({
             error: null,
             offlineMode: false,
@@ -128,7 +129,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     const signedOutStatus = authService.isConfigured ? 'signedOut' : 'disabled';
     set({ error: null, status: 'loading' });
     try {
-      await useAppStore.getState().bootstrap();
+      const bootstrapped = await useAppStore.getState().bootstrap();
+      if (!bootstrapped) return;
       set({ offlineMode: true, status: signedOutStatus });
     } catch (error) {
       useAppStore.getState().resetSession();

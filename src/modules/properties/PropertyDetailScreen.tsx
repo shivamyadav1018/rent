@@ -18,10 +18,15 @@ export function PropertyDetailScreen({ navigation, route }: any) {
   const [units, setUnits] = useState<Unit[]>([]);
 
   useFocusEffect(useCallback(() => {
+    let isActive = true;
     Promise.all([propertyRepo.find(propertyId), unitRepo.forProperty(propertyId)]).then(([nextProperty, nextUnits]) => {
+      if (!isActive) return;
       setProperty(nextProperty);
       setUnits(nextUnits);
+    }).catch(() => {
+      if (isActive) setProperty(null);
     });
+    return () => { isActive = false; };
   }, [propertyId]));
 
   if (!property) return <Screen><Muted>Loading property...</Muted></Screen>;

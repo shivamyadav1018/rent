@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -27,8 +27,9 @@ export function MonthlyLedgerScreen({ navigation }: any) {
   const refreshLedger = useAppStore(state => state.refreshLedger);
 
   const load = useCallback(() => refreshLedger(month, year, status, propertyId), [month, propertyId, refreshLedger, status, year]);
-  useFocusEffect(useCallback(() => { load(); }, [load]));
-  useEffect(() => { load(); }, [load]);
+  useFocusEffect(useCallback(() => {
+    load().catch(() => undefined);
+  }, [load]));
 
   const changeMonth = (amount: number) => {
     const next = new Date(year, month - 1 + amount, 1);

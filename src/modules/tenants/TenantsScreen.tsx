@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Linking, StyleSheet, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -21,9 +21,13 @@ type TenantRow = Tenant & { unit_name: string; property_name: string; current_st
 export function TenantsScreen({ navigation }: any) {
   const [search, setSearch] = useState('');
   const [tenants, setTenants] = useState<TenantRow[]>([]);
-  const load = useCallback(() => { tenantRepo.list(search).then(setTenants); }, [search]);
-  useFocusEffect(useCallback(() => { load(); }, [load]));
-  useEffect(() => { load(); }, [load]);
+  useFocusEffect(useCallback(() => {
+    let isActive = true;
+    tenantRepo.list(search)
+      .then(nextTenants => { if (isActive) setTenants(nextTenants); })
+      .catch(() => { if (isActive) setTenants([]); });
+    return () => { isActive = false; };
+  }, [search]));
 
   return (
     <Screen>

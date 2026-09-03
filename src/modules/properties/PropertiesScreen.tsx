@@ -16,7 +16,7 @@ export function PropertiesScreen({ navigation }: any) {
   const properties = useAppStore(state => state.properties);
   const refreshAll = useAppStore(state => state.refreshAll);
 
-  useFocusEffect(useCallback(() => { refreshAll(); }, [refreshAll]));
+  useFocusEffect(useCallback(() => { refreshAll().catch(() => undefined); }, [refreshAll]));
 
   return (
     <Screen>

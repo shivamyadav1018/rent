@@ -26,9 +26,11 @@ export function AddEditPropertyScreen({ navigation, route }: any) {
 
   useEffect(() => {
     if (!propertyId) return;
+    let isActive = true;
     propertyRepo.find(propertyId).then(property => {
-      if (property) reset({ address: property.address ?? '', name: property.name, type: property.type });
+      if (isActive && property) reset({ address: property.address ?? '', name: property.name, type: property.type });
     });
+    return () => { isActive = false; };
   }, [propertyId, reset]);
 
   const save = handleSubmit(async values => {

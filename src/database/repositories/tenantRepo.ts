@@ -64,6 +64,7 @@ export const tenantRepo = {
   }) {
     const timestamp = nowIso();
     const id = input.id ?? createId('tenant');
+    let shouldOccupyUnit = true;
     const values = [
       input.unit_id,
       input.name,
@@ -77,6 +78,7 @@ export const tenantRepo = {
     if (input.id) {
       const existing = await this.find(input.id);
       if (existing) {
+        shouldOccupyUnit = existing.status === 'active';
         // Release old unit if tenant is moving to a different unit
         if (existing.unit_id !== input.unit_id) {
           await unitRepo.markVacant(existing.unit_id);
@@ -105,7 +107,9 @@ export const tenantRepo = {
         [id, ...values, timestamp, timestamp],
       );
     }
-    await unitRepo.markOccupied(input.unit_id);
+    if (shouldOccupyUnit) {
+      await unitRepo.markOccupied(input.unit_id);
+    }
     return id;
   },
 
