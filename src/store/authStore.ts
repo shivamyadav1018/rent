@@ -3,6 +3,7 @@ import { isErrorWithCode, statusCodes } from '@react-native-google-signin/google
 
 import { syncRepo } from '../database/repositories/syncRepo';
 import { authService } from '../services/authService';
+import { useAppStore } from './appStore';
 
 type AuthUser = {
   uid: string;
@@ -16,12 +17,14 @@ type AuthStatus = 'disabled' | 'loading' | 'signedOut' | 'signedIn';
 type AuthState = {
   status: AuthStatus;
   user: AuthUser | null;
+  offlineMode: boolean;
   error: string | null;
   initialize: () => () => void;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   createAccount: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
+  continueOffline: () => Promise<void>;
   clearError: () => void;
 };
 
@@ -65,12 +68,14 @@ const messageForError = (error: unknown) => {
 
 export const useAuthStore = create<AuthState>((set) => ({
   error: null,
+  offlineMode: false,
   status: authService.isConfigured ? 'loading' : 'disabled',
   user: null,
 
   initialize() {
     if (!authService.isConfigured) {
-      set({ status: 'disabled', user: null });
+      useAppStore.getState().resetSession();
+      set({ offlineMode: false, status: 'disabled', user: null });
       return () => undefined;
     }
 
@@ -78,7 +83,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       return authService.subscribe(async firebaseUser => {
         if (!firebaseUser) {
-          set({ status: 'signedOut', user: null });
+          useAppStore.getState().resetSession();
+          set({ offlineMode: false, status: 'signedOut', user: null });
           return;
         }
 
@@ -95,8 +101,10 @@ export const useAuthStore = create<AuthState>((set) => ({
           }
 
           await syncRepo.claimLocalData(firebaseUser.uid);
+          await useAppStore.getState().bootstrap();
           set({
             error: null,
+            offlineMode: false,
             status: 'signedIn',
             user: {
               displayName: firebaseUser.displayName,
@@ -106,12 +114,25 @@ export const useAuthStore = create<AuthState>((set) => ({
             },
           });
         } catch (error) {
+          useAppStore.getState().resetSession();
           set({ error: messageForError(error), status: 'signedOut', user: null });
         }
       });
     } catch (error) {
       set({ error: messageForError(error), status: 'signedOut', user: null });
       return () => undefined;
+    }
+  },
+
+  async continueOffline() {
+    const signedOutStatus = authService.isConfigured ? 'signedOut' : 'disabled';
+    set({ error: null, status: 'loading' });
+    try {
+      await useAppStore.getState().bootstrap();
+      set({ offlineMode: true, status: signedOutStatus });
+    } catch (error) {
+      useAppStore.getState().resetSession();
+      set({ error: messageForError(error), offlineMode: false, status: signedOutStatus });
     }
   },
 
@@ -146,9 +167,11 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   async signOut() {
-    set({ error: null, status: 'loading' });
+    set({ error: null, offlineMode: false, status: 'loading' });
     try {
       await authService.signOut();
+      useAppStore.getState().resetSession();
+      set({ status: 'signedOut', user: null });
     } catch (error) {
       set({ error: messageForError(error), status: 'signedIn' });
     }

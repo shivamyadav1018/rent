@@ -17,13 +17,20 @@ export function WelcomeScreen({ navigation }: any) {
   const [formError, setFormError] = useState<string | null>(null);
   const error = useAuthStore(state => state.error);
   const clearError = useAuthStore(state => state.clearError);
+  const continueOffline = useAuthStore(state => state.continueOffline);
   const createAccount = useAuthStore(state => state.createAccount);
   const signInWithEmail = useAuthStore(state => state.signInWithEmail);
   const signInWithGoogle = useAuthStore(state => state.signInWithGoogle);
   const signOut = useAuthStore(state => state.signOut);
   const status = useAuthStore(state => state.status);
   const user = useAuthStore(state => state.user);
-  const continueToSetup = () => navigation.navigate('LandlordSetup');
+  const continueToSetup = async () => {
+    if (status !== 'signedIn') {
+      await continueOffline();
+      return;
+    }
+    navigation.navigate('LandlordSetup');
+  };
 
   const changeMode = (nextMode: 'signIn' | 'signUp') => {
     setMode(nextMode);

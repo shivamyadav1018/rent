@@ -18,6 +18,7 @@ type AppState = {
   ledger: LedgerItem[];
   summary: DashboardSummary;
   bootstrap: () => Promise<void>;
+  resetSession: () => void;
   refreshAll: () => Promise<void>;
   refreshLedger: (month?: number, year?: number, status?: string, propertyId?: string) => Promise<void>;
 };
@@ -42,6 +43,18 @@ export const useAppStore = create<AppState>((set, get) => ({
     const settings = await settingsRepo.getAll();
     set({ onboardingDone: settings.onboardingDone === 'true', settings });
     await get().refreshAll();
+  },
+
+  resetSession() {
+    set({
+      ledger: [],
+      onboardingDone: false,
+      properties: [],
+      settings: {},
+      summary: { ...emptySummary },
+      tenants: [],
+      units: [],
+    });
   },
 
   async refreshAll() {

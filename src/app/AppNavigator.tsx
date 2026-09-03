@@ -1,9 +1,11 @@
 import React from 'react';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { MainTabs } from './MainTabs';
 import { useAppStore } from '../store/appStore';
+import { useAuthStore } from '../store/authStore';
 import { WelcomeScreen } from '../modules/onboarding/WelcomeScreen';
 import { LandlordSetupScreen } from '../modules/onboarding/LandlordSetupScreen';
 import { AddEditPropertyScreen } from '../modules/properties/AddEditPropertyScreen';
@@ -34,11 +36,24 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export function AppNavigator() {
   const onboardingDone = useAppStore(state => state.onboardingDone);
+  const authStatus = useAuthStore(state => state.status);
+  const offlineMode = useAuthStore(state => state.offlineMode);
+  const hasAccess = authStatus === 'signedIn' || offlineMode;
+
+  if (authStatus === 'loading') {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator color={colors.primary} size="large" />
+      </View>
+    );
+  }
+
+  const flow = !hasAccess ? 'signedOut' : onboardingDone ? 'app' : 'setup';
 
   return (
-    <NavigationContainer>
+    <NavigationContainer key={flow}>
       <Stack.Navigator
-        initialRouteName={onboardingDone ? 'MainTabs' : 'Welcome'}
+        initialRouteName={!hasAccess ? 'Welcome' : onboardingDone ? 'MainTabs' : 'LandlordSetup'}
         screenOptions={{
           contentStyle: { backgroundColor: colors.background },
           headerBackTitle: 'Back',
@@ -47,31 +62,43 @@ export function AppNavigator() {
           headerTintColor: colors.ink,
           headerTitleStyle: { fontFamily, fontSize: 18, fontWeight: '700' },
         }}>
-        {!onboardingDone ? (
+        {!hasAccess ? (
+          <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
+        ) : !onboardingDone ? (
+          <Stack.Screen
+            name="LandlordSetup"
+            component={LandlordSetupScreen}
+            options={{
+              title: 'Your details',
+              headerBackVisible: false,
+              headerStyle: { backgroundColor: authColors.background },
+              headerTintColor: authColors.ink,
+              headerTitleStyle: { fontFamily, fontSize: 18, fontWeight: '700', color: authColors.ink },
+            }}
+          />
+        ) : (
           <>
-            <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
-            <Stack.Screen
-              name="LandlordSetup"
-              component={LandlordSetupScreen}
-              options={{
-                title: 'Your details',
-                headerStyle: { backgroundColor: authColors.background },
-                headerTintColor: authColors.ink,
-                headerTitleStyle: { fontFamily, fontSize: 18, fontWeight: '700', color: authColors.ink },
-              }}
-            />
+            <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
+            <Stack.Screen name="AddProperty" component={AddEditPropertyScreen} options={{ title: 'Property' }} />
+            <Stack.Screen name="PropertyDetail" component={PropertyDetailScreen} options={{ title: 'Property Detail' }} />
+            <Stack.Screen name="AddUnit" component={AddEditUnitScreen} options={{ title: 'Unit' }} />
+            <Stack.Screen name="AddTenant" component={AddEditTenantScreen} options={{ title: 'Tenant' }} />
+            <Stack.Screen name="TenantDetail" component={TenantDetailScreen} options={{ title: 'Tenant Detail' }} />
+            <Stack.Screen name="RecordPayment" component={RecordPaymentScreen} options={{ title: 'Record Payment' }} />
+            <Stack.Screen name="ReminderPreview" component={ReminderPreviewScreen} options={{ title: 'Reminder' }} />
+            <Stack.Screen name="ReceiptPreview" component={ReceiptPreviewScreen} options={{ title: 'Receipt' }} />
           </>
-        ) : null}
-        <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
-        <Stack.Screen name="AddProperty" component={AddEditPropertyScreen} options={{ title: 'Property' }} />
-        <Stack.Screen name="PropertyDetail" component={PropertyDetailScreen} options={{ title: 'Property Detail' }} />
-        <Stack.Screen name="AddUnit" component={AddEditUnitScreen} options={{ title: 'Unit' }} />
-        <Stack.Screen name="AddTenant" component={AddEditTenantScreen} options={{ title: 'Tenant' }} />
-        <Stack.Screen name="TenantDetail" component={TenantDetailScreen} options={{ title: 'Tenant Detail' }} />
-        <Stack.Screen name="RecordPayment" component={RecordPaymentScreen} options={{ title: 'Record Payment' }} />
-        <Stack.Screen name="ReminderPreview" component={ReminderPreviewScreen} options={{ title: 'Reminder' }} />
-        <Stack.Screen name="ReceiptPreview" component={ReceiptPreviewScreen} options={{ title: 'Receipt' }} />
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  loading: {
+    alignItems: 'center',
+    backgroundColor: colors.background,
+    flex: 1,
+    justifyContent: 'center',
+  },
+});

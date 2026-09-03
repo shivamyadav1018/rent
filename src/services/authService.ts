@@ -91,6 +91,12 @@ export const authService = {
     if (!isFirebaseConfigured) {
       return;
     }
-    await Promise.all([signOut(getAuth()), GoogleSignin.signOut()]);
+    await signOut(getAuth());
+    try {
+      await GoogleSignin.signOut();
+    } catch {
+      // Firebase owns the app session. A stale Google chooser session must not
+      // keep the user inside the app after Firebase has signed them out.
+    }
   },
 };

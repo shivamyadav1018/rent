@@ -36,7 +36,7 @@ export function SettingsScreen() {
   };
 
   const confirmSignOut = () => {
-    Alert.alert('Sign out?', 'Your rent records will remain on this device.', [
+    Alert.alert('Sign out?', 'You will return to the sign-in screen. Your rent records will remain stored on this device.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Sign out', style: 'destructive', onPress: signOut },
     ]);
