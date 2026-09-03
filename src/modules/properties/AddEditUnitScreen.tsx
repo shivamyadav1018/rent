@@ -41,7 +41,7 @@ export function AddEditUnitScreen({ navigation, route }: any) {
       <Controller control={control} name="monthlyRent" render={({ field }) => <AppInput label="Monthly rent" keyboardType="numeric" value={field.value} onChangeText={field.onChange} />} />
       <Body style={styles.label}>Status</Body>
       <View style={styles.options}>{(['vacant', 'occupied'] as UnitStatus[]).map(item => <AppChip key={item} label={item} selected={status === item} onPress={() => setValue('status', item)} />)}</View>
-      <AppButton title={isSubmitting ? 'Saving...' : 'Save unit'} onPress={save} />
+      <AppButton disabled={isSubmitting} title={isSubmitting ? 'Saving...' : 'Save unit'} onPress={save} />
     </Screen>
   );
 }

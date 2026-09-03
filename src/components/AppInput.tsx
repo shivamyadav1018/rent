@@ -26,9 +26,10 @@ export function AppInput({ label, error, style, variant = 'default', ...props }:
         isAuth && styles.inputAuth,
         focused && (isAuth ? styles.focusedAuth : styles.focused),
         error ? styles.errorInput : null,
+        props.editable === false ? styles.disabledInput : null,
         props.multiline ? styles.multilineContainer : null,
       ]}
-      inputStyle={[styles.input, isAuth && styles.inputAuthText, props.multiline && styles.multiline, style]}
+      inputStyle={[styles.input, isAuth && styles.inputAuthText, props.editable === false && styles.disabledText, props.multiline && styles.multiline, style]}
       label={label}
       labelStyle={[styles.label, isAuth && styles.labelAuth]}
       onBlur={event => {
@@ -48,6 +49,8 @@ export function AppInput({ label, error, style, variant = 'default', ...props }:
 
 const styles = StyleSheet.create({
   container: { paddingHorizontal: 0 },
+  disabledInput: { backgroundColor: colors.surfaceMuted },
+  disabledText: { color: colors.muted },
   error: { color: colors.danger, fontFamily, fontSize: 12, margin: 0, marginTop: 4 },
   errorInput: { borderColor: colors.danger },
   focused: { borderColor: colors.primary, borderWidth: 1.5 },

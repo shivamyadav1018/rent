@@ -14,6 +14,8 @@ type Props = {
 export function AppChip({ label, onPress, selected = false, style }: Props) {
   return (
     <Chip
+      accessibilityRole="radio"
+      accessibilityState={{ selected }}
       buttonStyle={[styles.button, selected ? styles.selected : styles.unselected]}
       containerStyle={style}
       onPress={onPress}

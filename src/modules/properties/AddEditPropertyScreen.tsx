@@ -53,7 +53,7 @@ export function AddEditPropertyScreen({ navigation, route }: any) {
         {types.map(type => <AppChip key={type} label={type} selected={selectedType === type} onPress={() => setValue('type', type)} />)}
       </View>
       <Controller control={control} name="address" render={({ field }) => <AppInput label="Address (optional)" value={field.value} onChangeText={field.onChange} multiline />} />
-      <AppButton title={isSubmitting ? 'Saving...' : 'Save property'} onPress={save} />
+      <AppButton disabled={isSubmitting} title={isSubmitting ? 'Saving...' : 'Save property'} onPress={save} />
     </Screen>
   );
 }

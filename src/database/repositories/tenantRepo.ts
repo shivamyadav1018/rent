@@ -26,7 +26,15 @@ export const tenantRepo = {
   },
 
   active() {
-    return executeSql<Tenant>('SELECT * FROM tenants WHERE status = ? ORDER BY name ASC', ['active']);
+    return executeSql<Tenant & { unit_name: string; property_name: string }>(
+      `SELECT t.*, u.name AS unit_name, p.name AS property_name
+       FROM tenants t
+       JOIN units u ON u.id = t.unit_id
+       JOIN properties p ON p.id = u.property_id
+       WHERE t.status = ?
+       ORDER BY t.name ASC`,
+      ['active'],
+    );
   },
 
   async find(id: string) {
