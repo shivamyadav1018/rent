@@ -1,4 +1,4 @@
-import Share from 'react-native-share';
+import Share, { Social, type ShareSingleOptions } from 'react-native-share';
 
 // Normalise phone for WhatsApp: requires international format without '+'.
 // Defaults to India (+91) if the number looks like a 10-digit local number.
@@ -16,11 +16,12 @@ const normalisePhone = (phone: string): string => {
 export const whatsappShareService = {
   async shareMessage(phone: string, message: string) {
     try {
-      await Share.shareSingle({
+      const options: ShareSingleOptions & { whatsAppNumber: string } = {
         message,
-        social: Share.Social.WHATSAPP,
+        social: Social.Whatsapp,
         whatsAppNumber: normalisePhone(phone),
-      });
+      };
+      await Share.shareSingle(options);
     } catch {
       await Share.open({ message });
     }

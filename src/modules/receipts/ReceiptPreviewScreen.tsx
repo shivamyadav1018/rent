@@ -50,8 +50,12 @@ export function ReceiptPreviewScreen({ route }: any) {
   };
 
   const share = async () => {
-    const path = filePath ?? await buildAndGenerate();
-    if (path) await receiptPdfService.share(path);
+    try {
+      const path = filePath ?? await buildAndGenerate();
+      if (path) await receiptPdfService.share(path);
+    } catch (error) {
+      Alert.alert('Could not share receipt', error instanceof Error ? error.message : 'Please try again.');
+    }
   };
 
   if (!cycle) return <Screen><Muted>Loading receipt...</Muted></Screen>;
@@ -73,8 +77,8 @@ export function ReceiptPreviewScreen({ route }: any) {
         <Muted>Notes: {data.notes || '-'}</Muted>
       </Card>
       {filePath ? <Muted>Saved locally: {filePath}</Muted> : null}
-      <AppButton title={working ? 'Generating...' : 'Generate PDF'} onPress={buildAndGenerate} />
-      <AppButton title="Share PDF" variant="secondary" onPress={share} />
+      <AppButton disabled={working} title={working ? 'Generating...' : 'Generate PDF'} onPress={buildAndGenerate} />
+      <AppButton disabled={working} title="Share PDF" variant="secondary" onPress={share} />
     </Screen>
   );
 }

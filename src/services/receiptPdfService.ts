@@ -1,4 +1,4 @@
-import RNHTMLtoPDF from 'react-native-html-to-pdf';
+import { generatePDF } from 'react-native-html-to-pdf';
 import Share from 'react-native-share';
 
 import { paymentRepo } from '../database/repositories/paymentRepo';
@@ -49,16 +49,24 @@ export const receiptPdfService = {
   },
 
   async generate(html: string) {
-    const pdf = await RNHTMLtoPDF.convert({
+    const pdf = await generatePDF({
       fileName: `rent-khata-receipt-${Date.now()}`,
       html,
     });
 
-    return pdf.filePath as string | undefined;
+    if (!pdf.filePath) {
+      throw new Error('The PDF was generated without a file path.');
+    }
+
+    return pdf.filePath;
   },
 
   async share(filePath: string) {
-    await Share.open({ type: 'application/pdf', url: `file://${filePath}` });
+    const url = filePath.startsWith('file://') || filePath.startsWith('content://')
+      ? filePath
+      : `file://${filePath}`;
+
+    await Share.open({ failOnCancel: false, type: 'application/pdf', url });
   },
 
   async generateAndShare(html: string) {
