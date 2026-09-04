@@ -5,6 +5,11 @@ import { runMigrations } from './migrations';
 SQLite.enablePromise(true);
 
 let database: any;
+let writeListener: (() => void) | null = null;
+
+export const setDatabaseWriteListener = (listener: (() => void) | null) => {
+  writeListener = listener;
+};
 
 export const getDb = async () => {
   if (!database) {
@@ -33,4 +38,5 @@ export const executeSql = async <T = any>(sql: string, params: any[] = []): Prom
 export const executeWrite = async (sql: string, params: any[] = []) => {
   const db = await getDb();
   await db.executeSql(sql, params);
+  writeListener?.();
 };

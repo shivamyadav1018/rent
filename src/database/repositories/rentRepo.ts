@@ -1,6 +1,5 @@
 import { LedgerItem, RentCycle, RentStatus } from '../../types/models';
 import { nowIso } from '../../utils/dates';
-import { createId } from '../../utils/ids';
 import { executeSql, executeWrite } from '../db';
 
 export const rentRepo = {
@@ -35,7 +34,9 @@ export const rentRepo = {
     due_date: string;
   }) {
     const timestamp = nowIso();
-    const id = createId('cycle');
+    // The same tenant/month must resolve to the same document on every device,
+    // including when two devices create the cycle while both are offline.
+    const id = `cycle_${input.tenant_id}_${input.year}_${String(input.month).padStart(2, '0')}`;
     await executeWrite(
       `INSERT OR IGNORE INTO rent_cycles
        (id, tenant_id, month, year, rent_amount, due_date, total_paid, balance, status, created_at, updated_at)

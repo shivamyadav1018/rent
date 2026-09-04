@@ -3,6 +3,7 @@ import { isErrorWithCode, statusCodes } from '@react-native-google-signin/google
 
 import { syncRepo } from '../database/repositories/syncRepo';
 import { authService } from '../services/authService';
+import { cloudSyncService, type CloudSyncStatus } from '../services/cloudSyncService';
 import { useAppStore } from './appStore';
 
 type AuthUser = {
@@ -19,12 +20,17 @@ type AuthState = {
   user: AuthUser | null;
   offlineMode: boolean;
   error: string | null;
+  syncError: string | null;
+  syncLastCompletedAt: string | null;
+  syncPendingCount: number;
+  syncStatus: CloudSyncStatus;
   initialize: () => () => void;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   createAccount: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   continueOffline: () => Promise<void>;
+  syncNow: () => Promise<void>;
   clearError: () => void;
 };
 
@@ -69,13 +75,18 @@ const messageForError = (error: unknown) => {
 export const useAuthStore = create<AuthState>((set) => ({
   error: null,
   offlineMode: false,
+  syncError: null,
+  syncLastCompletedAt: null,
+  syncPendingCount: 0,
+  syncStatus: 'disabled',
   status: authService.isConfigured ? 'loading' : 'disabled',
   user: null,
 
   initialize() {
     if (!authService.isConfigured) {
+      cloudSyncService.stop();
       useAppStore.getState().resetSession();
-      set({ offlineMode: false, status: 'disabled', user: null });
+      set({ offlineMode: false, status: 'disabled', syncStatus: 'disabled', user: null });
       return () => undefined;
     }
 
@@ -83,8 +94,17 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       return authService.subscribe(async firebaseUser => {
         if (!firebaseUser) {
+          cloudSyncService.stop();
           useAppStore.getState().resetSession();
-          set({ offlineMode: false, status: 'signedOut', user: null });
+          set({
+            offlineMode: false,
+            status: 'signedOut',
+            syncError: null,
+            syncLastCompletedAt: null,
+            syncPendingCount: 0,
+            syncStatus: 'disabled',
+            user: null,
+          });
           return;
         }
 
@@ -101,6 +121,24 @@ export const useAuthStore = create<AuthState>((set) => ({
           }
 
           await syncRepo.claimLocalData(firebaseUser.uid);
+          const initialSync = cloudSyncService.start(firebaseUser.uid, {
+            onDataChanged: () => {
+              useAppStore.getState().refreshAll();
+            },
+            onState: syncState => set({
+              syncError: syncState.error,
+              syncLastCompletedAt: syncState.lastSyncedAt,
+              syncPendingCount: syncState.pendingCount,
+              syncStatus: syncState.status,
+            }),
+          });
+          // Native Firestore waits for server acknowledgement when writes are
+          // queued offline. Do not hold the entire app loading screen hostage;
+          // the active sync continues and completes after connectivity returns.
+          await Promise.race([
+            initialSync,
+            new Promise<void>(resolve => setTimeout(() => resolve(), 4000)),
+          ]);
           const bootstrapped = await useAppStore.getState().bootstrap();
           if (!bootstrapped) return;
           set({
@@ -115,6 +153,7 @@ export const useAuthStore = create<AuthState>((set) => ({
             },
           });
         } catch (error) {
+          cloudSyncService.stop();
           useAppStore.getState().resetSession();
           set({ error: messageForError(error), status: 'signedOut', user: null });
         }
@@ -173,9 +212,23 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       await authService.signOut();
       useAppStore.getState().resetSession();
-      set({ status: 'signedOut', user: null });
+      set({
+        status: 'signedOut',
+        syncError: null,
+        syncLastCompletedAt: null,
+        syncPendingCount: 0,
+        syncStatus: 'disabled',
+        user: null,
+      });
     } catch (error) {
       set({ error: messageForError(error), status: 'signedIn' });
+    }
+  },
+
+  async syncNow() {
+    const success = await cloudSyncService.sync(false);
+    if (success) {
+      await useAppStore.getState().bootstrap();
     }
   },
 

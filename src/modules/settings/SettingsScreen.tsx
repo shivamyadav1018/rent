@@ -21,8 +21,13 @@ export function SettingsScreen() {
   const authError = useAuthStore(state => state.error);
   const authStatus = useAuthStore(state => state.status);
   const authUser = useAuthStore(state => state.user);
+  const syncError = useAuthStore(state => state.syncError);
+  const syncLastCompletedAt = useAuthStore(state => state.syncLastCompletedAt);
+  const syncPendingCount = useAuthStore(state => state.syncPendingCount);
+  const syncStatus = useAuthStore(state => state.syncStatus);
   const signInWithGoogle = useAuthStore(state => state.signInWithGoogle);
   const signOut = useAuthStore(state => state.signOut);
+  const syncNow = useAuthStore(state => state.syncNow);
 
   useFocusEffect(useCallback(() => {
     let isActive = true;
@@ -38,11 +43,11 @@ export function SettingsScreen() {
     if (!name.trim()) return Alert.alert('Landlord name is required');
     await settingsRepo.setMany({ currency: 'INR', landlordName: name.trim(), landlordPhone: phone.trim() });
     await bootstrap();
-    Alert.alert('Settings saved');
+    Alert.alert('Settings saved', authStatus === 'signedIn' ? 'Changes are queued for cloud sync.' : undefined);
   };
 
   const confirmSignOut = () => {
-    Alert.alert('Sign out?', 'You will return to the sign-in screen. Your rent records will remain stored on this device.', [
+    Alert.alert('Sign out?', 'You will return to the sign-in screen. Synced rent records remain available in your cloud account.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Sign out', style: 'destructive', onPress: signOut },
     ]);
@@ -81,6 +86,35 @@ export function SettingsScreen() {
                 {authUser?.email ? <Muted>{authUser.email}</Muted> : null}
               </View>
             </View>
+            <View style={styles.syncRow}>
+              <AppIcon
+                color={syncStatus === 'error' ? colors.danger : authColors.primary}
+                name={syncStatus === 'error' ? 'cloud-alert-outline' : 'cloud-check-outline'}
+                size={20}
+              />
+              <View style={styles.accountDetails}>
+                <Body style={styles.syncLabel}>
+                  {syncStatus === 'syncing'
+                    ? 'Syncing...'
+                    : syncStatus === 'error'
+                      ? 'Sync needs attention'
+                      : syncPendingCount > 0
+                        ? `${syncPendingCount} change${syncPendingCount === 1 ? '' : 's'} pending`
+                        : 'Cloud data is up to date'}
+                </Body>
+                {syncLastCompletedAt ? (
+                  <Muted>Last synced {new Date(syncLastCompletedAt).toLocaleString()}</Muted>
+                ) : null}
+                {syncError ? <Muted style={styles.error}>{syncError}</Muted> : null}
+              </View>
+            </View>
+            <AppButton
+              disabled={syncStatus === 'syncing'}
+              icon={<AppIcon color={authColors.primary} name="sync" size={19} />}
+              title={syncStatus === 'syncing' ? 'Syncing...' : 'Sync now'}
+              variant="secondary"
+              onPress={syncNow}
+            />
             <AppButton
               icon={<AppIcon color={authColors.primary} name="logout" size={19} />}
               title="Sign out"
@@ -108,7 +142,7 @@ export function SettingsScreen() {
       <AppInput label="Phone number (optional)" keyboardType="phone-pad" value={phone} onChangeText={setPhone} />
       <AppInput label="Currency" editable={false} value="INR" />
       <AppButton title="Save settings" onPress={save} />
-      <Muted>Rent records remain available offline on this device.</Muted>
+      <Muted>Rent records remain available offline and sync to Firebase when your cloud account is connected.</Muted>
     </Screen>
   );
 }
@@ -132,4 +166,6 @@ const styles = StyleSheet.create({
   cloudTitle: { fontWeight: '700' },
   error: { color: colors.danger, fontSize: 13 },
   loading: { alignItems: 'center', flexDirection: 'row', gap: 10, minHeight: 48 },
+  syncLabel: { fontSize: 14, fontWeight: '600' },
+  syncRow: { alignItems: 'center', flexDirection: 'row', gap: 10 },
 });

@@ -85,7 +85,7 @@ export function LandlordSetupScreen({ navigation }: any) {
 
       <View style={styles.privacyRow}>
         <AppIcon color={authColors.muted} name="lock-outline" size={15} />
-        <Body style={styles.privacy}>Stored privately on this device only</Body>
+        <Body style={styles.privacy}>Available offline and synced privately to your cloud account</Body>
       </View>
 
       <AppButton

@@ -1,6 +1,6 @@
 # KirayaBahi
 
-KirayaBahi is an offline-first React Native rent manager for landlords to manage properties, units, tenants, monthly rent, payments, WhatsApp reminders, and PDF receipts. Firebase sign-in establishes cloud ownership while SQLite keeps rent records available offline.
+KirayaBahi is an offline-first React Native rent manager for landlords to manage properties, units, tenants, monthly rent, payments, WhatsApp reminders, and PDF receipts. SQLite keeps records available offline while authenticated accounts back up and restore their data through Cloud Firestore.
 
 ## Run on Android
 
@@ -53,4 +53,6 @@ npm test -- --runInBand
 - `src/components`: shared UI controls
 
 `patch-package` replaces the obsolete `jcenter()` declaration in `react-native-sqlite-storage` with `mavenCentral()` after each install so current Android Gradle versions can build the dependency.
+
+Firebase console and security-rule setup is documented in [`docs/firebase-setup.md`](docs/firebase-setup.md).
 # rent
