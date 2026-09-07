@@ -14,12 +14,13 @@ import { unitRepo } from '../../database/repositories/unitRepo';
 import { rentCycleService } from '../../services/rentCycleService';
 import { useAppStore } from '../../store/appStore';
 import { colors, radius } from '../../theme';
+import { isValidDate, todayDate } from '../../utils/dates';
 import { formatCurrency } from '../../utils/currency';
 
 const schema = z.object({
   dueDay: z.coerce.number().int().min(1).max(31),
   monthlyRent: z.coerce.number().positive(),
-  moveInDate: z.string().min(10),
+  moveInDate: z.string().refine(isValidDate, 'Enter a valid move-in date (YYYY-MM-DD)'),
   name: z.string().trim().min(1, 'Tenant name is required'),
   notes: z.string(),
   phone: z.string().trim().min(7, 'Enter a valid phone number'),
@@ -36,14 +37,15 @@ export function AddEditTenantScreen({ navigation, route }: any) {
   const refreshAll = useAppStore(state => state.refreshAll);
   const [isRefreshingUnits, setIsRefreshingUnits] = useState(units.length === 0);
   const { control, handleSubmit, reset, setValue, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
-    defaultValues: { dueDay: '5', monthlyRent: '', moveInDate: new Date().toISOString().slice(0, 10), name: '', notes: '', phone: '', securityDeposit: '0', unitId: initialUnitId ?? '' },
+    defaultValues: { dueDay: '5', monthlyRent: '', moveInDate: todayDate(), name: '', notes: '', phone: '', securityDeposit: '0', unitId: initialUnitId ?? '' },
   });
   const unitId = watch('unitId');
+  const [originalUnitId, setOriginalUnitId] = useState<string>();
   // Show: (a) vacant units OR (b) the tenant's own current unit (even if marked occupied)
   // This prevents showing units occupied by OTHER tenants
   const availableUnits = useMemo(
-    () => units.filter(unit => unit.status === 'vacant' || unit.id === unitId),
-    [unitId, units],
+    () => units.filter(unit => unit.status === 'vacant' || unit.id === originalUnitId),
+    [originalUnitId, units],
   );
 
   useFocusEffect(useCallback(() => {
@@ -58,7 +60,10 @@ export function AddEditTenantScreen({ navigation, route }: any) {
     if (!tenantId) return;
     let isActive = true;
     tenantRepo.find(tenantId).then(tenant => {
-      if (isActive && tenant) reset({ dueDay: String(tenant.due_day), monthlyRent: String(tenant.monthly_rent), moveInDate: tenant.move_in_date.slice(0, 10), name: tenant.name, notes: tenant.notes ?? '', phone: tenant.phone, securityDeposit: String(tenant.security_deposit), unitId: tenant.unit_id });
+      if (isActive && tenant) {
+        setOriginalUnitId(tenant.unit_id);
+        reset({ dueDay: String(tenant.due_day), monthlyRent: String(tenant.monthly_rent), moveInDate: tenant.move_in_date.slice(0, 10), name: tenant.name, notes: tenant.notes ?? '', phone: tenant.phone, securityDeposit: String(tenant.security_deposit), unitId: tenant.unit_id });
+      }
     });
     return () => { isActive = false; };
   }, [reset, tenantId]);

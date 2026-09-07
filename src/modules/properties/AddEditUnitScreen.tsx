@@ -33,9 +33,13 @@ export function AddEditUnitScreen({ navigation, route }: any) {
   const save = handleSubmit(async values => {
     const parsed = schema.safeParse(values);
     if (!parsed.success) return Alert.alert('Check the form', parsed.error.issues[0]?.message ?? 'Invalid values');
-    await unitRepo.save({ id: unitId, monthly_rent: parsed.data.monthlyRent, name: parsed.data.name, property_id: propertyId, status: parsed.data.status });
-    await refreshAll();
-    navigation.goBack();
+    try {
+      await unitRepo.save({ id: unitId, monthly_rent: parsed.data.monthlyRent, name: parsed.data.name, property_id: propertyId, status: parsed.data.status });
+      await refreshAll();
+      navigation.goBack();
+    } catch (error) {
+      Alert.alert('Could not save unit', error instanceof Error ? error.message : 'Please try again.');
+    }
   });
 
   return (

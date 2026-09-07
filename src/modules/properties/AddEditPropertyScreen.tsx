@@ -35,7 +35,7 @@ export function AddEditPropertyScreen({ navigation, route }: any) {
 
   const save = handleSubmit(async values => {
     const parsed = schema.safeParse(values);
-    if (!parsed.success) return;
+    if (!parsed.success) return Alert.alert('Check the form', parsed.error.issues[0]?.message ?? 'Invalid values');
     try {
       const id = await propertyRepo.save({ ...parsed.data, id: propertyId });
       await refreshAll();

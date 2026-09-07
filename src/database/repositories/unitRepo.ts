@@ -29,6 +29,12 @@ export const unitRepo = {
     monthly_rent: number;
     status: UnitStatus;
   }) {
+    if (input.id && input.status === 'vacant') {
+      const occupants = await executeSql<{ id: string }>(
+        "SELECT id FROM tenants WHERE unit_id = ? AND status = 'active' LIMIT 1", [input.id],
+      );
+      if (occupants.length) throw new Error('Move out the active tenant before marking this unit vacant.');
+    }
     const timestamp = nowIso();
     const id = input.id ?? createId('unit');
     if (input.id && await this.find(input.id)) {

@@ -7,7 +7,7 @@ import { tenantRepo } from '../database/repositories/tenantRepo';
 import { unitRepo } from '../database/repositories/unitRepo';
 import { rentCycleService } from '../services/rentCycleService';
 import { DashboardSummary, LedgerItem, Property, Tenant, Unit } from '../types/models';
-import { currentMonthYear } from '../utils/dates';
+import { currentMonthYear, isPastDue } from '../utils/dates';
 
 type AppState = {
   settings: Record<string, string>;
@@ -16,6 +16,7 @@ type AppState = {
   units: Array<Unit & { property_name?: string }>;
   tenants: Array<Tenant & { unit_name?: string; property_name?: string; current_status?: string }>;
   ledger: LedgerItem[];
+  dashboardLedger: LedgerItem[];
   summary: DashboardSummary;
   bootstrap: () => Promise<boolean>;
   resetSession: () => void;
@@ -36,6 +37,7 @@ let ledgerRequestId = 0;
 
 export const useAppStore = create<AppState>((set, get) => ({
   ledger: [],
+  dashboardLedger: [],
   onboardingDone: false,
   properties: [],
   settings: {},
@@ -57,6 +59,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     ledgerRequestId += 1;
     set({
       ledger: [],
+      dashboardLedger: [],
       onboardingDone: false,
       properties: [],
       settings: {},
@@ -69,15 +72,25 @@ export const useAppStore = create<AppState>((set, get) => ({
   async refreshAll() {
     const generation = sessionGeneration;
     const requestId = ++allRequestId;
-    const [properties, units, tenants] = await Promise.all([
+    const { month, year } = currentMonthYear();
+    await rentCycleService.ensureCyclesForMonth(month, year);
+    if (generation !== sessionGeneration || requestId !== allRequestId) return false;
+    const [properties, units, tenants, dashboardLedger] = await Promise.all([
       propertyRepo.listWithCounts(),
       unitRepo.allWithProperty(),
       tenantRepo.list(),
+      rentRepo.ledger(month, year),
     ]);
     if (generation !== sessionGeneration || requestId !== allRequestId) return false;
-    set({ properties, tenants, units });
-    const { month, year } = currentMonthYear();
-    return get().refreshLedger(month, year);
+    const summary = dashboardLedger.reduce<DashboardSummary>((acc, item) => {
+      acc.expectedRent += item.rent_amount;
+      acc.collectedRent += item.total_paid;
+      acc.pendingRent += Math.max(item.balance, 0);
+      if (item.balance > 0 && isPastDue(item.due_date)) acc.overdueCount += 1;
+      return acc;
+    }, { ...emptySummary });
+    set({ properties, tenants, units, dashboardLedger, summary });
+    return true;
   },
 
   async refreshLedger(month, year, status = 'all', propertyId) {
@@ -87,17 +100,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     await rentCycleService.ensureCyclesForMonth(selected.month, selected.year);
     const ledger = await rentRepo.ledger(selected.month, selected.year, status, propertyId);
     if (generation !== sessionGeneration || requestId !== ledgerRequestId) return false;
-    const summary = ledger.reduce<DashboardSummary>((acc, item) => {
-      acc.expectedRent += item.rent_amount;
-      acc.collectedRent += item.total_paid;
-      acc.pendingRent += Math.max(item.balance, 0);
-      if (item.status === 'overdue') {
-        acc.overdueCount += 1;
-      }
-      return acc;
-    }, { ...emptySummary });
-
-    set({ ledger, summary });
+    set({ ledger });
     return true;
   },
 }));

@@ -16,8 +16,8 @@ export const tenantRepo = {
       JOIN units u ON u.id = t.unit_id
       JOIN properties p ON p.id = u.property_id
       LEFT JOIN rent_cycles rc ON rc.tenant_id = t.id
-        AND rc.month = CAST(strftime('%m', 'now') AS INTEGER)
-        AND rc.year = CAST(strftime('%Y', 'now') AS INTEGER)
+        AND rc.month = CAST(strftime('%m', 'now', 'localtime') AS INTEGER)
+        AND rc.year = CAST(strftime('%Y', 'now', 'localtime') AS INTEGER)
       WHERE (t.name LIKE ? OR t.phone LIKE ?) ${statusFilter}
       ORDER BY t.created_at DESC
     `,
@@ -64,6 +64,19 @@ export const tenantRepo = {
   }) {
     const timestamp = nowIso();
     const id = input.id ?? createId('tenant');
+    const previous = input.id ? await this.find(input.id) : null;
+    if (input.id && !previous) throw new Error('Tenant no longer exists. Reopen the tenant list.');
+    const unit = await unitRepo.find(input.unit_id);
+    if (!unit) throw new Error('Selected unit no longer exists');
+    if (!previous || previous.status === 'active') {
+      const occupants = await executeSql<Tenant>(
+        "SELECT * FROM tenants WHERE unit_id = ? AND status = 'active' AND id <> ?",
+        [input.unit_id, id],
+      );
+      if (occupants.length > 0 || (unit.status === 'occupied' && previous?.unit_id !== input.unit_id)) {
+        throw new Error('This unit is already occupied. Select a vacant unit.');
+      }
+    }
     let shouldOccupyUnit = true;
     const values = [
       input.unit_id,
@@ -76,11 +89,11 @@ export const tenantRepo = {
       input.notes ?? null,
     ];
     if (input.id) {
-      const existing = await this.find(input.id);
+      const existing = previous;
       if (existing) {
         shouldOccupyUnit = existing.status === 'active';
         // Release old unit if tenant is moving to a different unit
-        if (existing.unit_id !== input.unit_id) {
+        if (existing.status === 'active' && existing.unit_id !== input.unit_id) {
           await unitRepo.markVacant(existing.unit_id);
         }
         await executeWrite(
@@ -115,7 +128,7 @@ export const tenantRepo = {
 
   async deactivate(tenantId: string) {
     const tenant = await this.find(tenantId);
-    if (!tenant) return;
+    if (!tenant || tenant.status !== 'active') return;
     const timestamp = nowIso();
     await executeWrite(
       `UPDATE tenants

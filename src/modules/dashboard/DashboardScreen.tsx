@@ -19,7 +19,7 @@ import { colors, fontFamily, radius } from '../../theme';
 export function DashboardScreen({ navigation }: any) {
   const { month, year } = currentMonthYear();
   const summary = useAppStore(state => state.summary);
-  const ledger = useAppStore(state => state.ledger);
+  const ledger = useAppStore(state => state.dashboardLedger);
   const refreshAll = useAppStore(state => state.refreshAll);
   const settings = useAppStore(state => state.settings);
 
@@ -27,8 +27,9 @@ export function DashboardScreen({ navigation }: any) {
     refreshAll().catch(() => undefined);
   }, [refreshAll]));
 
-  const due = ledger.filter(item => item.status !== 'paid').slice(0, 5);
-  const paid = ledger.filter(item => item.status === 'paid').slice(0, 5);
+  const pending = ledger.filter(item => item.balance > 0);
+  const due = pending.slice(0, 5);
+  const paid = ledger.filter(item => item.status === 'paid').sort((a, b) => b.updated_at.localeCompare(a.updated_at)).slice(0, 5);
 
   return (
     <Screen>
@@ -85,7 +86,7 @@ export function DashboardScreen({ navigation }: any) {
       </View>
 
       {/* ── Due this month ── */}
-      <SectionHeader detail={`${due.length} pending`} title="Due this month" />
+      <SectionHeader detail={`${pending.length} pending`} title="Due this month" />
       {due.length === 0
         ? <EmptyState message="No pending rent for this month." />
         : due.map(item => (

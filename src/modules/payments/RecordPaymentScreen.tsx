@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { z } from 'zod';
@@ -8,6 +8,7 @@ import { AppChip } from '../../components/AppChip';
 import { AppIcon } from '../../components/AppIcon';
 import { AppInput } from '../../components/AppInput';
 import { Card } from '../../components/Card';
+import { MonthSelector } from '../../components/MonthSelector';
 import { Screen } from '../../components/Screen';
 import { Body, Muted, Title } from '../../components/Typography';
 import { rentRepo } from '../../database/repositories/rentRepo';
@@ -17,7 +18,7 @@ import { useAppStore } from '../../store/appStore';
 import { colors, radius } from '../../theme';
 import { PaymentMode, RentCycle, Tenant } from '../../types/models';
 import { formatCurrency } from '../../utils/currency';
-import { currentMonthYear, monthLabel } from '../../utils/dates';
+import { currentMonthYear, monthLabel, todayDate, isValidDate } from '../../utils/dates';
 
 const modes: PaymentMode[] = ['cash', 'upi', 'bank_transfer', 'cheque', 'other'];
 const paymentSchema = z.coerce.number().positive('Amount must be greater than zero');
@@ -32,64 +33,83 @@ export function RecordPaymentScreen({ navigation, route }: any) {
   const [month, setMonth] = useState(current.month);
   const [year, setYear] = useState(current.year);
   const [amount, setAmount] = useState('');
-  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().slice(0, 10));
+  const [paymentDate, setPaymentDate] = useState(todayDate());
   const [mode, setMode] = useState<PaymentMode>('cash');
   const [referenceNo, setReferenceNo] = useState('');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
+  const [selectionReady, setSelectionReady] = useState(!route.params?.cycleId);
+  const [loadingCycle, setLoadingCycle] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const [cycleError, setCycleError] = useState('');
   const [savedCycleId, setSavedCycleId] = useState<string | null>(null);
 
   // Refresh after returning from the tenant form so newly created tenants appear immediately.
   useFocusEffect(useCallback(() => {
     let isActive = true;
     setLoadingTenants(true);
-    tenantRepo.active()
+    tenantRepo.list('', Boolean(route.params?.cycleId))
       .then(tenants => { if (isActive) setActiveTenants(tenants); })
       .catch(() => { if (isActive) setActiveTenants([]); })
       .finally(() => { if (isActive) setLoadingTenants(false); });
     return () => { isActive = false; };
-  }, []));
+  }, [route.params?.cycleId]));
 
   useEffect(() => {
     const cycleId = route.params?.cycleId as string | undefined;
     if (!cycleId) return;
     let isActive = true;
     rentRepo.findLedgerItem(cycleId).then(item => {
-      if (!isActive || !item) return;
-      setCycle(item); setTenantId(item.tenant_id); setMonth(item.month); setYear(item.year); setAmount(String(Math.max(item.balance, 0)));
-    });
+      if (!isActive) return;
+      if (!item) throw new Error('Rent cycle not found');
+      setTenantId(item.tenant_id); setMonth(item.month); setYear(item.year);
+      setSelectionReady(true);
+    }).catch(error => { if (isActive) setCycleError(error instanceof Error ? error.message : 'Could not load rent cycle'); });
     return () => { isActive = false; };
   }, [route.params?.cycleId]);
 
   useEffect(() => {
-    if (!tenantId || route.params?.cycleId) return;
+    if (!tenantId || !selectionReady) return;
+    setCycle(null);
+    setAmount('');
+    setCycleError('');
+    setLoadingCycle(true);
     let isActive = true;
     rentCycleService.ensureCycleForTenant(tenantId, month, year).then(next => {
       if (!isActive) return;
-      setCycle(next); if (next) setAmount(String(Math.max(next.balance, 0)));
+      setCycle(next);
+      if (next) setAmount(String(Math.max(next.balance, 0)));
+      else setCycleError('No rent cycle is available for this month.');
     }).catch(() => {
-      if (isActive) setCycle(null);
-    });
+      if (isActive) setCycleError('Could not load the rent balance. Please retry.');
+    }).finally(() => { if (isActive) setLoadingCycle(false); });
     return () => { isActive = false; };
-  }, [month, route.params?.cycleId, tenantId, year]);
+  }, [month, retryCount, selectionReady, tenantId, year]);
 
   const changeMonth = (delta: number) => {
+    if (savingRef.current || !selectionReady) return;
+    setAmount('');
     const next = new Date(year, month - 1 + delta, 1); setMonth(next.getMonth() + 1); setYear(next.getFullYear()); setCycle(null);
   };
 
   const save = async () => {
+    if (savingRef.current) return;
     const parsedAmount = paymentSchema.safeParse(amount);
     if (!tenantId) return Alert.alert('Select a tenant');
     if (!parsedAmount.success) return Alert.alert('Check amount', parsedAmount.error.issues[0]?.message);
+    if (!isValidDate(paymentDate)) return Alert.alert('Check date', 'Enter a valid payment date (YYYY-MM-DD)');
+    if (!cycle || loadingCycle) return Alert.alert('Wait for the rent balance to load');
+    savingRef.current = true;
     setSaving(true);
     try {
       // paymentDate stored as plain YYYY-MM-DD (no UTC conversion) consistent with dates.ts fix
       const updated = await rentCycleService.recordPayment({ amount: parsedAmount.data, month, notes, paymentDate, paymentMode: mode, referenceNo, tenantId, year });
-      await refreshAll();
       if (updated) { setCycle(updated); setSavedCycleId(updated.id); }
+      refreshAll().catch(() => undefined);
     } catch (error) {
       Alert.alert('Could not record payment', error instanceof Error ? error.message : 'Please try again.');
-    } finally { setSaving(false); }
+    } finally { savingRef.current = false; setSaving(false); }
   };
 
   if (savedCycleId) return (
@@ -97,7 +117,7 @@ export function RecordPaymentScreen({ navigation, route }: any) {
       <Title>Payment saved</Title>
       <Card><Body>{formatCurrency(Number(amount))} recorded</Body><Muted>{monthLabel(month, year)} | {mode.replace('_', ' ')}</Muted></Card>
       <AppButton title="Generate / share receipt" onPress={() => navigation.navigate('ReceiptPreview', { amountPaid: Number(amount), cycleId: savedCycleId, notes, paymentDate, paymentMode: mode, referenceNo })} />
-      <AppButton title="Back to dashboard" variant="secondary" onPress={() => navigation.navigate('MainTabs')} />
+      <AppButton title="Back to dashboard" variant="secondary" onPress={() => navigation.navigate('MainTabs', { screen: 'Dashboard' })} />
     </Screen>
   );
 
@@ -119,7 +139,7 @@ export function RecordPaymentScreen({ navigation, route }: any) {
                 accessibilityRole="radio"
                 accessibilityState={{ selected }}
                 key={tenant.id}
-                onPress={() => { setTenantId(tenant.id); setCycle(null); }}
+                onPress={() => { if (savingRef.current || !selectionReady || tenantId === tenant.id) return; setTenantId(tenant.id); setCycle(null); setAmount(''); }}
                 style={({ pressed }) => [styles.tenantOption, selected && styles.tenantOptionSelected, pressed && styles.optionPressed]}>
                 <View style={[styles.tenantIcon, selected && styles.tenantIconSelected]}>
                   <AppIcon color={selected ? colors.surface : colors.primary} name="account-outline" size={21} />
@@ -149,19 +169,17 @@ export function RecordPaymentScreen({ navigation, route }: any) {
           <AppButton title="Add tenant" variant="secondary" onPress={() => navigation.navigate('AddTenant')} />
         </View>
       )}
-      <View style={styles.monthRow}>
-        <AppButton style={styles.monthButton} title="Previous" variant="secondary" onPress={() => changeMonth(-1)} />
-        <Body style={styles.month}>{monthLabel(month, year)}</Body>
-        <AppButton style={styles.monthButton} title="Next" variant="secondary" onPress={() => changeMonth(1)} />
-      </View>
+      <MonthSelector month={month} year={year} onChange={changeMonth} disabled={saving || !selectionReady} />
+      {loadingCycle ? <Muted>Loading rent balance...</Muted> : null}
+      {cycleError ? <View><Muted>{cycleError}</Muted><AppButton title="Retry" variant="secondary" onPress={() => { if (selectionReady) setRetryCount(count => count + 1); else navigation.replace('RecordPayment', route.params); }} /></View> : null}
       {cycle ? <Muted>Rent {formatCurrency(cycle.rent_amount)} | Current balance {formatCurrency(cycle.balance)}</Muted> : null}
-      <AppInput label="Amount received" keyboardType="numeric" value={amount} onChangeText={setAmount} />
-      <AppInput label="Payment date (YYYY-MM-DD)" value={paymentDate} onChangeText={setPaymentDate} />
+      <AppInput editable={!saving} label="Amount received" keyboardType="numeric" value={amount} onChangeText={setAmount} />
+      <AppInput editable={!saving} label="Payment date (YYYY-MM-DD)" value={paymentDate} onChangeText={setPaymentDate} />
       <Body style={styles.label}>Payment mode</Body>
-      <View style={styles.options}>{modes.map(item => <AppChip key={item} label={item.replace('_', ' ')} selected={mode === item} onPress={() => setMode(item)} />)}</View>
-      <AppInput label="Reference number (optional)" value={referenceNo} onChangeText={setReferenceNo} />
-      <AppInput label="Notes (optional)" value={notes} onChangeText={setNotes} multiline />
-      <AppButton disabled={saving} title={saving ? 'Saving...' : 'Save payment'} onPress={save} />
+      <View style={styles.options}>{modes.map(item => <AppChip key={item} label={item.replace('_', ' ')} selected={mode === item} onPress={() => { if (!savingRef.current) setMode(item); }} />)}</View>
+      <AppInput editable={!saving} label="Reference number (optional)" value={referenceNo} onChangeText={setReferenceNo} />
+      <AppInput editable={!saving} label="Notes (optional)" value={notes} onChangeText={setNotes} multiline />
+      <AppButton disabled={saving || loadingCycle || !cycle || !selectionReady} title={saving ? 'Saving...' : 'Save payment'} onPress={save} />
     </Screen>
   );
 }
@@ -198,9 +216,6 @@ const styles = StyleSheet.create({
     gap: 10,
     padding: 16,
   },
-  month: { flex: 1, fontWeight: '700', textAlign: 'center' },
-  monthButton: { minWidth: 88 },
-  monthRow: { alignItems: 'center', flexDirection: 'row', gap: 8 },
   optionPressed: { opacity: 0.75 },
   options: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   tenantIcon: {

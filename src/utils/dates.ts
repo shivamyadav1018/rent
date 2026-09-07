@@ -1,4 +1,4 @@
-import { format, isBefore, parseISO, startOfDay } from 'date-fns';
+import { format, isBefore, isValid, parseISO, startOfDay } from 'date-fns';
 
 export const nowIso = () => new Date().toISOString();
 
@@ -32,4 +32,12 @@ export const isPastDue = (isoDate: string): boolean => {
 };
 
 export const displayDate = (isoDate?: string | null) =>
-  isoDate ? format(parseISO(isoDate.slice(0, 10)), 'dd MMM yyyy') : '-';
+  isoDate && isValidDate(isoDate.slice(0, 10)) ? format(parseISO(isoDate.slice(0, 10)), 'dd MMM yyyy') : '-';
+
+export const todayDate = () => format(new Date(), 'yyyy-MM-dd');
+
+export const isValidDate = (value: string): boolean => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = parseISO(value);
+  return isValid(parsed) && format(parsed, 'yyyy-MM-dd') === value;
+};

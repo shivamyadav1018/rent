@@ -20,12 +20,16 @@ type HistoryPayment = Payment & { month: number; year: number };
 
 export function TenantDetailScreen({ navigation, route }: any) {
   const tenantId = route.params.tenantId as string;
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [tenant, setTenant] = useState<TenantDetail | null>(null);
   const [cycle, setCycle] = useState<RentCycle | null>(null);
   const [payments, setPayments] = useState<HistoryPayment[]>([]);
 
   useFocusEffect(useCallback(() => {
     let isActive = true;
+    setLoading(true);
+    setError('');
     const load = async () => {
       try {
         const nextTenant = await tenantRepo.find(tenantId);
@@ -45,18 +49,22 @@ export function TenantDetailScreen({ navigation, route }: any) {
         if (!isActive) return;
         setCycle(null);
         setPayments([]);
+        setError('Could not load tenant details. Reopen this tenant to retry.');
+      } finally {
+        if (isActive) setLoading(false);
       }
     };
     load();
     return () => { isActive = false; };
   }, [tenantId]));
 
-  if (!tenant) return <Screen><Muted>Loading tenant...</Muted></Screen>;
+  if (loading) return <Screen><Muted>Loading tenant...</Muted></Screen>;
+  if (error || !tenant) return <Screen><Muted>{error || 'Tenant not found.'}</Muted><AppButton title="Go back" onPress={() => navigation.goBack()} /></Screen>;
   return (
     <Screen>
       <Title>{tenant.name}</Title>
       <Muted>{tenant.property_name} / {tenant.unit_name}</Muted>
-      {tenant.status === 'inactive' ? <StatusBadge status="vacant" /> : null}
+      {tenant.status === 'inactive' ? <Muted>Moved out</Muted> : null}
       <Card>
         <Body>{tenant.phone}</Body>
         <Body>{formatCurrency(tenant.monthly_rent)} monthly, due day {tenant.due_day}</Body>
@@ -67,7 +75,7 @@ export function TenantDetailScreen({ navigation, route }: any) {
         {tenant.status === 'active' ? (
           <AppButton title="Record payment" onPress={() => navigation.navigate('RecordPayment', { tenantId, cycleId: cycle?.id })} />
         ) : null}
-        {tenant.status === 'active' && cycle ? (
+        {tenant.status === 'active' && cycle && cycle.balance > 0 ? (
           <AppButton title="Send reminder" variant="secondary" onPress={() => navigation.navigate('ReminderPreview', { cycleId: cycle.id })} />
         ) : null}
         <AppButton title="Edit tenant" variant="secondary" onPress={() => navigation.navigate('AddTenant', { tenantId })} />
@@ -85,8 +93,12 @@ export function TenantDetailScreen({ navigation, route }: any) {
                     text: 'Move out',
                     style: 'destructive',
                     onPress: async () => {
-                      await tenantRepo.deactivate(tenantId);
-                      navigation.goBack();
+                      try {
+                        await tenantRepo.deactivate(tenantId);
+                        navigation.goBack();
+                      } catch {
+                        Alert.alert('Could not move out tenant', 'Please try again.');
+                      }
                     },
                   },
                 ],

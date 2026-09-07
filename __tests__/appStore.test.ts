@@ -46,7 +46,7 @@ describe('app session data', () => {
 
   test('does not restore an in-flight refresh after the session is reset', async () => {
     const properties = deferred<Array<{ id: string }>>();
-    mockListProperties.mockReturnValueOnce(properties.promise);
+    mockEnsureCycles.mockReturnValueOnce(properties.promise);
 
     const refresh = useAppStore.getState().refreshAll();
     useAppStore.getState().resetSession();
@@ -71,4 +71,23 @@ describe('app session data', () => {
     await expect(olderRefresh).resolves.toBe(false);
     expect(useAppStore.getState().ledger).toEqual([{ id: 'newer-ledger' }]);
   });
+});
+
+
+test('filtered ledger refresh never changes the dashboard totals or its current-month rows', async () => {
+  useAppStore.getState().resetSession();
+  mockListProperties.mockResolvedValue([]);
+  mockListUnits.mockResolvedValue([]);
+  mockListTenants.mockResolvedValue([]);
+  mockEnsureCycles.mockResolvedValue(undefined);
+  const current = { id: 'current', rent_amount: 1000, total_paid: 200, balance: 800, status: 'partial', due_date: '2020-01-01' };
+  mockLedger.mockResolvedValueOnce([current]);
+  await useAppStore.getState().refreshAll();
+  const summary = useAppStore.getState().summary;
+  expect(summary.overdueCount).toBe(1);
+  mockLedger.mockResolvedValueOnce([]);
+  await useAppStore.getState().refreshLedger(1, 2020, 'paid');
+  expect(useAppStore.getState().ledger).toEqual([]);
+  expect(useAppStore.getState().dashboardLedger).toEqual([current]);
+  expect(useAppStore.getState().summary).toEqual(summary);
 });

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 import { AppIcon } from '../components/AppIcon';
@@ -43,8 +44,12 @@ const screenOptions = ({ route }: any) => {
 };
 
 export function MainTabs() {
+  const insets = useSafeAreaInsets();
   return (
-    <Tab.Navigator screenOptions={screenOptions}>
+    <Tab.Navigator screenOptions={props => {
+      const options = screenOptions(props);
+      return { ...options, tabBarStyle: { ...options.tabBarStyle, height: 60 + Math.max(insets.bottom, 8), paddingBottom: Math.max(insets.bottom, 8) } };
+    }}>
       <Tab.Screen name="Dashboard" component={DashboardScreen} />
       <Tab.Screen name="Tenants" component={TenantsScreen} />
       <Tab.Screen name="Ledger" component={MonthlyLedgerScreen} />
