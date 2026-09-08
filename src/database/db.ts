@@ -5,6 +5,8 @@ import { runMigrations } from './migrations';
 SQLite.enablePromise(true);
 
 let database: any;
+let opening: Promise<any> | null = null;
+let initializing: Promise<void> | null = null;
 let writeListener: (() => void) | null = null;
 
 export const setDatabaseWriteListener = (listener: (() => void) | null) => {
@@ -13,14 +15,21 @@ export const setDatabaseWriteListener = (listener: (() => void) | null) => {
 
 export const getDb = async () => {
   if (!database) {
-    database = await SQLite.openDatabase({ location: 'default', name: 'rent_khata.db' });
+    if (!opening) {
+      opening = SQLite.openDatabase({ location: 'default', name: 'rent_khata.db' })
+        .then((db: any) => { database = db; return db; })
+        .finally(() => { opening = null; });
+    }
+    return opening;
   }
   return database;
 };
 
-export const initializeDatabase = async () => {
-  const db = await getDb();
-  await runMigrations(db);
+export const initializeDatabase = () => {
+  if (!initializing) {
+    initializing = getDb().then(runMigrations).finally(() => { initializing = null; });
+  }
+  return initializing;
 };
 
 export const executeSql = async <T = any>(sql: string, params: any[] = []): Promise<T[]> => {

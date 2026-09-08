@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+import { ResourceState } from '../../components/ResourceState';
+import React, { useEffect, useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -18,29 +19,39 @@ type FormData = { name: string; monthlyRent: string; status: UnitStatus };
 export function AddEditUnitScreen({ navigation, route }: any) {
   const { propertyId, unitId } = route.params as { propertyId: string; unitId?: string };
   const refreshAll = useAppStore(state => state.refreshAll);
+  const [loadingRecord, setLoadingRecord] = useState(Boolean(unitId));
+  const [loadError, setLoadError] = useState('');
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const { control, handleSubmit, reset, setValue, watch, formState: { errors, isSubmitting } } = useForm<FormData>({ defaultValues: { monthlyRent: '', name: '', status: 'vacant' } });
   const status = watch('status');
 
   useEffect(() => {
     if (!unitId) return;
     let isActive = true;
+    setLoadingRecord(true);
+    setLoadError('');
     unitRepo.find(unitId).then(unit => {
+      if (!isActive) return;
+      if (!unit) throw new Error('Unit not found.');
       if (isActive && unit) reset({ monthlyRent: String(unit.monthly_rent), name: unit.name, status: unit.status });
-    });
+    }).catch(() => { if (isActive) setLoadError('Could not load unit. Please retry or return to the list.'); })
+      .finally(() => { if (isActive) setLoadingRecord(false); });
     return () => { isActive = false; };
-  }, [reset, unitId]);
+  }, [reset, unitId, loadAttempt]);
 
   const save = handleSubmit(async values => {
     const parsed = schema.safeParse(values);
     if (!parsed.success) return Alert.alert('Check the form', parsed.error.issues[0]?.message ?? 'Invalid values');
     try {
       await unitRepo.save({ id: unitId, monthly_rent: parsed.data.monthlyRent, name: parsed.data.name, property_id: propertyId, status: parsed.data.status });
-      await refreshAll();
+      await refreshAll().catch(() => undefined);
       navigation.goBack();
     } catch (error) {
       Alert.alert('Could not save unit', error instanceof Error ? error.message : 'Please try again.');
     }
   });
+
+  if (loadingRecord || loadError) return <ResourceState loading={loadingRecord} error={loadError} label="unit" retry={() => setLoadAttempt(value => value + 1)} />;
 
   return (
     <Screen>

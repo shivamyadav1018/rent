@@ -16,9 +16,11 @@ export const tenantRepo = {
       JOIN units u ON u.id = t.unit_id
       JOIN properties p ON p.id = u.property_id
       LEFT JOIN rent_cycles rc ON rc.tenant_id = t.id
+        AND rc.deleted_at IS NULL
         AND rc.month = CAST(strftime('%m', 'now', 'localtime') AS INTEGER)
         AND rc.year = CAST(strftime('%Y', 'now', 'localtime') AS INTEGER)
       WHERE (t.name LIKE ? OR t.phone LIKE ?) ${statusFilter}
+        AND t.deleted_at IS NULL AND u.deleted_at IS NULL AND p.deleted_at IS NULL
       ORDER BY t.created_at DESC
     `,
       [term, term],
@@ -31,7 +33,7 @@ export const tenantRepo = {
        FROM tenants t
        JOIN units u ON u.id = t.unit_id
        JOIN properties p ON p.id = u.property_id
-       WHERE t.status = ?
+       WHERE t.status = ? AND t.deleted_at IS NULL AND u.deleted_at IS NULL AND p.deleted_at IS NULL
        ORDER BY t.name ASC`,
       ['active'],
     );
@@ -44,7 +46,7 @@ export const tenantRepo = {
       FROM tenants t
       JOIN units u ON u.id = t.unit_id
       JOIN properties p ON p.id = u.property_id
-      WHERE t.id = ?
+      WHERE t.id = ? AND t.deleted_at IS NULL AND u.deleted_at IS NULL AND p.deleted_at IS NULL
     `,
       [id],
     );
@@ -70,7 +72,7 @@ export const tenantRepo = {
     if (!unit) throw new Error('Selected unit no longer exists');
     if (!previous || previous.status === 'active') {
       const occupants = await executeSql<Tenant>(
-        "SELECT * FROM tenants WHERE unit_id = ? AND status = 'active' AND id <> ?",
+        "SELECT * FROM tenants WHERE unit_id = ? AND status = 'active' AND deleted_at IS NULL AND id <> ?",
         [input.unit_id, id],
       );
       if (occupants.length > 0 || (unit.status === 'occupied' && previous?.unit_id !== input.unit_id)) {

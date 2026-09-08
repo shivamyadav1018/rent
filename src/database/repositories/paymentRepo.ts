@@ -41,7 +41,7 @@ export const paymentRepo = {
       SELECT p.*, rc.month, rc.year
       FROM payments p
       JOIN rent_cycles rc ON rc.id = p.rent_cycle_id
-      WHERE p.tenant_id = ?
+      WHERE p.tenant_id = ? AND p.deleted_at IS NULL AND rc.deleted_at IS NULL
       ORDER BY p.payment_date DESC
     `,
       [tenantId],
@@ -50,7 +50,7 @@ export const paymentRepo = {
 
   async latestForCycle(rentCycleId: string) {
     const rows = await executeSql<Payment>(
-      'SELECT * FROM payments WHERE rent_cycle_id = ? ORDER BY created_at DESC LIMIT 1',
+      'SELECT * FROM payments WHERE rent_cycle_id = ? AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1',
       [rentCycleId],
     );
     return rows[0] ?? null;
@@ -58,13 +58,13 @@ export const paymentRepo = {
 
   async totalForCycle(rentCycleId: string) {
     const rows = await executeSql<{ total: number }>(
-      'SELECT COALESCE(SUM(amount), 0) AS total FROM payments WHERE rent_cycle_id = ?',
+      'SELECT COALESCE(SUM(amount), 0) AS total FROM payments WHERE rent_cycle_id = ? AND deleted_at IS NULL',
       [rentCycleId],
     );
     return rows[0]?.total ?? 0;
   },
 
   count() {
-    return executeSql<{ count: number }>('SELECT COUNT(*) AS count FROM payments');
+    return executeSql<{ count: number }>('SELECT COUNT(*) AS count FROM payments WHERE deleted_at IS NULL');
   },
 };

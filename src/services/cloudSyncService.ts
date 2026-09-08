@@ -1,285 +1,139 @@
-import { AppState, type AppStateStatus } from 'react-native';
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  getFirestore,
-  onSnapshot,
-  serverTimestamp,
-  setDoc,
-} from '@react-native-firebase/firestore';
+import { AppState } from 'react-native';
+import { collection, doc, getFirestore, onSnapshot, serverTimestamp, setDoc } from '@react-native-firebase/firestore';
 
 import { setDatabaseWriteListener } from '../database/db';
-import {
-  syncEntityConfig,
-  syncRepo,
-  type SyncEntityType,
-  type SyncQueueItem,
-} from '../database/repositories/syncRepo';
+import { syncEntityConfig, syncRepo } from '../database/repositories/syncRepo';
+import { entityTypes, pullEntities, pushPending, syncProfile } from './sync/operations';
+import { createSyncSession, type SyncSession } from './sync/session';
 
 export type CloudSyncStatus = 'disabled' | 'idle' | 'syncing' | 'synced' | 'error';
-
 export type CloudSyncState = {
   error: string | null;
   lastSyncedAt: string | null;
   pendingCount: number;
   status: CloudSyncStatus;
 };
-
 type SyncCallbacks = {
-  onDataChanged?: () => void;
+  onDataChanged?: () => void | Promise<void>;
   onState?: (state: CloudSyncState) => void;
 };
-
-const entityTypes = Object.keys(syncEntityConfig) as SyncEntityType[];
-const profileFields = ['currency', 'landlordName', 'landlordPhone', 'onboardingDone'] as const;
-
-let activeOwnerId: string | null = null;
-let callbacks: SyncCallbacks = {};
-let appStateSubscription: { remove: () => void } | null = null;
-let remoteUnsubscribers: Array<() => void> = [];
-let scheduledSync: ReturnType<typeof setTimeout> | null = null;
-let syncPromise: Promise<boolean> | null = null;
-let syncAgain = false;
-
-let state: CloudSyncState = {
-  error: null,
-  lastSyncedAt: null,
-  pendingCount: 0,
-  status: 'disabled',
+type ActiveSync = SyncSession & {
+  callbacks: SyncCallbacks;
+  promise: Promise<boolean> | null;
+  again: boolean;
+  notify: boolean;
+  timer: ReturnType<typeof setTimeout> | null;
+  cleanup: Array<() => void>;
 };
 
-const emit = (updates: Partial<CloudSyncState>) => {
+const emptyState = (): CloudSyncState => ({ error: null, lastSyncedAt: null, pendingCount: 0, status: 'disabled' });
+let state = emptyState();
+let active: ActiveSync | null = null;
+
+const emit = (session: ActiveSync, updates: Partial<CloudSyncState>) => {
+  if (!session.isActive()) return;
   state = { ...state, ...updates };
-  callbacks.onState?.(state);
+  session.callbacks.onState?.(state);
 };
 
-const timestamp = (value: unknown) => typeof value === 'string' ? value : '';
-
-const isRemoteNewer = (remote: Record<string, unknown>, local: Record<string, unknown>) =>
-  timestamp(remote.updated_at) > timestamp(local.updated_at);
-
-const firestoreData = (row: Record<string, unknown>, ownerId: string) =>
-  Object.fromEntries(
-    Object.entries({ ...row, owner_id: ownerId })
-      .filter(([key, value]) => key !== 'sync_status' && value !== undefined),
-  );
-
-const pullEntities = async (ownerId: string) => {
-  const firestore = getFirestore();
-  let changed = false;
-
-  // Parent records are applied first so relational data is complete before the UI refreshes.
-  for (const entityType of entityTypes) {
-    const config = syncEntityConfig[entityType];
-    const snapshot = await getDocs(collection(firestore, 'users', ownerId, config.collection));
-
-    for (const document of snapshot.docs) {
-      const remote = { ...document.data(), id: document.id } as Record<string, unknown>;
-      if (remote.owner_id && remote.owner_id !== ownerId) continue;
-      if (!timestamp(remote.updated_at)) continue;
-
-      const local = await syncRepo.entity(entityType, document.id);
-      if (!local || isRemoteNewer(remote, local)) {
-        await syncRepo.applyRemoteEntity(entityType, remote, ownerId);
-        changed = true;
-      }
-    }
-  }
-
-  return changed;
-};
-
-const pushPending = async (ownerId: string) => {
-  const firestore = getFirestore();
-  const pending = await syncRepo.pending();
-
-  for (const item of pending) {
-    try {
-      const entityType = item.entity_type as SyncEntityType;
-      const config = syncEntityConfig[entityType];
-      const row = await syncRepo.entity(entityType, item.entity_id);
-
-      if (!row) {
-        // A future hard-delete can leave only its queue record. Keep a small
-        // tombstone in Firestore so other devices do not recreate stale data.
-        await setDoc(doc(firestore, 'users', ownerId, config.collection, item.entity_id), {
-          deleted_at: item.updated_at,
-          id: item.entity_id,
-          owner_id: ownerId,
-          updated_at: item.updated_at,
-        });
-      } else {
-        await setDoc(
-          doc(firestore, 'users', ownerId, config.collection, item.entity_id),
-          firestoreData(row, ownerId),
-        );
-      }
-
-      await syncRepo.markSynced(item as SyncQueueItem, ownerId);
-    } catch (error) {
-      await syncRepo.markFailed(item as SyncQueueItem, error);
-      throw error;
-    }
-  }
-};
-
-const syncProfile = async (ownerId: string) => {
-  const firestore = getFirestore();
-  const profileRef = doc(firestore, 'users', ownerId, 'profile', 'settings');
-  const [local, remoteSnapshot] = await Promise.all([syncRepo.profile(), getDoc(profileRef)]);
-  const hasLocalProfile = profileFields.some(key => typeof local[key] === 'string');
-
-  if (remoteSnapshot.exists()) {
-    const remote = remoteSnapshot.data() as Record<string, unknown>;
-    const remoteUpdatedAt = timestamp(remote.updated_at);
-    const localUpdatedAt = timestamp(local.cloudProfileUpdatedAt);
-
-    if (!hasLocalProfile || remoteUpdatedAt >= localUpdatedAt) {
-      await syncRepo.applyRemoteProfile({
-        ...remote,
-        cloudProfileUpdatedAt: remoteUpdatedAt,
-      });
-      return true;
-    }
-  }
-
-  if (hasLocalProfile) {
-    const updatedAt = timestamp(local.cloudProfileUpdatedAt) || new Date().toISOString();
-    const profile = Object.fromEntries(
-      profileFields
-        .filter(key => typeof local[key] === 'string')
-        .map(key => [key, local[key]]),
-    );
-    await setDoc(profileRef, { ...profile, owner_id: ownerId, updated_at: updatedAt });
-    await syncRepo.applyRemoteProfile({ cloudProfileUpdatedAt: updatedAt });
-  }
-
-  return false;
-};
-
-const performSync = async (ownerId: string, notifyDataChanged: boolean) => {
-  emit({ error: null, pendingCount: await syncRepo.pendingCount(), status: 'syncing' });
-
-  try {
-    const entitiesChanged = await pullEntities(ownerId);
-    const profileChanged = await syncProfile(ownerId);
-    const totalsChanged = await syncRepo.reconcileRentCycles();
-    await pushPending(ownerId);
-
-    const syncedAt = new Date().toISOString();
-    await setDoc(
-      doc(getFirestore(), 'users', ownerId),
-      { last_synced_at: serverTimestamp() },
-      { merge: true },
-    );
-    emit({
-      error: null,
-      lastSyncedAt: syncedAt,
-      pendingCount: await syncRepo.pendingCount(),
-      status: 'synced',
-    });
-    if (notifyDataChanged && (entitiesChanged || profileChanged || totalsChanged) && activeOwnerId === ownerId) {
-      callbacks.onDataChanged?.();
-    }
-    return true;
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Cloud sync failed. Local data is safe.';
-    emit({
-      error: message,
-      pendingCount: await syncRepo.pendingCount(),
-      status: 'error',
-    });
-    return false;
-  }
-};
-
-const schedule = () => {
-  if (!activeOwnerId) return;
-  if (scheduledSync) clearTimeout(scheduledSync);
-  scheduledSync = setTimeout(() => {
-    scheduledSync = null;
+const schedule = (session: ActiveSync) => {
+  if (!session.isActive()) return;
+  if (session.timer) clearTimeout(session.timer);
+  session.timer = setTimeout(() => {
+    session.timer = null;
     cloudSyncService.sync();
   }, 750);
 };
 
-const onAppStateChange = (nextState: AppStateStatus) => {
-  if (nextState === 'active') schedule();
-};
-
-const watchRemoteChanges = (ownerId: string) => {
-  const firestore = getFirestore();
-  const onRemoteChange = () => {
-    if (activeOwnerId === ownerId) schedule();
-  };
-  const onRemoteError = (error: Error) => {
-    if (activeOwnerId === ownerId) emit({ error: error.message, status: 'error' });
-  };
-
-  remoteUnsubscribers = entityTypes.map(entityType =>
-    onSnapshot(
-      collection(firestore, 'users', ownerId, syncEntityConfig[entityType].collection),
-      onRemoteChange,
-      onRemoteError,
-    ),
-  );
-  remoteUnsubscribers.push(
-    onSnapshot(
-      doc(firestore, 'users', ownerId, 'profile', 'settings'),
-      onRemoteChange,
-      onRemoteError,
-    ),
-  );
+const performSync = async (session: ActiveSync) => {
+  const { ownerId, run } = session;
+  try {
+    emit(session, { error: null, pendingCount: await run(() => syncRepo.pendingCount()), status: 'syncing' });
+    const entitiesChanged = await pullEntities(session);
+    const profileChanged = await syncProfile(session);
+    const totalsChanged = await run(() => syncRepo.reconcileRentCycles());
+    // Publish restored data even when a subsequent offline upload is still waiting.
+    if (session.notify && (entitiesChanged || profileChanged || totalsChanged)) {
+      await run(async () => { await session.callbacks.onDataChanged?.(); });
+    }
+    await pushPending(session);
+    await run(() => setDoc(
+      doc(getFirestore(), 'users', ownerId),
+      { last_synced_at: serverTimestamp() },
+      { merge: true },
+    ));
+    emit(session, {
+      error: null,
+      lastSyncedAt: new Date().toISOString(),
+      pendingCount: await run(() => syncRepo.pendingCount()),
+      status: 'synced',
+    });
+    return true;
+  } catch (error) {
+    if (!session.isActive()) return false;
+    emit(session, { error: error instanceof Error ? error.message : 'Cloud sync failed. Local data is safe.', status: 'error' });
+    return false;
+  }
 };
 
 export const cloudSyncService = {
-  getState() {
-    return state;
-  },
+  getState: () => state,
 
-  async start(ownerId: string, nextCallbacks: SyncCallbacks = {}) {
+  async start(ownerId: string, callbacks: SyncCallbacks = {}) {
     this.stop();
-    activeOwnerId = ownerId;
-    callbacks = nextCallbacks;
-    state = { error: null, lastSyncedAt: null, pendingCount: 0, status: 'idle' };
-    callbacks.onState?.(state);
-    setDatabaseWriteListener(schedule);
-    appStateSubscription = AppState.addEventListener('change', onAppStateChange);
-    const result = await this.sync(false);
-    if (activeOwnerId === ownerId) watchRemoteChanges(ownerId);
-    return result;
+    const session: ActiveSync = {
+      ...createSyncSession(ownerId, () => active === session),
+      callbacks, promise: null, again: false, notify: true, timer: null, cleanup: [],
+    };
+    active = session;
+    emit(session, { ...emptyState(), status: 'idle' });
+    setDatabaseWriteListener(() => schedule(session));
+    const subscription = AppState.addEventListener('change', next => {
+      if (next === 'active') schedule(session);
+    });
+    session.cleanup.push(() => subscription.remove());
+    try {
+      const firestore = getFirestore();
+      const onChange = () => schedule(session);
+      const onError = (error: Error) => emit(session, { error: error.message, status: 'error' });
+      for (const entityType of entityTypes) {
+        session.cleanup.push(onSnapshot(
+          collection(firestore, 'users', ownerId, syncEntityConfig[entityType].collection), onChange, onError,
+        ));
+      }
+      session.cleanup.push(onSnapshot(doc(firestore, 'users', ownerId, 'profile', 'settings'), onChange, onError));
+      return await this.sync();
+    } catch (error) {
+      emit(session, { error: error instanceof Error ? error.message : 'Could not start cloud sync.', status: 'error' });
+      return false;
+    }
   },
 
   stop() {
-    activeOwnerId = null;
-    callbacks = {};
+    const previous = active;
+    active = null;
     setDatabaseWriteListener(null);
-    appStateSubscription?.remove();
-    appStateSubscription = null;
-    remoteUnsubscribers.forEach(unsubscribe => unsubscribe());
-    remoteUnsubscribers = [];
-    if (scheduledSync) clearTimeout(scheduledSync);
-    scheduledSync = null;
-    state = { error: null, lastSyncedAt: null, pendingCount: 0, status: 'disabled' };
+    if (previous?.timer) clearTimeout(previous.timer);
+    previous?.cleanup.forEach(unsubscribe => unsubscribe());
+    state = emptyState();
   },
 
   async sync(notifyDataChanged = true): Promise<boolean> {
-    const ownerId = activeOwnerId;
-    if (!ownerId) return false;
-
-    if (syncPromise) {
-      syncAgain = true;
-      return syncPromise;
+    const session = active;
+    if (!session) return false;
+    if (session.promise) {
+      session.again = true;
+      session.notify ||= notifyDataChanged;
+      return session.promise;
     }
-
-    syncPromise = performSync(ownerId, notifyDataChanged).finally(() => {
-      syncPromise = null;
-      if (syncAgain && activeOwnerId) {
-        syncAgain = false;
-        schedule();
+    session.notify = notifyDataChanged;
+    session.promise = performSync(session).finally(() => {
+      session.promise = null;
+      if (session.again && session.isActive()) {
+        session.again = false;
+        schedule(session);
       }
     });
-    return syncPromise;
+    return session.promise;
   },
 };

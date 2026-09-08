@@ -11,7 +11,7 @@ export const rentRepo = {
       JOIN tenants t ON t.id = rc.tenant_id
       JOIN units u ON u.id = t.unit_id
       JOIN properties p ON p.id = u.property_id
-      WHERE rc.id = ?
+      WHERE rc.id = ? AND rc.deleted_at IS NULL AND t.deleted_at IS NULL AND u.deleted_at IS NULL AND p.deleted_at IS NULL
       `,
       [id],
     );
@@ -48,7 +48,7 @@ export const rentRepo = {
 
   ledger(month: number, year: number, status = 'all', propertyId?: string) {
     const params: any[] = [month, year];
-    const filters = ['rc.month = ?', 'rc.year = ?'];
+    const filters = ['rc.month = ?', 'rc.year = ?', 'rc.deleted_at IS NULL', 't.deleted_at IS NULL', 'u.deleted_at IS NULL', 'p.deleted_at IS NULL'];
     if (status !== 'all') {
       filters.push('rc.status = ?');
       params.push(status);
@@ -79,7 +79,7 @@ export const rentRepo = {
       JOIN tenants t ON t.id = rc.tenant_id
       JOIN units u ON u.id = t.unit_id
       JOIN properties p ON p.id = u.property_id
-      WHERE rc.total_paid > 0
+      WHERE rc.total_paid > 0 AND rc.deleted_at IS NULL AND t.deleted_at IS NULL AND u.deleted_at IS NULL AND p.deleted_at IS NULL
       ORDER BY rc.updated_at DESC
       LIMIT 5
     `);

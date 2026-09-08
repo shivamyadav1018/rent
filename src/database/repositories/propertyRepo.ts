@@ -5,7 +5,7 @@ import { executeSql, executeWrite } from '../db';
 
 export const propertyRepo = {
   all() {
-    return executeSql<Property>('SELECT * FROM properties ORDER BY created_at DESC');
+    return executeSql<Property>('SELECT * FROM properties WHERE deleted_at IS NULL ORDER BY created_at DESC');
   },
 
   listWithCounts() {
@@ -14,21 +14,23 @@ export const propertyRepo = {
         COUNT(u.id) AS total_units,
         SUM(CASE WHEN u.status = 'occupied' THEN 1 ELSE 0 END) AS occupied_units
       FROM properties p
-      LEFT JOIN units u ON u.property_id = p.id
+      LEFT JOIN units u ON u.property_id = p.id AND u.deleted_at IS NULL
+      WHERE p.deleted_at IS NULL
       GROUP BY p.id
       ORDER BY p.created_at DESC
     `);
   },
 
   async find(id: string) {
-    const rows = await executeSql<Property>('SELECT * FROM properties WHERE id = ?', [id]);
+    const rows = await executeSql<Property>('SELECT * FROM properties WHERE id = ? AND deleted_at IS NULL', [id]);
     return rows[0] ?? null;
   },
 
   async save(input: { id?: string; name: string; type: PropertyType; address?: string }) {
     const timestamp = nowIso();
     const id = input.id ?? createId('prop');
-    if (input.id && await this.find(input.id)) {
+    if (input.id && !await this.find(input.id)) throw new Error('Property no longer exists. Reopen the property list.');
+    if (input.id) {
       await executeWrite(
         `UPDATE properties
          SET name = ?, type = ?, address = ?, updated_at = ?, sync_status = 'pending', version = version + 1

@@ -1,5 +1,6 @@
+import { statusFor } from '../../services/rentStatus';
 import { executeSql, executeWrite, getDb } from '../db';
-import { isPastDue, nowIso } from '../../utils/dates';
+import { nowIso } from '../../utils/dates';
 
 export type SyncQueueItem = {
   id: string;
@@ -173,13 +174,7 @@ export const syncRepo = {
     for (const cycle of cycles) {
       const totalPaid = Number(cycle.payment_total);
       const balance = Number(cycle.rent_amount) - totalPaid;
-      const status = balance <= 0
-        ? 'paid'
-        : totalPaid > 0
-          ? 'partial'
-          : isPastDue(cycle.due_date)
-            ? 'overdue'
-            : 'unpaid';
+      const status = statusFor({ balance, due_date: cycle.due_date, total_paid: totalPaid });
 
       if (Number(cycle.stored_total) !== totalPaid || Number(cycle.balance) !== balance || cycle.status !== status) {
         await db.executeSql(

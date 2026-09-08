@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Avatar } from 'react-native-elements';
@@ -15,6 +15,8 @@ import { useAuthStore } from '../../store/authStore';
 import { authColors, colors } from '../../theme';
 
 export function SettingsScreen() {
+  const savingRef = useRef(false);
+  const [saving, setSaving] = useState(false);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const bootstrap = useAppStore(state => state.bootstrap);
@@ -35,15 +37,25 @@ export function SettingsScreen() {
       if (!isActive) return;
       setName(settings.landlordName ?? '');
       setPhone(settings.landlordPhone ?? '');
-    });
+    }).catch(() => { if (isActive) Alert.alert('Could not load settings', 'Reopen Settings to retry.'); });
     return () => { isActive = false; };
   }, []));
 
   const save = async () => {
+    if (savingRef.current) return;
     if (!name.trim()) return Alert.alert('Landlord name is required');
-    await settingsRepo.setMany({ currency: 'INR', landlordName: name.trim(), landlordPhone: phone.trim() });
-    await bootstrap();
-    Alert.alert('Settings saved', authStatus === 'signedIn' ? 'Changes are queued for cloud sync.' : undefined);
+    savingRef.current = true;
+    setSaving(true);
+    try {
+      await settingsRepo.setMany({ currency: 'INR', landlordName: name.trim(), landlordPhone: phone.trim() });
+      await bootstrap().catch(() => undefined);
+      Alert.alert('Settings saved', authStatus === 'signedIn' ? 'Changes are queued for cloud sync.' : undefined);
+    } catch (error) {
+      Alert.alert('Could not save settings', error instanceof Error ? error.message : 'Please try again.');
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
+    }
   };
 
   const confirmSignOut = () => {
@@ -141,7 +153,7 @@ export function SettingsScreen() {
       <AppInput label="Landlord name" value={name} onChangeText={setName} />
       <AppInput label="Phone number (optional)" keyboardType="phone-pad" value={phone} onChangeText={setPhone} />
       <AppInput label="Currency" editable={false} value="INR" />
-      <AppButton title="Save settings" onPress={save} />
+      <AppButton disabled={saving} title={saving ? 'Saving...' : 'Save settings'} onPress={save} />
       <Muted>Rent records remain available offline and sync to Firebase when your cloud account is connected.</Muted>
     </Screen>
   );

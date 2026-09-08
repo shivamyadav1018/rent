@@ -141,4 +141,53 @@ describe('cloudSyncService', () => {
       status: 'error',
     }));
   });
+  test('a stopped pull cannot restore data or report success', async () => {
+    let finish!: (value: unknown) => void;
+    mockGetDocs.mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
+    const syncing = cloudSyncService.start('user-1');
+    for (let step = 0; step < 10 && !finish; step += 1) await Promise.resolve();
+    expect(finish).toBeDefined();
+    cloudSyncService.stop();
+    finish({ docs: [{ id: 'late', data: () => ({ updated_at: '2026-09-01' }) }] });
+    await expect(syncing).resolves.toBe(false);
+    expect(mockSyncRepo.applyRemoteEntity).not.toHaveBeenCalled();
+    expect(mockSetDoc).not.toHaveBeenCalled();
+    expect(cloudSyncService.getState().status).toBe('disabled');
+  });
+
+  test('a new session syncs without waiting for the old network request', async () => {
+    let finish!: (value: unknown) => void;
+    mockGetDocs.mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
+    const previous = cloudSyncService.start('user-1');
+    for (let step = 0; step < 10 && !finish; step += 1) await Promise.resolve();
+    await expect(cloudSyncService.start('user-2')).resolves.toBe(true);
+    finish(emptySnapshot);
+    await expect(previous).resolves.toBe(false);
+    expect(mockSetDoc).toHaveBeenCalledWith('users/user-2', expect.anything(), { merge: true });
+    expect(cloudSyncService.getState().status).toBe('synced');
+  });
+
+  test('reports queue-read errors instead of rejecting startup', async () => {
+    mockSyncRepo.pendingCount.mockRejectedValueOnce(new Error('Database unavailable'));
+    await expect(cloudSyncService.start('user-1')).resolves.toBe(false);
+    expect(cloudSyncService.getState()).toMatchObject({ status: 'error', error: 'Database unavailable' });
+  });
+
+  test('notifies restored profile data during the initial sync', async () => {
+    mockGetDoc.mockResolvedValue({ exists: () => true, data: () => ({ landlordName: 'Restored', updated_at: '2026-09-01' }) });
+    const onDataChanged = jest.fn();
+    await cloudSyncService.start('user-1', { onDataChanged });
+    expect(onDataChanged).toHaveBeenCalledTimes(1);
+  });
+
+  test('equal profile timestamps do not write the same profile repeatedly', async () => {
+    mockSyncRepo.profile.mockResolvedValue({ landlordName: 'Owner', cloudProfileUpdatedAt: '2026-09-01' });
+    mockGetDoc.mockResolvedValue({ exists: () => true, data: () => ({ landlordName: 'Owner', updated_at: '2026-09-01' }) });
+    const onDataChanged = jest.fn();
+    await cloudSyncService.start('user-1', { onDataChanged });
+    expect(mockSyncRepo.applyRemoteProfile).not.toHaveBeenCalled();
+    expect(mockSetDoc).not.toHaveBeenCalledWith('users/user-1/profile/settings', expect.anything());
+    expect(onDataChanged).not.toHaveBeenCalled();
+  });
+
 });

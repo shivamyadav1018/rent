@@ -1,21 +1,9 @@
+import { statusFor } from './rentStatus';
 import { paymentRepo } from '../database/repositories/paymentRepo';
 import { rentRepo } from '../database/repositories/rentRepo';
 import { tenantRepo } from '../database/repositories/tenantRepo';
-import { PaymentMode, RentCycle, RentStatus } from '../types/models';
-import { currentMonthYear, dueDateFor, isPastDue, isValidDate } from '../utils/dates';
-
-const statusFor = (cycle: Pick<RentCycle, 'balance' | 'due_date' | 'total_paid'>): RentStatus => {
-  if (cycle.balance <= 0) {
-    return 'paid';
-  }
-  if (cycle.total_paid > 0) {
-    return 'partial';
-  }
-  if (isPastDue(cycle.due_date)) {
-    return 'overdue';
-  }
-  return 'unpaid';
-};
+import { PaymentMode, RentCycle } from '../types/models';
+import { currentMonthYear, dueDateFor, isValidDate } from '../utils/dates';
 
 export const rentCycleService = {
   async ensureCycleForTenant(tenantId: string, month: number, year: number): Promise<RentCycle | null> {
@@ -23,6 +11,8 @@ export const rentCycleService = {
       throw new Error('Select a valid rent month');
     }
     const existing = await rentRepo.findCycle(tenantId, month, year);
+    // Retain tombstones in SQLite so a deleted month is not recreated.
+    if (existing?.deleted_at) return null;
     if (existing) {
       const totalPaid = await paymentRepo.totalForCycle(existing.id);
       const balance = existing.rent_amount - totalPaid;

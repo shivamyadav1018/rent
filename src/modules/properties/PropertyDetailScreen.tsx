@@ -1,6 +1,7 @@
-import React, { useCallback, useState } from 'react';
+import { useFocusedResource } from '../../hooks/useFocusedResource';
+import { ResourceState } from '../../components/ResourceState';
+import React, { useCallback } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 
 import { AppButton } from '../../components/AppButton';
 import { Card } from '../../components/Card';
@@ -9,27 +10,18 @@ import { StatusBadge } from '../../components/StatusBadge';
 import { Body, Muted, Title } from '../../components/Typography';
 import { propertyRepo } from '../../database/repositories/propertyRepo';
 import { unitRepo } from '../../database/repositories/unitRepo';
-import { Property, Unit } from '../../types/models';
 import { formatCurrency } from '../../utils/currency';
 
 export function PropertyDetailScreen({ navigation, route }: any) {
   const propertyId = route.params.propertyId as string;
-  const [property, setProperty] = useState<Property | null>(null);
-  const [units, setUnits] = useState<Unit[]>([]);
-
-  useFocusEffect(useCallback(() => {
-    let isActive = true;
-    Promise.all([propertyRepo.find(propertyId), unitRepo.forProperty(propertyId)]).then(([nextProperty, nextUnits]) => {
-      if (!isActive) return;
-      setProperty(nextProperty);
-      setUnits(nextUnits);
-    }).catch(() => {
-      if (isActive) setProperty(null);
-    });
-    return () => { isActive = false; };
+  const { data, loading, error, retry } = useFocusedResource(useCallback(async () => {
+    const [property, units] = await Promise.all([propertyRepo.find(propertyId), unitRepo.forProperty(propertyId)]);
+    if (!property) throw new Error('Property not found.');
+    return { property, units };
   }, [propertyId]));
 
-  if (!property) return <Screen><Muted>Loading property...</Muted></Screen>;
+  if (loading || !data) return <ResourceState loading={loading} error={error} label="property" retry={retry} />;
+  const { property, units } = data;
 
   return (
     <Screen>

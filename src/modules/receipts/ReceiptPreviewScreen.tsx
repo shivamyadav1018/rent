@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import { useFocusedResource } from '../../hooks/useFocusedResource';
+import { ResourceState } from '../../components/ResourceState';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, StyleSheet } from 'react-native';
 
 import { AppButton } from '../../components/AppButton';
@@ -9,7 +11,7 @@ import { paymentRepo } from '../../database/repositories/paymentRepo';
 import { rentRepo } from '../../database/repositories/rentRepo';
 import { settingsRepo } from '../../database/repositories/settingsRepo';
 import { receiptPdfService } from '../../services/receiptPdfService';
-import { LedgerItem, PaymentMode } from '../../types/models';
+import { PaymentMode } from '../../types/models';
 import { formatCurrency } from '../../utils/currency';
 import { displayDate, monthLabel } from '../../utils/dates';
 import { fontFamily } from '../../theme';
@@ -17,24 +19,26 @@ import { fontFamily } from '../../theme';
 type ReceiptData = { amountPaid: number; paymentDate: string; paymentMode: PaymentMode; referenceNo?: string; notes?: string };
 
 export function ReceiptPreviewScreen({ route }: any) {
-  const [cycle, setCycle] = useState<LedgerItem | null>(null);
-  const [data, setData] = useState<ReceiptData | null>(null);
-  const [landlordName, setLandlordName] = useState('Landlord');
   const [filePath, setFilePath] = useState<string | null>(null);
   const [working, setWorking] = useState(false);
 
-  useEffect(() => {
-    let isActive = true;
-    Promise.all([rentRepo.findLedgerItem(route.params.cycleId), paymentRepo.latestForCycle(route.params.cycleId), settingsRepo.getAll()]).then(([nextCycle, payment, settings]) => {
-      if (!isActive) return;
-      setCycle(nextCycle); setLandlordName(settings.landlordName ?? 'Landlord');
-      const paymentMode = route.params.paymentMode as PaymentMode | undefined;
-      if (route.params.amountPaid || payment) setData({ amountPaid: route.params.amountPaid ?? payment?.amount ?? 0, notes: route.params.notes ?? payment?.notes ?? undefined, paymentDate: route.params.paymentDate ?? payment?.payment_date ?? new Date().toISOString(), paymentMode: paymentMode ?? payment?.payment_mode ?? 'cash', referenceNo: route.params.referenceNo ?? payment?.reference_no ?? undefined });
-    }).catch(() => {
-      if (isActive) setCycle(null);
-    });
-    return () => { isActive = false; };
-  }, [route.params]);
+  const params = route.params;
+  const resource = useFocusedResource(useCallback(async () => {
+    const [cycle, payment, settings] = await Promise.all([
+      rentRepo.findLedgerItem(params.cycleId), paymentRepo.latestForCycle(params.cycleId), settingsRepo.getAll(),
+    ]);
+    if (!cycle) throw new Error('Rent cycle not found.');
+    const data: ReceiptData | null = params.amountPaid || payment ? {
+      amountPaid: params.amountPaid ?? payment?.amount ?? 0,
+      notes: params.notes ?? payment?.notes ?? undefined,
+      paymentDate: params.paymentDate ?? payment?.payment_date ?? new Date().toISOString(),
+      paymentMode: params.paymentMode ?? payment?.payment_mode ?? 'cash',
+      referenceNo: params.referenceNo ?? payment?.reference_no ?? undefined,
+    } : null;
+    return { cycle, data, landlordName: settings.landlordName ?? 'Landlord' };
+  }, [params]));
+  const { cycle, data, landlordName } = resource.data ?? {};
+  useEffect(() => { setFilePath(null); }, [resource.data]);
 
   const buildAndGenerate = async () => {
     if (!cycle || !data) return undefined;
@@ -58,7 +62,7 @@ export function ReceiptPreviewScreen({ route }: any) {
     }
   };
 
-  if (!cycle) return <Screen><Muted>Loading receipt...</Muted></Screen>;
+  if (resource.loading || !cycle) return <ResourceState loading={resource.loading} error={resource.error} label="receipt" retry={resource.retry} />;
   if (!data) return <Screen><Title>Receipt preview</Title><Muted>No payment exists for this rent cycle yet.</Muted></Screen>;
   return (
     <Screen>

@@ -5,7 +5,7 @@ import { executeSql, executeWrite } from '../db';
 
 export const unitRepo = {
   forProperty(propertyId: string) {
-    return executeSql<Unit>('SELECT * FROM units WHERE property_id = ? ORDER BY name ASC', [propertyId]);
+    return executeSql<Unit>('SELECT * FROM units WHERE property_id = ? AND deleted_at IS NULL ORDER BY name ASC', [propertyId]);
   },
 
   allWithProperty() {
@@ -13,12 +13,13 @@ export const unitRepo = {
       SELECT u.*, p.name AS property_name
       FROM units u
       JOIN properties p ON p.id = u.property_id
+      WHERE u.deleted_at IS NULL AND p.deleted_at IS NULL
       ORDER BY p.name ASC, u.name ASC
     `);
   },
 
   async find(id: string) {
-    const rows = await executeSql<Unit>('SELECT * FROM units WHERE id = ?', [id]);
+    const rows = await executeSql<Unit>('SELECT * FROM units WHERE id = ? AND deleted_at IS NULL', [id]);
     return rows[0] ?? null;
   },
 
@@ -31,13 +32,14 @@ export const unitRepo = {
   }) {
     if (input.id && input.status === 'vacant') {
       const occupants = await executeSql<{ id: string }>(
-        "SELECT id FROM tenants WHERE unit_id = ? AND status = 'active' LIMIT 1", [input.id],
+        "SELECT id FROM tenants WHERE unit_id = ? AND status = 'active' AND deleted_at IS NULL LIMIT 1", [input.id],
       );
       if (occupants.length) throw new Error('Move out the active tenant before marking this unit vacant.');
     }
     const timestamp = nowIso();
     const id = input.id ?? createId('unit');
-    if (input.id && await this.find(input.id)) {
+    if (input.id && !await this.find(input.id)) throw new Error('Unit no longer exists. Reopen the unit list.');
+    if (input.id) {
       await executeWrite(
         `UPDATE units
          SET property_id = ?, name = ?, monthly_rent = ?, status = ?, updated_at = ?,

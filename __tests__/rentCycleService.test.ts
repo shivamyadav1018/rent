@@ -49,3 +49,10 @@ test('rejects impossible payment dates before writing', async () => {
   await expect(rentCycleService.recordPayment({ tenantId: 'tenant', month: 6, year: 2026, amount: 500, paymentDate: '2026-02-30', paymentMode: 'cash' })).rejects.toThrow('date');
   expect(paymentRepo.create).not.toHaveBeenCalled();
 });
+
+test('does not recreate or charge a deleted rent cycle', async () => {
+  (rentRepo.findCycle as jest.Mock).mockResolvedValue({ ...cycle, deleted_at: '2026-06-09' });
+  await expect(rentCycleService.ensureCycleForTenant('tenant', 6, 2026)).resolves.toBeNull();
+  expect(rentRepo.createCycle).not.toHaveBeenCalled();
+  expect(paymentRepo.totalForCycle).not.toHaveBeenCalled();
+});

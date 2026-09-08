@@ -43,7 +43,7 @@ export function TenantDetailScreen({ navigation, route }: any) {
           : rentRepo.findCycle(tenantId, now.getMonth() + 1, now.getFullYear());
         const [nextCycle, nextPayments] = await Promise.all([cyclePromise, paymentRepo.forTenant(tenantId)]);
         if (!isActive) return;
-        setCycle(nextCycle);
+        setCycle(nextCycle?.deleted_at ? null : nextCycle);
         setPayments(nextPayments);
       } catch {
         if (!isActive) return;

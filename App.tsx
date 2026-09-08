@@ -1,12 +1,13 @@
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
+import React from 'react';
+import { ActivityIndicator, StatusBar, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from 'react-native-elements';
 import type { Theme } from 'react-native-elements';
 
 import { AppNavigator } from './src/app/AppNavigator';
-import { initializeDatabase } from './src/database/db';
-import { useAuthStore } from './src/store/authStore';
+import { useAppStartup } from './src/app/useAppStartup';
+import { AppButton } from './src/components/AppButton';
+import { Body, Title } from './src/components/Typography';
 import { colors, elementsTheme } from './src/theme';
 
 const ElementsThemeProvider = ThemeProvider as unknown as React.ComponentType<
@@ -14,32 +15,23 @@ const ElementsThemeProvider = ThemeProvider as unknown as React.ComponentType<
 >;
 
 function App() {
-  const isDarkMode = useColorScheme() === 'dark';
-  const [ready, setReady] = useState(false);
-  const initializeAuth = useAuthStore(state => state.initialize);
-
-  useEffect(() => {
-    let unsubscribeAuth: () => void = () => {};
-    const start = async () => {
-      await initializeDatabase();
-      unsubscribeAuth = initializeAuth();
-      setReady(true);
-    };
-
-    start();
-    return () => unsubscribeAuth();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // intentionally empty — runs once on mount; bootstrap/initializeAuth are stable Zustand refs
+  const { ready, error, retry } = useAppStartup();
 
   return (
     <SafeAreaProvider>
       <ElementsThemeProvider theme={elementsTheme}>
-        <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+        <StatusBar barStyle="dark-content" />
         {ready ? (
           <AppNavigator />
         ) : (
           <View style={styles.loading}>
-            <ActivityIndicator size="large" color={colors.primary} />
+            {error ? (
+              <>
+                <Title>Could not start the app</Title>
+                <Body>{error}</Body>
+                <AppButton title="Retry" onPress={retry} />
+              </>
+            ) : <ActivityIndicator size="large" color={colors.primary} />}
           </View>
         )}
       </ElementsThemeProvider>
@@ -52,7 +44,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.background,
     flex: 1,
+    gap: 16,
     justifyContent: 'center',
+    padding: 24,
   },
 });
 

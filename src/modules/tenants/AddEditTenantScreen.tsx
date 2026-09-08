@@ -1,3 +1,4 @@
+import { ResourceState } from '../../components/ResourceState';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -10,8 +11,6 @@ import { AppInput } from '../../components/AppInput';
 import { Screen } from '../../components/Screen';
 import { Body, Muted, Title } from '../../components/Typography';
 import { tenantRepo } from '../../database/repositories/tenantRepo';
-import { unitRepo } from '../../database/repositories/unitRepo';
-import { rentCycleService } from '../../services/rentCycleService';
 import { useAppStore } from '../../store/appStore';
 import { colors, radius } from '../../theme';
 import { isValidDate, todayDate } from '../../utils/dates';
@@ -35,6 +34,9 @@ export function AddEditTenantScreen({ navigation, route }: any) {
   const properties = useAppStore(state => state.properties);
   const units = useAppStore(state => state.units);
   const refreshAll = useAppStore(state => state.refreshAll);
+  const [loadingRecord, setLoadingRecord] = useState(Boolean(tenantId));
+  const [loadError, setLoadError] = useState('');
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [isRefreshingUnits, setIsRefreshingUnits] = useState(units.length === 0);
   const { control, handleSubmit, reset, setValue, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
     defaultValues: { dueDay: '5', monthlyRent: '', moveInDate: todayDate(), name: '', notes: '', phone: '', securityDeposit: '0', unitId: initialUnitId ?? '' },
@@ -59,18 +61,23 @@ export function AddEditTenantScreen({ navigation, route }: any) {
   useEffect(() => {
     if (!tenantId) return;
     let isActive = true;
+    setLoadingRecord(true);
+    setLoadError('');
     tenantRepo.find(tenantId).then(tenant => {
+      if (!isActive) return;
+      if (!tenant) throw new Error('Tenant not found.');
       if (isActive && tenant) {
         setOriginalUnitId(tenant.unit_id);
         reset({ dueDay: String(tenant.due_day), monthlyRent: String(tenant.monthly_rent), moveInDate: tenant.move_in_date.slice(0, 10), name: tenant.name, notes: tenant.notes ?? '', phone: tenant.phone, securityDeposit: String(tenant.security_deposit), unitId: tenant.unit_id });
       }
-    });
+    }).catch(() => { if (isActive) setLoadError('Could not load tenant. Please retry or return to the list.'); })
+      .finally(() => { if (isActive) setLoadingRecord(false); });
     return () => { isActive = false; };
-  }, [reset, tenantId]);
+  }, [reset, tenantId, loadAttempt]);
 
-  const chooseUnit = async (id: string) => {
+  const chooseUnit = (id: string) => {
     setValue('unitId', id, { shouldValidate: true });
-    const unit = await unitRepo.find(id);
+    const unit = units.find(item => item.id === id);
     if (unit) setValue('monthlyRent', String(unit.monthly_rent));
   };
 
@@ -95,13 +102,14 @@ export function AddEditTenantScreen({ navigation, route }: any) {
         notes: parsed.data.notes, phone: parsed.data.phone, security_deposit: parsed.data.securityDeposit,
         unit_id: parsed.data.unitId,
       });
-      await rentCycleService.ensureCurrentCycleForTenant(id);
-      await refreshAll();
+      await refreshAll().catch(() => undefined);
       navigation.replace('TenantDetail', { tenantId: id });
     } catch (error) {
       Alert.alert('Could not save tenant', error instanceof Error ? error.message : 'Please try again.');
     }
   });
+
+  if (loadingRecord || loadError) return <ResourceState loading={loadingRecord} error={loadError} label="tenant" retry={() => setLoadAttempt(value => value + 1)} />;
 
   return (
     <Screen>

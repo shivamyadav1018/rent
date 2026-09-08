@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+import { ResourceState } from '../../components/ResourceState';
+import React, { useEffect, useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -19,6 +20,9 @@ const types: PropertyType[] = ['house', 'flat', 'room', 'shop', 'PG'];
 export function AddEditPropertyScreen({ navigation, route }: any) {
   const propertyId = route.params?.propertyId as string | undefined;
   const refreshAll = useAppStore(state => state.refreshAll);
+  const [loadingRecord, setLoadingRecord] = useState(Boolean(propertyId));
+  const [loadError, setLoadError] = useState('');
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const { control, handleSubmit, reset, setValue, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
     defaultValues: { address: '', name: '', type: 'house' },
   });
@@ -27,24 +31,31 @@ export function AddEditPropertyScreen({ navigation, route }: any) {
   useEffect(() => {
     if (!propertyId) return;
     let isActive = true;
+    setLoadingRecord(true);
+    setLoadError('');
     propertyRepo.find(propertyId).then(property => {
+      if (!isActive) return;
+      if (!property) throw new Error('Property not found.');
       if (isActive && property) reset({ address: property.address ?? '', name: property.name, type: property.type });
-    });
+    }).catch(() => { if (isActive) setLoadError('Could not load property. Please retry or return to the list.'); })
+      .finally(() => { if (isActive) setLoadingRecord(false); });
     return () => { isActive = false; };
-  }, [propertyId, reset]);
+  }, [propertyId, reset, loadAttempt]);
 
   const save = handleSubmit(async values => {
     const parsed = schema.safeParse(values);
     if (!parsed.success) return Alert.alert('Check the form', parsed.error.issues[0]?.message ?? 'Invalid values');
     try {
       const id = await propertyRepo.save({ ...parsed.data, id: propertyId });
-      await refreshAll();
+      await refreshAll().catch(() => undefined);
       if (propertyId) navigation.goBack();
       else navigation.replace('PropertyDetail', { propertyId: id });
     } catch (error) {
       Alert.alert('Could not save property', error instanceof Error ? error.message : 'Please try again.');
     }
   });
+
+  if (loadingRecord || loadError) return <ResourceState loading={loadingRecord} error={loadError} label="property" retry={() => setLoadAttempt(value => value + 1)} />;
 
   return (
     <Screen>
