@@ -5,6 +5,7 @@ import { waitForInitialSync } from '../services/sync/waitForInitialSync';
 import { syncRepo } from '../database/repositories/syncRepo';
 import { authService } from '../services/authService';
 import { cloudSyncService, type CloudSyncStatus } from '../services/cloudSyncService';
+import { pushNotificationService } from '../services/pushNotificationService';
 import { useAppStore } from './appStore';
 
 type AuthUser = {
@@ -66,6 +67,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         const generation = ++sessionGeneration;
         const isCurrent = () => !disposed && generation === sessionGeneration;
         if (!firebaseUser) {
+          pushNotificationService.stopForSignOut().catch(() => undefined);
           cloudSyncService.stop();
           useAppStore.getState().resetSession();
           set({
@@ -125,6 +127,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
               uid: firebaseUser.uid,
             },
           });
+          pushNotificationService.resume(firebaseUser.uid).catch(() => undefined);
         } catch (error) {
           if (!isCurrent()) return;
           cloudSyncService.stop();
@@ -199,6 +202,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const generation = ++sessionGeneration;
     set({ error: null, offlineMode: false, status: 'loading' });
     try {
+      await pushNotificationService.stopForSignOut(get().user?.uid).catch(() => undefined);
       await authService.signOut();
       cloudSyncService.stop();
       useAppStore.getState().resetSession();

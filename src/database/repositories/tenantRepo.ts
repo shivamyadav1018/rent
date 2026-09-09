@@ -59,6 +59,7 @@ export const tenantRepo = {
     name: string;
     phone: string;
     monthly_rent: number;
+    electricity_amount?: number;
     due_day: number;
     move_in_date: string;
     security_deposit: number;
@@ -85,6 +86,7 @@ export const tenantRepo = {
       input.name,
       input.phone,
       input.monthly_rent,
+      input.electricity_amount ?? 0,
       input.due_day,
       input.move_in_date,
       input.security_deposit,
@@ -100,7 +102,7 @@ export const tenantRepo = {
         }
         await executeWrite(
           `UPDATE tenants
-           SET unit_id = ?, name = ?, phone = ?, monthly_rent = ?, due_day = ?, move_in_date = ?,
+           SET unit_id = ?, name = ?, phone = ?, monthly_rent = ?, electricity_amount = ?, due_day = ?, move_in_date = ?,
                security_deposit = ?, notes = ?, updated_at = ?, sync_status = 'pending', version = version + 1
            WHERE id = ?`,
           [...values, timestamp, id],
@@ -109,16 +111,16 @@ export const tenantRepo = {
         // id was provided but no row found — insert as new
         await executeWrite(
           `INSERT INTO tenants
-           (id, unit_id, name, phone, monthly_rent, due_day, move_in_date, security_deposit, status, notes, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)`,
+           (id, unit_id, name, phone, monthly_rent, electricity_amount, due_day, move_in_date, security_deposit, status, notes, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)`,
           [id, ...values, timestamp, timestamp],
         );
       }
     } else {
       await executeWrite(
         `INSERT INTO tenants
-         (id, unit_id, name, phone, monthly_rent, due_day, move_in_date, security_deposit, status, notes, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)`,
+         (id, unit_id, name, phone, monthly_rent, electricity_amount, due_day, move_in_date, security_deposit, status, notes, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)`,
         [id, ...values, timestamp, timestamp],
       );
     }
@@ -126,6 +128,20 @@ export const tenantRepo = {
       await unitRepo.markOccupied(input.unit_id);
     }
     return id;
+  },
+
+  async updateIdProof(tenantId: string, proof: {
+    name: string | null;
+    storagePath: string | null;
+    mimeType: string | null;
+  }) {
+    await executeWrite(
+      `UPDATE tenants
+       SET id_proof_name = ?, id_proof_storage_path = ?, id_proof_mime_type = ?,
+           updated_at = ?, sync_status = 'pending', version = version + 1
+       WHERE id = ? AND deleted_at IS NULL`,
+      [proof.name, proof.storagePath, proof.mimeType, nowIso(), tenantId],
+    );
   },
 
   async deactivate(tenantId: string) {

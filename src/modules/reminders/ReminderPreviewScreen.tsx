@@ -17,8 +17,8 @@ import { formatCurrency } from '../../utils/currency';
 import { displayDate, monthLabel, isPastDue } from '../../utils/dates';
 
 const createMessage = (cycle: LedgerItem, landlordName: string) => cycle.balance > 0 && isPastDue(cycle.due_date)
-  ? `Hello ${cycle.tenant_name}, your rent of ${formatCurrency(cycle.balance)} for ${monthLabel(cycle.month, cycle.year)} was due on ${displayDate(cycle.due_date)}. Please clear it soon.\n\n- ${landlordName}`
-  : `Hello ${cycle.tenant_name}, your rent of ${formatCurrency(cycle.balance)} for ${monthLabel(cycle.month, cycle.year)} is pending. Please pay when possible.\n\n- ${landlordName}`;
+  ? `Hello ${cycle.tenant_name}, your remaining payment of ${formatCurrency(cycle.balance)} for ${monthLabel(cycle.month, cycle.year)} was due on ${displayDate(cycle.due_date)}. Bill: Rent ${formatCurrency(cycle.rent_amount)} + Electricity ${formatCurrency(cycle.electricity_amount)} = ${formatCurrency(cycle.total_payable)}. Please clear it soon.\n\n- ${landlordName}`
+  : `Hello ${cycle.tenant_name}, your remaining payment of ${formatCurrency(cycle.balance)} for ${monthLabel(cycle.month, cycle.year)} is pending. Bill: Rent ${formatCurrency(cycle.rent_amount)} + Electricity ${formatCurrency(cycle.electricity_amount)} = ${formatCurrency(cycle.total_payable)}. Please pay when possible.\n\n- ${landlordName}`;
 
 export function ReminderPreviewScreen({ route }: any) {
   const [message, setMessage] = useState('');

@@ -15,8 +15,11 @@ export const rentCycleService = {
     if (existing?.deleted_at) return null;
     if (existing) {
       const totalPaid = await paymentRepo.totalForCycle(existing.id);
-      const balance = existing.rent_amount - totalPaid;
-      const reconciled = { ...existing, total_paid: totalPaid, balance };
+      const totalPayable = Number.isFinite(existing.total_payable)
+        ? existing.total_payable
+        : existing.rent_amount + (existing.electricity_amount ?? 0);
+      const balance = totalPayable - totalPaid;
+      const reconciled = { ...existing, electricity_amount: existing.electricity_amount ?? 0, total_payable: totalPayable, total_paid: totalPaid, balance };
       const updatedStatus = statusFor(reconciled);
       if (updatedStatus !== existing.status || totalPaid !== existing.total_paid || balance !== existing.balance) {
         await rentRepo.updateTotals(existing.id, totalPaid, balance, updatedStatus);
@@ -35,6 +38,7 @@ export const rentCycleService = {
     await rentRepo.createCycle({
       due_date: dueDateFor(month, year, tenant.due_day),
       month,
+      electricity_amount: tenant.electricity_amount,
       rent_amount: tenant.monthly_rent,
       tenant_id: tenant.id,
       year,
@@ -55,21 +59,47 @@ export const rentCycleService = {
     for (const tenantId of tenantIds) await this.ensureCycleForTenant(tenantId, month, year);
   },
 
+  async updateElectricity(tenantId: string, month: number, year: number, electricityAmount: number) {
+    if (!Number.isFinite(electricityAmount) || electricityAmount < 0) {
+      throw new Error('Electricity amount cannot be negative');
+    }
+    const cycle = await this.ensureCycleForTenant(tenantId, month, year);
+    if (!cycle) throw new Error('No rent is due for this tenant in the selected month');
+    if (electricityAmount === cycle.electricity_amount) return cycle;
+    const totalPayable = cycle.rent_amount + electricityAmount;
+    const balance = totalPayable - cycle.total_paid;
+    const status = statusFor({ balance, due_date: cycle.due_date, total_paid: cycle.total_paid });
+    await rentRepo.updateCharges(cycle.id, electricityAmount, totalPayable, balance, status);
+    return { ...cycle, balance, electricity_amount: electricityAmount, status, total_payable: totalPayable };
+  },
+
   async recordPayment(input: {
     tenantId: string;
     month: number;
     year: number;
     amount: number;
+    electricityAmount?: number;
     paymentDate: string;
     paymentMode: PaymentMode;
     referenceNo?: string;
     notes?: string;
   }) {
     if (!Number.isFinite(input.amount) || input.amount <= 0) throw new Error('Amount must be greater than zero');
+    if (input.electricityAmount !== undefined && (!Number.isFinite(input.electricityAmount) || input.electricityAmount < 0)) {
+      throw new Error('Electricity amount cannot be negative');
+    }
     if (!isValidDate(input.paymentDate)) throw new Error('Enter a valid payment date (YYYY-MM-DD)');
-    const cycle = await this.ensureCycleForTenant(input.tenantId, input.month, input.year);
+    let cycle = await this.ensureCycleForTenant(input.tenantId, input.month, input.year);
     if (!cycle) {
       throw new Error('No rent is due for this tenant in the selected month');
+    }
+
+    if (input.electricityAmount !== undefined && input.electricityAmount !== cycle.electricity_amount) {
+      const totalPayable = cycle.rent_amount + input.electricityAmount;
+      const balance = totalPayable - cycle.total_paid;
+      const status = statusFor({ balance, due_date: cycle.due_date, total_paid: cycle.total_paid });
+      await rentRepo.updateCharges(cycle.id, input.electricityAmount, totalPayable, balance, status);
+      cycle = { ...cycle, balance, electricity_amount: input.electricityAmount, status, total_payable: totalPayable };
     }
 
     await paymentRepo.create({
@@ -83,7 +113,7 @@ export const rentCycleService = {
     });
 
     const totalPaid = await paymentRepo.totalForCycle(cycle.id);
-    const balance = cycle.rent_amount - totalPaid;
+    const balance = cycle.total_payable - totalPaid;
     const status = statusFor({ balance, due_date: cycle.due_date, total_paid: totalPaid });
     await rentRepo.updateTotals(cycle.id, totalPaid, balance, status);
 

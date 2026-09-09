@@ -83,7 +83,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     ]);
     if (generation !== sessionGeneration || requestId !== allRequestId) return false;
     const summary = dashboardLedger.reduce<DashboardSummary>((acc, item) => {
-      acc.expectedRent += item.rent_amount;
+      acc.expectedRent += item.total_payable ?? item.rent_amount + (item.electricity_amount ?? 0);
       acc.collectedRent += item.total_paid;
       acc.pendingRent += Math.max(item.balance, 0);
       if (item.balance > 0 && isPastDue(item.due_date)) acc.overdueCount += 1;

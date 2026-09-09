@@ -12,6 +12,7 @@ import { currentMonthYear, todayDate, isValidDate } from '../../utils/dates';
 
 export const paymentModes: PaymentMode[] = ['cash', 'upi', 'bank_transfer', 'cheque', 'other'];
 const paymentSchema = z.coerce.number().positive('Amount must be greater than zero');
+const electricitySchema = z.coerce.number().min(0, 'Electricity amount cannot be negative');
 
 export function useRecordPayment(params?: { tenantId?: string; cycleId?: string }) {
   const current = currentMonthYear();
@@ -26,6 +27,7 @@ export function useRecordPayment(params?: { tenantId?: string; cycleId?: string 
   const [month, setMonth] = useState(current.month);
   const [year, setYear] = useState(current.year);
   const [amount, setAmount] = useState('');
+  const [electricityAmount, setElectricityAmount] = useState('0');
   const [paymentDate, setPaymentDate] = useState(todayDate());
   const [mode, setMode] = useState<PaymentMode>('cash');
   const [referenceNo, setReferenceNo] = useState('');
@@ -77,7 +79,10 @@ export function useRecordPayment(params?: { tenantId?: string; cycleId?: string 
     rentCycleService.ensureCycleForTenant(tenantId, month, year).then(next => {
       if (!isActive) return;
       setCycle(next);
-      if (next) setAmount(String(Math.max(next.balance, 0)));
+      if (next) {
+        setAmount(String(Math.max(next.balance, 0)));
+        setElectricityAmount(String(next.electricity_amount ?? 0));
+      }
       else setCycleError('No rent cycle is available for this month.');
     }).catch(() => {
       if (isActive) setCycleError('Could not load the rent balance. Please retry.');
@@ -94,15 +99,17 @@ export function useRecordPayment(params?: { tenantId?: string; cycleId?: string 
   const save = async () => {
     if (savingRef.current) return;
     const parsedAmount = paymentSchema.safeParse(amount);
+    const parsedElectricity = electricitySchema.safeParse(electricityAmount);
     if (!tenantId) return Alert.alert('Select a tenant');
     if (!parsedAmount.success) return Alert.alert('Check amount', parsedAmount.error.issues[0]?.message);
+    if (!parsedElectricity.success) return Alert.alert('Check electricity', parsedElectricity.error.issues[0]?.message);
     if (!isValidDate(paymentDate)) return Alert.alert('Check date', 'Enter a valid payment date (YYYY-MM-DD)');
     if (!cycle || loadingCycle) return Alert.alert('Wait for the rent balance to load');
     savingRef.current = true;
     setSaving(true);
     try {
       // paymentDate stored as plain YYYY-MM-DD (no UTC conversion) consistent with dates.ts fix
-      const updated = await rentCycleService.recordPayment({ amount: parsedAmount.data, month, notes, paymentDate, paymentMode: mode, referenceNo, tenantId, year });
+      const updated = await rentCycleService.recordPayment({ amount: parsedAmount.data, electricityAmount: parsedElectricity.data, month, notes, paymentDate, paymentMode: mode, referenceNo, tenantId, year });
       if (updated) { setCycle(updated); setSavedCycleId(updated.id); }
       refreshAll().catch(() => undefined);
     } catch (error) {
@@ -125,6 +132,7 @@ export function useRecordPayment(params?: { tenantId?: string; cycleId?: string 
   return {
     activeTenants, loadingTenants, tenantError, retryTenants: () => setTenantAttempt(count => count + 1),
     tenantId, selectTenant, cycle, month, year, changeMonth, amount, setAmount,
+    electricityAmount, setElectricityAmount,
     paymentDate, setPaymentDate, mode, selectMode, referenceNo, setReferenceNo,
     notes, setNotes, saving, selectionReady, loadingCycle, cycleError, retryCycle,
     savedCycleId, save,

@@ -27,7 +27,7 @@ export function AppChip({ label, onPress, selected = false, style }: Props) {
 }
 
 const styles = {
-  button: { borderRadius: radius.pill, minHeight: 38, paddingHorizontal: 14 },
+  button: { borderRadius: radius.pill, minHeight: 44, paddingHorizontal: 14 },
   selected: { backgroundColor: colors.primary, borderColor: colors.primary },
   selectedTitle: { color: colors.surface, fontWeight: '700' as const },
   title: { fontFamily, fontSize: 14, textTransform: 'capitalize' as const },

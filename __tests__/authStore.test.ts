@@ -4,6 +4,7 @@ const mockRepo = { localOwner: jest.fn(), claimLocalData: jest.fn() };
 const mockApp = { resetSession: jest.fn(), bootstrap: jest.fn() };
 jest.mock('../src/services/authService', () => ({ authService: mockAuth }));
 jest.mock('../src/services/cloudSyncService', () => ({ cloudSyncService: mockSync }));
+jest.mock('../src/services/pushNotificationService', () => ({ pushNotificationService: { resume: jest.fn().mockResolvedValue(false), stopForSignOut: jest.fn().mockResolvedValue(undefined) } }));
 jest.mock('../src/database/repositories/syncRepo', () => ({ syncRepo: mockRepo }));
 jest.mock('../src/store/appStore', () => ({ useAppStore: { getState: () => mockApp } }));
 jest.mock('@react-native-google-signin/google-signin', () => ({ isErrorWithCode: () => false, statusCodes: {} }));

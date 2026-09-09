@@ -3,6 +3,7 @@ import { Alert, StyleSheet, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
 import { AppButton } from '../../components/AppButton';
+import { AppInput } from '../../components/AppInput';
 import { Card } from '../../components/Card';
 import { Screen } from '../../components/Screen';
 import { StatusBadge } from '../../components/StatusBadge';
@@ -11,6 +12,7 @@ import { paymentRepo } from '../../database/repositories/paymentRepo';
 import { rentRepo } from '../../database/repositories/rentRepo';
 import { tenantRepo } from '../../database/repositories/tenantRepo';
 import { rentCycleService } from '../../services/rentCycleService';
+import { idProofService } from '../../services/idProofService';
 import { Payment, RentCycle, Tenant } from '../../types/models';
 import { formatCurrency } from '../../utils/currency';
 import { displayDate, monthLabel } from '../../utils/dates';
@@ -25,6 +27,8 @@ export function TenantDetailScreen({ navigation, route }: any) {
   const [tenant, setTenant] = useState<TenantDetail | null>(null);
   const [cycle, setCycle] = useState<RentCycle | null>(null);
   const [payments, setPayments] = useState<HistoryPayment[]>([]);
+  const [electricityDraft, setElectricityDraft] = useState('0');
+  const [savingBill, setSavingBill] = useState(false);
 
   useFocusEffect(useCallback(() => {
     let isActive = true;
@@ -44,6 +48,7 @@ export function TenantDetailScreen({ navigation, route }: any) {
         const [nextCycle, nextPayments] = await Promise.all([cyclePromise, paymentRepo.forTenant(tenantId)]);
         if (!isActive) return;
         setCycle(nextCycle?.deleted_at ? null : nextCycle);
+        if (nextCycle && !nextCycle.deleted_at) setElectricityDraft(String(nextCycle.electricity_amount ?? 0));
         setPayments(nextPayments);
       } catch {
         if (!isActive) return;
@@ -60,6 +65,21 @@ export function TenantDetailScreen({ navigation, route }: any) {
 
   if (loading) return <Screen><Muted>Loading tenant...</Muted></Screen>;
   if (error || !tenant) return <Screen><Muted>{error || 'Tenant not found.'}</Muted><AppButton title="Go back" onPress={() => navigation.goBack()} /></Screen>;
+  const updateElectricity = async () => {
+    if (!cycle || savingBill) return;
+    const amount = Number(electricityDraft);
+    if (!Number.isFinite(amount) || amount < 0) return Alert.alert('Check electricity', 'Enter an amount of zero or more.');
+    setSavingBill(true);
+    try {
+      const updated = await rentCycleService.updateElectricity(tenantId, cycle.month, cycle.year, amount);
+      setCycle(updated);
+      Alert.alert('Bill updated', `Total payable is now ${formatCurrency(updated.total_payable)}.`);
+    } catch (updateError) {
+      Alert.alert('Could not update bill', updateError instanceof Error ? updateError.message : 'Please try again.');
+    } finally {
+      setSavingBill(false);
+    }
+  };
   return (
     <Screen>
       <Title>{tenant.name}</Title>
@@ -67,8 +87,16 @@ export function TenantDetailScreen({ navigation, route }: any) {
       {tenant.status === 'inactive' ? <Muted>Moved out</Muted> : null}
       <Card>
         <Body>{tenant.phone}</Body>
-        <Body>{formatCurrency(tenant.monthly_rent)} monthly, due day {tenant.due_day}</Body>
+        <Body>Rent {formatCurrency(tenant.monthly_rent)} + Electricity {formatCurrency(tenant.electricity_amount)}</Body>
+        <Body>Total {formatCurrency(tenant.monthly_rent + tenant.electricity_amount)}, due day {tenant.due_day}</Body>
         <Muted>Moved in {displayDate(tenant.move_in_date)} | Deposit {formatCurrency(tenant.security_deposit)}</Muted>
+        {tenant.id_proof_storage_path ? (
+          <AppButton
+            title={`View ID proof${tenant.id_proof_name ? ` · ${tenant.id_proof_name}` : ''}`}
+            variant="secondary"
+            onPress={() => idProofService.open(tenant.id_proof_storage_path as string).catch(() => Alert.alert('Could not open ID proof', 'Check your connection and Firebase Storage access.'))}
+          />
+        ) : null}
         {tenant.notes ? <Muted>{tenant.notes}</Muted> : null}
       </Card>
       <View style={styles.actions}>
@@ -108,11 +136,11 @@ export function TenantDetailScreen({ navigation, route }: any) {
         ) : null}
       </View>
       <Body style={styles.heading}>Current rent</Body>
-      {cycle ? <Card><Body>{formatCurrency(cycle.total_paid)} paid of {formatCurrency(cycle.rent_amount)}</Body><Body>{formatCurrency(cycle.balance)} balance</Body><StatusBadge status={cycle.status} /></Card> : <Muted>No cycle available.</Muted>}
+      {cycle ? <Card><Body>Rent {formatCurrency(cycle.rent_amount)} + Electricity {formatCurrency(cycle.electricity_amount)}</Body><Body style={styles.total}>Total payable {formatCurrency(cycle.total_payable)}</Body><Body>{formatCurrency(cycle.total_paid)} paid · {formatCurrency(cycle.balance)} remaining</Body><StatusBadge status={cycle.status} />{tenant.status === 'active' ? <><AppInput editable={!savingBill} label="Electricity for this month" keyboardType="numeric" value={electricityDraft} onChangeText={setElectricityDraft} /><AppButton disabled={savingBill} title={savingBill ? 'Updating...' : 'Update electricity'} variant="secondary" onPress={updateElectricity} /></> : null}</Card> : <Muted>No cycle available.</Muted>}
       <Body style={styles.heading}>Payment history</Body>
       {payments.length === 0 ? <Muted>No payments recorded.</Muted> : payments.map(payment => <Card key={payment.id}><Body>{formatCurrency(payment.amount)}</Body><Muted>{monthLabel(payment.month, payment.year)} | {displayDate(payment.payment_date)} | {payment.payment_mode.replace('_', ' ')}</Muted></Card>)}
     </Screen>
   );
 }
 
-const styles = StyleSheet.create({ actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, heading: { fontWeight: '800', marginTop: 4 } });
+const styles = StyleSheet.create({ actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, heading: { fontWeight: '800', marginTop: 4 }, total: { fontWeight: '800' } });

@@ -68,12 +68,15 @@ export function ReceiptPreviewScreen({ route }: any) {
     <Screen>
       <Title>Receipt preview</Title>
       <Card>
-        <Body style={styles.heading}>KirayaBahi Receipt</Body>
+        <Body style={styles.heading}>{cycle.tenant_name}</Body>
+        <Muted>KirayaBahi payment receipt</Muted>
         <Muted>Date: {displayDate(data.paymentDate)}</Muted>
         <Body>Landlord: {landlordName}</Body>
-        <Body>Tenant: {cycle.tenant_name}</Body>
         <Body>Property / Unit: {cycle.property_name} / {cycle.unit_name}</Body>
         <Body>Rent month: {monthLabel(cycle.month, cycle.year)}</Body>
+        <Body>Rent: {formatCurrency(cycle.rent_amount)}</Body>
+        <Body>Electricity: {formatCurrency(cycle.electricity_amount)}</Body>
+        <Body>Total payable: {formatCurrency(cycle.total_payable)}</Body>
         <Body>Amount paid: {formatCurrency(data.amountPaid)}</Body>
         <Body>Balance: {formatCurrency(Math.max(cycle.balance, 0))}</Body>
         <Body>Payment mode: {data.paymentMode.replace('_', ' ')}</Body>

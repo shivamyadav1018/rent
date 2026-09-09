@@ -31,6 +31,7 @@ export const rentRepo = {
     month: number;
     year: number;
     rent_amount: number;
+    electricity_amount: number;
     due_date: string;
   }) {
     const timestamp = nowIso();
@@ -39,9 +40,21 @@ export const rentRepo = {
     const id = `cycle_${input.tenant_id}_${input.year}_${String(input.month).padStart(2, '0')}`;
     await executeWrite(
       `INSERT OR IGNORE INTO rent_cycles
-       (id, tenant_id, month, year, rent_amount, due_date, total_paid, balance, status, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, 0, ?, 'unpaid', ?, ?)`,
-      [id, input.tenant_id, input.month, input.year, input.rent_amount, input.due_date, input.rent_amount, timestamp, timestamp],
+       (id, tenant_id, month, year, rent_amount, electricity_amount, total_payable, due_date, total_paid, balance, status, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, 'unpaid', ?, ?)`,
+      [
+        id,
+        input.tenant_id,
+        input.month,
+        input.year,
+        input.rent_amount,
+        input.electricity_amount,
+        input.rent_amount + input.electricity_amount,
+        input.due_date,
+        input.rent_amount + input.electricity_amount,
+        timestamp,
+        timestamp,
+      ],
     );
     return id;
   },
@@ -91,6 +104,22 @@ export const rentRepo = {
        SET total_paid = ?, balance = ?, status = ?, updated_at = ?, sync_status = 'pending', version = version + 1
        WHERE id = ?`,
       [totalPaid, balance, status, nowIso(), id],
+    );
+  },
+
+  async updateCharges(
+    id: string,
+    electricityAmount: number,
+    totalPayable: number,
+    balance: number,
+    status: RentStatus,
+  ) {
+    await executeWrite(
+      `UPDATE rent_cycles
+       SET electricity_amount = ?, total_payable = ?, balance = ?, status = ?,
+           updated_at = ?, sync_status = 'pending', version = version + 1
+       WHERE id = ?`,
+      [electricityAmount, totalPayable, balance, status, nowIso(), id],
     );
   },
 };

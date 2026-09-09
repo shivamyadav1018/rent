@@ -4,6 +4,7 @@ import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { AppButton } from '../../components/AppButton';
 import { AppIcon } from '../../components/AppIcon';
 import { AppInput } from '../../components/AppInput';
+import { InfoNote } from '../../components/FormSection';
 import { Screen } from '../../components/Screen';
 import { Body, Muted, Title } from '../../components/Typography';
 import { useAuthStore } from '../../store/authStore';
@@ -63,11 +64,13 @@ export function WelcomeScreen({ navigation }: any) {
   };
 
   return (
-    <Screen backgroundColor={authColors.background} style={styles.screen}>
+    <Screen style={styles.screen}>
+      <View style={styles.readyStrip}><View style={styles.readyDot} /><Muted>Offline-first khata</Muted><AppIcon color={colors.success} name="shield-check-outline" size={19} /></View>
       <View style={styles.brandSection}>
         <View style={styles.logoMark}>
-          <AppIcon color={authColors.background} name="book-check-outline" size={30} />
+          <AppIcon color={authColors.background} name="home-city-outline" size={40} />
         </View>
+        <View style={styles.brandPill}><AppIcon name="office-building-outline" color={colors.primaryDark} size={15} /><Body style={styles.brandPillText}>SMART BAHI-KHATA</Body></View>
         <Title style={styles.brandName}>KirayaBahi</Title>
         <Muted style={styles.tagline}>Smart rent management for landlords</Muted>
       </View>
@@ -109,8 +112,8 @@ export function WelcomeScreen({ navigation }: any) {
           <>
             {status !== 'disabled' ? (
               <>
-                <AppInput variant="auth" autoCapitalize="none" autoComplete="email" keyboardType="email-address" label="Email" placeholder="you@example.com" value={email} onChangeText={setEmail} />
-                <AppInput variant="auth" autoCapitalize="none" autoComplete={mode === 'signUp' ? 'new-password' : 'current-password'} label="Password" placeholder="Enter your password" secureTextEntry value={password} onChangeText={setPassword} />
+                <AppInput variant="auth" autoCapitalize="none" autoComplete="email" keyboardType="email-address" icon="at" label="Email address" placeholder="you@example.com" value={email} onChangeText={setEmail} />
+                <AppInput variant="auth" autoCapitalize="none" autoComplete={mode === 'signUp' ? 'new-password' : 'current-password'} icon="lock-outline" label="Password" placeholder="Enter your password" secureTextEntry value={password} onChangeText={setPassword} />
                 {mode === 'signUp' ? (
                   <AppInput variant="auth" autoCapitalize="none" autoComplete="new-password" label="Confirm password" placeholder="Re-enter your password" secureTextEntry value={confirmPassword} onChangeText={setConfirmPassword} />
                 ) : null}
@@ -121,7 +124,7 @@ export function WelcomeScreen({ navigation }: any) {
                   <Muted style={styles.dividerText}>or continue with</Muted>
                   <View style={styles.dividerLine} />
                 </View>
-                <AppButton icon={<AppIcon color="#4285F4" name="google" size={19} />} title="Google" variant="secondary" onPress={signInWithGoogle} />
+                <AppButton icon={<AppIcon color="#4285F4" name="google" size={19} />} title="Sign in with Google" variant="secondary" onPress={signInWithGoogle} />
               </>
             ) : (
               <Muted style={styles.offlineNote}>Online sign-in is unavailable in this build.</Muted>
@@ -133,43 +136,51 @@ export function WelcomeScreen({ navigation }: any) {
                 <Body style={styles.modeLink}>{mode === 'signUp' ? 'Sign in' : 'Sign up'}</Body>
               </Pressable>
             </View>
-            <Pressable onPress={continueToSetup} style={styles.offlineAction}>
-              <AppIcon color={authColors.muted} name="wifi-off" size={16} />
-              <Muted style={styles.offlineActionText}>Continue offline</Muted>
-            </Pressable>
+
           </>
         )}
       </View>
 
-      <Muted style={styles.privacy}>Your rent records remain available on this device.</Muted>
+      {status !== 'signedIn' && status !== 'loading' ? <View style={styles.offlineCard}>
+        <View style={styles.offlineHeading}><View style={styles.offlineIcon}><AppIcon name="cellphone-wireless" color={colors.success} size={29} /></View><View style={styles.offlineInfo}><Title style={styles.heading}>Continue offline</Title><Muted>No internet required. Keep your rent records on this device.</Muted></View></View>
+        <AppButton title="Start Offline  ›" variant="secondary" onPress={continueToSetup} />
+      </View> : null}
+      <InfoNote>Your data is stored locally on this phone. Sign in to an account to enable cloud backup.</InfoNote>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  readyStrip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, backgroundColor: colors.primarySoft, borderRadius: 24, padding: 12 },
+  readyDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.mint },
+  brandPill: { flexDirection: 'row', gap: 6, alignItems: 'center', backgroundColor: colors.lavender, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20 },
+  brandPillText: { color: colors.primaryDark, fontSize: 11, fontWeight: '700', letterSpacing: 0.6 },
+  offlineCard: { backgroundColor: colors.surface, borderRadius: 16, padding: 20, gap: 20 },
+  offlineHeading: { flexDirection: 'row', gap: 12 }, offlineInfo: { flex: 1, gap: 4 },
+  offlineIcon: { width: 48, height: 48, backgroundColor: colors.mint, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   account: { alignItems: 'center', backgroundColor: authColors.primarySoft, borderColor: authColors.border, borderRadius: radius.md, borderWidth: 1, flexDirection: 'row', gap: 12, padding: 14 },
   accountAvatar: { alignItems: 'center', backgroundColor: authColors.background, borderRadius: 20, height: 40, justifyContent: 'center', width: 40 },
   accountEmail: { color: authColors.muted, fontSize: 12, marginTop: 1 },
   accountName: { color: authColors.ink, fontWeight: '700' },
   accountText: { flex: 1 },
-  brandName: { color: authColors.primaryDark, fontFamily, fontSize: 27, fontWeight: '800', letterSpacing: -0.5, marginTop: 12 },
-  brandSection: { alignItems: 'center', paddingTop: 22 },
+  brandName: { color: authColors.ink, fontFamily, fontSize: 32, fontWeight: '800', letterSpacing: -0.5, marginTop: 12 },
+  brandSection: { alignItems: 'center', paddingTop: 18, paddingBottom: 12 },
   divider: { alignItems: 'center', flexDirection: 'row', gap: 12, marginVertical: 2 },
   dividerLine: { backgroundColor: authColors.border, flex: 1, height: 1 },
   dividerText: { color: authColors.muted, fontSize: 12 },
   error: { backgroundColor: colors.dangerSoft, borderColor: '#F6C7C1', borderRadius: radius.sm, borderWidth: 1, color: colors.danger, fontSize: 13, padding: 12 },
-  form: { ...authShadow, backgroundColor: authColors.background, borderColor: authColors.border, borderRadius: radius.lg, borderWidth: 1, gap: 14, marginTop: 28, padding: 22 },
+  form: { backgroundColor: colors.surface, borderRadius: radius.lg, gap: 18, marginTop: 4, padding: 20 },
   heading: { color: authColors.ink, fontSize: 22, lineHeight: 28 },
   loading: { alignItems: 'center', flexDirection: 'row', gap: 10, paddingVertical: 18 },
   loadingText: { color: authColors.muted },
-  logoMark: { ...authShadow, alignItems: 'center', backgroundColor: authColors.primary, borderRadius: radius.lg, height: 64, justifyContent: 'center', width: 64 },
+  logoMark: { ...authShadow, alignItems: 'center', backgroundColor: authColors.primary, borderRadius: radius.lg, height: 88, justifyContent: 'center', width: 88, marginBottom: 14 },
   modeLink: { color: authColors.primary, fontSize: 13, fontWeight: '700' },
   modeRow: { alignItems: 'center', flexDirection: 'row', gap: 5, justifyContent: 'center', marginTop: 4 },
   offlineAction: { alignItems: 'center', alignSelf: 'center', flexDirection: 'row', gap: 6, padding: 6 },
   offlineActionText: { color: authColors.muted, textDecorationLine: 'underline' },
   offlineNote: { color: authColors.muted, paddingVertical: 8, textAlign: 'center' },
   privacy: { color: authColors.muted, marginTop: 'auto', paddingBottom: 8, paddingTop: 24, textAlign: 'center' },
-  screen: { flexGrow: 1, paddingHorizontal: 24 },
+  screen: { flexGrow: 1, paddingHorizontal: 16, gap: 20 },
   subtitle: { color: authColors.muted, fontSize: 14, lineHeight: 21, marginBottom: 2 },
   tagline: { color: authColors.muted, fontSize: 14, marginTop: 4 },
 });

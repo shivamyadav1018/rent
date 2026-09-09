@@ -10,6 +10,7 @@ import { AppInput } from '../../components/AppInput';
 import { Screen } from '../../components/Screen';
 import { Body, Muted, Title } from '../../components/Typography';
 import { settingsRepo } from '../../database/repositories/settingsRepo';
+import { pushNotificationService } from '../../services/pushNotificationService';
 import { useAppStore } from '../../store/appStore';
 import { useAuthStore } from '../../store/authStore';
 import { authColors, colors } from '../../theme';
@@ -19,6 +20,8 @@ export function SettingsScreen() {
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [remindersEnabled, setRemindersEnabled] = useState(false);
+  const [reminderWorking, setReminderWorking] = useState(false);
   const bootstrap = useAppStore(state => state.bootstrap);
   const authError = useAuthStore(state => state.error);
   const authStatus = useAuthStore(state => state.status);
@@ -37,6 +40,7 @@ export function SettingsScreen() {
       if (!isActive) return;
       setName(settings.landlordName ?? '');
       setPhone(settings.landlordPhone ?? '');
+      setRemindersEnabled(settings.remindersEnabled === 'true');
     }).catch(() => { if (isActive) Alert.alert('Could not load settings', 'Reopen Settings to retry.'); });
     return () => { isActive = false; };
   }, []));
@@ -63,6 +67,27 @@ export function SettingsScreen() {
       { text: 'Cancel', style: 'cancel' },
       { text: 'Sign out', style: 'destructive', onPress: signOut },
     ]);
+  };
+
+  const toggleReminders = async () => {
+    if (reminderWorking) return;
+    if (!remindersEnabled && (!authUser || authStatus !== 'signedIn')) {
+      return Alert.alert('Cloud account required', 'Connect your Firebase account before enabling scheduled reminders.');
+    }
+    setReminderWorking(true);
+    try {
+      if (remindersEnabled) {
+        await pushNotificationService.disable();
+        setRemindersEnabled(false);
+      } else if (authUser) {
+        await pushNotificationService.enable(authUser.uid);
+        setRemindersEnabled(true);
+      }
+    } catch (error) {
+      Alert.alert('Could not update reminders', error instanceof Error ? error.message : 'Please try again.');
+    } finally {
+      setReminderWorking(false);
+    }
   };
 
   return (
@@ -149,6 +174,22 @@ export function SettingsScreen() {
             variant="secondary"
           />
         )}
+      </Card>
+      <Card>
+        <View style={styles.cloudHeader}>
+          <View style={styles.cloudIcon}><AppIcon color={authColors.primary} name="bell-ring-outline" size={23} /></View>
+          <View style={styles.cloudText}>
+            <Body style={styles.cloudTitle}>Scheduled rent reminders</Body>
+            <Muted>{remindersEnabled ? 'Enabled on this device' : 'Get owner alerts before, on, and after each due date'}</Muted>
+          </View>
+        </View>
+        <Muted>Alerts name the tenant, room, and remaining balance so you know whom to follow up with.</Muted>
+        <AppButton
+          disabled={reminderWorking}
+          title={reminderWorking ? 'Updating...' : remindersEnabled ? 'Disable reminders' : 'Enable reminders'}
+          variant="secondary"
+          onPress={toggleReminders}
+        />
       </Card>
       <AppInput label="Landlord name" value={name} onChangeText={setName} />
       <AppInput label="Phone number (optional)" keyboardType="phone-pad" value={phone} onChangeText={setPhone} />

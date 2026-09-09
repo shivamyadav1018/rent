@@ -78,7 +78,8 @@ export function MonthlyLedgerScreen({ navigation }: any) {
         <Card key={item.id}>
           <Body style={styles.name}>{item.tenant_name}</Body>
           <Muted>{item.property_name} / {item.unit_name} | Due {displayDate(item.due_date)}</Muted>
-          <Body>{formatCurrency(item.total_paid)} paid | {formatCurrency(item.balance)} balance</Body>
+          <Muted>Rent {formatCurrency(item.rent_amount)} + Electricity {formatCurrency(item.electricity_amount)} = {formatCurrency(item.total_payable)}</Muted>
+          <Body>{formatCurrency(item.total_paid)} paid | {formatCurrency(item.balance)} remaining</Body>
           <StatusBadge status={item.status} />
           <View style={styles.actions}>
             {item.balance > 0 ? <AppButton disabled={saving} title={saving ? 'Saving...' : 'Mark paid'} onPress={() => markPaid(item.tenant_id, item.balance)} /> : null}

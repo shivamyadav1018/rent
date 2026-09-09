@@ -7,8 +7,8 @@ import { colors, fontFamily } from '../theme';
 const statusColors = {
   occupied: [colors.primarySoft, colors.primary],
   overdue:  [colors.dangerSoft, colors.danger],
-  paid:     [colors.primarySoft, colors.primary],
-  partial:  [colors.warningSoft, colors.warning],
+  paid:     [colors.successSoft, colors.success],
+  partial:  [colors.lavender, colors.primaryDark],
   unpaid:   [colors.surfaceMuted, colors.muted],
   vacant:   ['#E8EEF8', '#35598A'],
 };

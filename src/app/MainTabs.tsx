@@ -22,7 +22,7 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 
 const icons = {
   Dashboard: 'view-dashboard-outline',
-  Ledger: 'receipt',
+  Ledger: 'book-open-page-variant-outline',
   Properties: 'office-building-outline',
   Settings: 'cog-outline',
   Tenants: 'account-group-outline',
@@ -37,7 +37,7 @@ const screenOptions = ({ route }: any) => {
     tabBarInactiveTintColor: colors.muted,
     tabBarIcon: ({ color, size }: { color: string; size: number }) => <AppIcon color={color} name={icon} size={size} />,
     tabBarLabelStyle: { fontFamily, fontSize: 11, fontWeight: '600' as const },
-    tabBarItemStyle: { borderRadius: 8, marginHorizontal: 3 },
+    tabBarItemStyle: { borderRadius: 14, marginHorizontal: 3 },
     tabBarHideOnKeyboard: true,
     tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border, height: 68, paddingBottom: 8, paddingTop: 8 },
   };
@@ -48,7 +48,7 @@ export function MainTabs() {
   return (
     <Tab.Navigator screenOptions={props => {
       const options = screenOptions(props);
-      return { ...options, tabBarStyle: { ...options.tabBarStyle, height: 60 + Math.max(insets.bottom, 8), paddingBottom: Math.max(insets.bottom, 8) } };
+      return { ...options, tabBarStyle: { ...options.tabBarStyle, height: 68 + Math.max(insets.bottom, 8), paddingBottom: Math.max(insets.bottom, 8) } };
     }}>
       <Tab.Screen name="Dashboard" component={DashboardScreen} />
       <Tab.Screen name="Tenants" component={TenantsScreen} />

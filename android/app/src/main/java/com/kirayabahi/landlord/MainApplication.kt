@@ -1,6 +1,9 @@
 package com.kirayabahi.landlord
 
 import android.app.Application
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.os.Build
 import com.facebook.react.PackageList
 import com.facebook.react.ReactApplication
 import com.facebook.react.ReactHost
@@ -22,6 +25,16 @@ class MainApplication : Application(), ReactApplication {
 
   override fun onCreate() {
     super.onCreate()
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      val channel = NotificationChannel(
+        "rent-reminders",
+        "Rent reminders",
+        NotificationManager.IMPORTANCE_HIGH,
+      ).apply {
+        description = "Upcoming and overdue tenant payment reminders"
+      }
+      getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+    }
     loadReactNative(this)
   }
 }

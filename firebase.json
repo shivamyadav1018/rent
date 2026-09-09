@@ -1,6 +1,15 @@
 {
+  "functions": {
+    "source": "functions"
+  },
   "firestore": {
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "react-native": {
+    "messaging_ios_foreground_presentation_options": ["badge", "sound", "list", "banner"]
   }
 }

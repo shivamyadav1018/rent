@@ -37,9 +37,13 @@ export type Tenant = SyncMetadata & {
   name: string;
   phone: string;
   monthly_rent: number;
+  electricity_amount: number;
   due_day: number;
   move_in_date: string;
   security_deposit: number;
+  id_proof_name?: string | null;
+  id_proof_storage_path?: string | null;
+  id_proof_mime_type?: string | null;
   status: TenantStatus;
   notes?: string | null;
   created_at: string;
@@ -52,6 +56,8 @@ export type RentCycle = SyncMetadata & {
   month: number;
   year: number;
   rent_amount: number;
+  electricity_amount: number;
+  total_payable: number;
   due_date: string;
   total_paid: number;
   balance: number;

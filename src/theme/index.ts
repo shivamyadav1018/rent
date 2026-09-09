@@ -2,17 +2,21 @@ import type { Theme } from 'react-native-elements';
 
 export const colors = {
   accent: '#4B61D1',
-  background: '#F6F7FC',
-  border: '#DDE1EE',
-  danger: '#B42318',
-  dangerSoft: '#FDE8E5',
-  ink: '#171B2C',
-  muted: '#6F7587',
+  background: '#FAF8FF',
+  border: '#E9EDFF',
+  danger: '#BA1A1A',
+  dangerSoft: '#FFDAD6',
+  ink: '#151B2A',
+  muted: '#454653',
   primary: '#263BAA',
-  primaryDark: '#1D2F91',
-  primarySoft: '#EEF1FF',
+  primaryDark: '#001F94',
+  primarySoft: '#F1F3FF',
   surface: '#FFFFFF',
-  surfaceMuted: '#F1F3F9',
+  surfaceMuted: '#E9EDFF',
+  success: '#00392B',
+  successSoft: '#DDFBF1',
+  mint: '#93F5D4',
+  lavender: '#DEE0FF',
   warning: '#A15C00',
   warningSoft: '#FFF0D6',
 };
@@ -37,10 +41,10 @@ export const radius = {
 };
 
 export const shadow = {
-  elevation: 3,
+  elevation: 1,
   shadowColor: '#1D2F91',
   shadowOffset: { height: 3, width: 0 },
-  shadowOpacity: 0.08,
+  shadowOpacity: 0.04,
   shadowRadius: 12,
 };
 

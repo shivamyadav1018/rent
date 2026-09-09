@@ -18,7 +18,7 @@ import { paymentModes, useRecordPayment } from './useRecordPayment';
 export function RecordPaymentScreen({ navigation, route }: any) {
   const {
     activeTenants, loadingTenants, tenantError, retryTenants, tenantId, selectTenant,
-    cycle, month, year, changeMonth, amount, setAmount, paymentDate, setPaymentDate,
+    cycle, month, year, changeMonth, amount, setAmount, electricityAmount, setElectricityAmount, paymentDate, setPaymentDate,
     mode, selectMode, referenceNo, setReferenceNo, notes, setNotes, saving,
     selectionReady, loadingCycle, cycleError, retryCycle, savedCycleId, save,
   } = useRecordPayment(route.params);
@@ -84,7 +84,14 @@ export function RecordPaymentScreen({ navigation, route }: any) {
       <MonthSelector month={month} year={year} onChange={changeMonth} disabled={saving || !selectionReady} />
       {loadingCycle ? <Muted>Loading rent balance...</Muted> : null}
       {cycleError ? <View><Muted>{cycleError}</Muted><AppButton title="Retry" variant="secondary" onPress={retryCycle} /></View> : null}
-      {cycle ? <Muted>Rent {formatCurrency(cycle.rent_amount)} | Current balance {formatCurrency(cycle.balance)}</Muted> : null}
+      {cycle ? (
+        <Card>
+          <Body>{`Rent ${formatCurrency(cycle.rent_amount)} + Electricity ${formatCurrency(Number(electricityAmount) || 0)}`}</Body>
+          <Body style={styles.payable}>{`Total payable ${formatCurrency(cycle.rent_amount + (Number(electricityAmount) || 0))}`}</Body>
+          <Muted>Already paid {formatCurrency(cycle.total_paid)} | Balance after bill update {formatCurrency(cycle.rent_amount + (Number(electricityAmount) || 0) - cycle.total_paid)}</Muted>
+        </Card>
+      ) : null}
+      <AppInput editable={!saving} label="Electricity for this month" keyboardType="numeric" value={electricityAmount} onChangeText={setElectricityAmount} />
       <AppInput editable={!saving} label="Amount received" keyboardType="numeric" value={amount} onChangeText={setAmount} />
       <AppInput editable={!saving} label="Payment date (YYYY-MM-DD)" value={paymentDate} onChangeText={setPaymentDate} />
       <Body style={styles.label}>Payment mode</Body>
@@ -129,6 +136,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   optionPressed: { opacity: 0.75 },
+  payable: { fontWeight: '800' },
   options: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   tenantIcon: {
     alignItems: 'center',

@@ -80,7 +80,7 @@ test('filtered ledger refresh never changes the dashboard totals or its current-
   mockListUnits.mockResolvedValue([]);
   mockListTenants.mockResolvedValue([]);
   mockEnsureCycles.mockResolvedValue(undefined);
-  const current = { id: 'current', rent_amount: 1000, total_paid: 200, balance: 800, status: 'partial', due_date: '2020-01-01' };
+  const current = { id: 'current', rent_amount: 1000, electricity_amount: 200, total_payable: 1200, total_paid: 200, balance: 1000, status: 'partial', due_date: '2020-01-01' };
   mockLedger.mockResolvedValueOnce([current]);
   await useAppStore.getState().refreshAll();
   const summary = useAppStore.getState().summary;

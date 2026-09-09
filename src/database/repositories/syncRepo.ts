@@ -26,12 +26,12 @@ export const syncEntityConfig = {
   },
   tenant: {
     collection: 'tenants',
-    columns: ['id', 'unit_id', 'name', 'phone', 'monthly_rent', 'due_day', 'move_in_date', 'security_deposit', 'status', 'notes', 'created_at', 'updated_at', 'owner_id', 'deleted_at', 'version'],
+    columns: ['id', 'unit_id', 'name', 'phone', 'monthly_rent', 'electricity_amount', 'due_day', 'move_in_date', 'security_deposit', 'id_proof_name', 'id_proof_storage_path', 'id_proof_mime_type', 'status', 'notes', 'created_at', 'updated_at', 'owner_id', 'deleted_at', 'version'],
     table: 'tenants',
   },
   rentCycle: {
     collection: 'rentCycles',
-    columns: ['id', 'tenant_id', 'month', 'year', 'rent_amount', 'due_date', 'total_paid', 'balance', 'status', 'created_at', 'updated_at', 'owner_id', 'deleted_at', 'version'],
+    columns: ['id', 'tenant_id', 'month', 'year', 'rent_amount', 'electricity_amount', 'total_payable', 'due_date', 'total_paid', 'balance', 'status', 'created_at', 'updated_at', 'owner_id', 'deleted_at', 'version'],
     table: 'rent_cycles',
   },
   payment: {
@@ -79,7 +79,13 @@ export const syncRepo = {
   async applyRemoteEntity(entityType: SyncEntityType, data: Record<string, unknown>, ownerId: string) {
     const config = syncEntityConfig[entityType];
     const columns = config.columns;
-    const values = columns.map(column => column === 'owner_id' ? ownerId : data[column] ?? null);
+    const values = columns.map(column => {
+      if (column === 'owner_id') return ownerId;
+      if (data[column] !== undefined && data[column] !== null) return data[column];
+      if (column === 'electricity_amount') return 0;
+      if (entityType === 'rentCycle' && column === 'total_payable') return Number(data.rent_amount ?? 0);
+      return null;
+    });
     const updates = columns
       .filter(column => column !== 'id')
       .map(column => `${column} = excluded.${column}`)
@@ -157,11 +163,12 @@ export const syncRepo = {
       due_date: string;
       id: string;
       rent_amount: number;
+      total_payable: number;
       status: string;
       stored_total: number;
       payment_total: number;
     }>(`
-      SELECT rc.id, rc.rent_amount, rc.balance, rc.due_date, rc.status,
+      SELECT rc.id, rc.rent_amount, rc.total_payable, rc.balance, rc.due_date, rc.status,
              rc.total_paid AS stored_total, COALESCE(SUM(p.amount), 0) AS payment_total
       FROM rent_cycles rc
       LEFT JOIN payments p ON p.rent_cycle_id = rc.id AND p.deleted_at IS NULL
@@ -173,7 +180,7 @@ export const syncRepo = {
 
     for (const cycle of cycles) {
       const totalPaid = Number(cycle.payment_total);
-      const balance = Number(cycle.rent_amount) - totalPaid;
+      const balance = Number(cycle.total_payable) - totalPaid;
       const status = statusFor({ balance, due_date: cycle.due_date, total_paid: totalPaid });
 
       if (Number(cycle.stored_total) !== totalPaid || Number(cycle.balance) !== balance || cycle.status !== status) {

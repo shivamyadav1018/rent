@@ -1,6 +1,6 @@
 # KirayaBahi
 
-KirayaBahi is an offline-first React Native rent manager for landlords to manage properties, units, tenants, monthly rent, payments, WhatsApp reminders, and PDF receipts. SQLite keeps records available offline while authenticated accounts back up and restore their data through Cloud Firestore.
+KirayaBahi is an offline-first React Native rent manager for landlords to manage tenant profiles, rent and electricity bills, partial payments, payment history, scheduled owner reminders, WhatsApp follow-ups, and PDF receipts. SQLite keeps records available offline while authenticated accounts back up and restore their data through Cloud Firestore.
 
 ## Run on Android
 
@@ -48,6 +48,7 @@ npm test -- --runInBand
 
 - `src/database`: SQLite schema and repositories
 - `src/services`: rent-cycle, WhatsApp share, receipt PDF, and authentication logic
+- `functions`: the daily Firebase scheduler that creates missing monthly cycles and sends FCM owner reminders
 - `src/services/sync`: session guards and cloud transfer operations
 - `src/hooks`: reusable resource loading and retry logic
 - `src/app`: startup lifecycle, providers, and navigation
@@ -57,6 +58,6 @@ npm test -- --runInBand
 
 `patch-package` replaces the obsolete `jcenter()` declaration in `react-native-sqlite-storage` with `mavenCentral()` after each install so current Android Gradle versions can build the dependency.
 
-Firebase console and security-rule setup is documented in [`docs/firebase-setup.md`](docs/firebase-setup.md).
+Firebase Authentication, Firestore, Storage, FCM, APNs, and scheduled-function setup is documented in [`docs/firebase-setup.md`](docs/firebase-setup.md).
 
 The [app review](docs/app-review.md) records fixed issues, module boundaries, validation, and remaining device checks. Run `npm run check` for TypeScript, lint, and all tests. Repository integration tests use Node 22.13+ built-in SQLite.

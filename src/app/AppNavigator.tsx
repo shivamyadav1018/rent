@@ -69,7 +69,7 @@ export function AppNavigator() {
             name="LandlordSetup"
             component={LandlordSetupScreen}
             options={{
-              title: 'Your details',
+              title: 'Landlord Profile',
               headerBackVisible: false,
               headerStyle: { backgroundColor: authColors.background },
               headerTintColor: authColors.ink,
@@ -79,10 +79,10 @@ export function AppNavigator() {
         ) : (
           <>
             <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
-            <Stack.Screen name="AddProperty" component={AddEditPropertyScreen} options={{ title: 'Property' }} />
+            <Stack.Screen name="AddProperty" component={AddEditPropertyScreen} options={({ route }) => ({ title: route.params?.propertyId ? 'Edit Property' : 'Add Property' })} />
             <Stack.Screen name="PropertyDetail" component={PropertyDetailScreen} options={{ title: 'Property Detail' }} />
             <Stack.Screen name="AddUnit" component={AddEditUnitScreen} options={{ title: 'Unit' }} />
-            <Stack.Screen name="AddTenant" component={AddEditTenantScreen} options={{ title: 'Tenant' }} />
+            <Stack.Screen name="AddTenant" component={AddEditTenantScreen} options={({ route }) => ({ title: route.params?.tenantId ? 'Edit Tenant' : 'Add New Tenant' })} />
             <Stack.Screen name="TenantDetail" component={TenantDetailScreen} options={{ title: 'Tenant Detail' }} />
             <Stack.Screen name="RecordPayment" component={RecordPaymentScreen} options={{ title: 'Record Payment' }} />
             <Stack.Screen name="ReminderPreview" component={ReminderPreviewScreen} options={{ title: 'Reminder' }} />

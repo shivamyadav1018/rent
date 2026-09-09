@@ -29,13 +29,16 @@ export const receiptPdfService = {
       <html>
         <body style="font-family: Arial, sans-serif; padding: 28px; color: #17201d;">
           <h1 style="color: #263BAA; margin-bottom: 4px;">KirayaBahi Receipt</h1>
+          <h2 style="margin: 4px 0 16px;">${input.cycle.tenant_name}</h2>
           <p style="margin-top: 0;">Receipt No: ${receiptNumber}</p>
           <hr />
           <p><strong>Date:</strong> ${displayDate(input.paymentDate)}</p>
           <p><strong>Landlord:</strong> ${landlordName}</p>
-          <p><strong>Tenant:</strong> ${input.cycle.tenant_name}</p>
           <p><strong>Property / Unit:</strong> ${input.cycle.property_name} / ${input.cycle.unit_name}</p>
           <p><strong>Rent Month:</strong> ${monthLabel(input.cycle.month, input.cycle.year)}</p>
+          <p><strong>Rent:</strong> ${formatCurrency(input.cycle.rent_amount)}</p>
+          <p><strong>Electricity:</strong> ${formatCurrency(input.cycle.electricity_amount)}</p>
+          <p><strong>Total Payable:</strong> ${formatCurrency(input.cycle.total_payable)}</p>
           <p><strong>Amount Paid:</strong> ${formatCurrency(input.amountPaid)}</p>
           <p><strong>Balance:</strong> ${formatCurrency(Math.max(input.cycle.balance, 0))}</p>
           <p><strong>Payment Mode:</strong> ${input.paymentMode.replace('_', ' ')}</p>

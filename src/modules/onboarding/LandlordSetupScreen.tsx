@@ -1,23 +1,28 @@
 import React, { useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { Alert, Image, StyleSheet, View } from 'react-native';
 import { z } from 'zod';
 
 import { AppButton } from '../../components/AppButton';
 import { AppIcon } from '../../components/AppIcon';
 import { AppInput } from '../../components/AppInput';
 import { Screen } from '../../components/Screen';
-import { Body, Muted, Title } from '../../components/Typography';
+import { Body, Muted } from '../../components/Typography';
 import { settingsRepo } from '../../database/repositories/settingsRepo';
 import { useAppStore } from '../../store/appStore';
-import { authColors, authShadow, fontFamily, radius } from '../../theme';
+import { colors } from '../../theme';
+import { FormStep, InfoNote } from '../../components/FormSection';
+import { initials } from '../../components/BrandHeader';
+import { useAuthStore } from '../../store/authStore';
 
 const schema = z.object({
   landlordName: z.string().min(2, 'Enter landlord name'),
   landlordPhone: z.string().optional(),
 });
 
-export function LandlordSetupScreen({ navigation }: any) {
-  const [landlordName, setLandlordName] = useState('');
+export function LandlordSetupScreen() {
+  const user = useAuthStore(state => state.user);
+  const [saving, setSaving] = useState(false);
+  const [landlordName, setLandlordName] = useState(user?.displayName ?? '');
   const [landlordPhone, setLandlordPhone] = useState('');
   const bootstrap = useAppStore(state => state.bootstrap);
 
@@ -27,118 +32,99 @@ export function LandlordSetupScreen({ navigation }: any) {
       Alert.alert('Check details', parsed.error.issues[0]?.message);
       return;
     }
-    await settingsRepo.setMany({
-      currency: 'INR',
-      landlordName,
-      landlordPhone,
-      onboardingDone: 'true',
-    });
-    await bootstrap();
-    navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
+    setSaving(true);
+    try {
+      await settingsRepo.setMany({
+        currency: 'INR',
+        landlordName,
+        landlordPhone,
+        onboardingDone: 'true',
+      });
+      await bootstrap();
+    } catch (error) {
+      Alert.alert(
+        'Could not save profile',
+        error instanceof Error ? error.message : 'Please try again.',
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
-    <Screen backgroundColor={authColors.background} style={styles.screen}>
-
-      {/* ── Step indicator ── */}
-      <View style={styles.steps}>
-        <View style={styles.stepDone} />
-        <View style={styles.stepActive} />
-      </View>
-      <Muted style={styles.stepLabel}>Step 2 of 2 — Profile setup</Muted>
-
-      {/* ── Header ── */}
-      <View style={styles.header}>
-        <View style={styles.iconWrap}>
-          <AppIcon color={authColors.primary} name="account-outline" size={28} />
-        </View>
-        <Title style={styles.title}>Your details</Title>
-        <Muted style={styles.subtitle}>
-          These details appear on rent reminders and receipts sent to tenants.
+    <Screen>
+      <FormStep
+        title="Step 2 of 2: Landlord Details"
+        detail="Final Step"
+        complete
+      />
+      <Muted>
+        Set up your landlord profile to personalize receipts and WhatsApp
+        reminders.
+      </Muted>
+      <View style={styles.profile}>
+        {user?.photoURL ? (
+          <Image source={{ uri: user.photoURL }} style={styles.photo} />
+        ) : (
+          <View style={styles.photo}>
+            <Body style={styles.initials}>{initials(landlordName)}</Body>
+          </View>
+        )}
+        <Muted style={styles.caption}>
+          {landlordName || 'Your landlord profile'}
         </Muted>
       </View>
-
-      {/* ── Form card ── */}
-      <View style={styles.card}>
-        <AppInput
-          variant="auth"
-          label="Landlord name"
-          placeholder="e.g. Rahul Sharma"
-          value={landlordName}
-          onChangeText={setLandlordName}
-        />
-        <AppInput
-          variant="auth"
-          keyboardType="phone-pad"
-          label="Phone number (optional)"
-          placeholder="e.g. 9876543210"
-          value={landlordPhone}
-          onChangeText={setLandlordPhone}
-        />
-        <AppInput
-          variant="auth"
-          editable={false}
-          label="Default currency"
-          value="INR — Indian Rupee"
-        />
-      </View>
-
-      <View style={styles.privacyRow}>
-        <AppIcon color={authColors.muted} name="lock-outline" size={15} />
-        <Body style={styles.privacy}>Available offline and synced privately to your cloud account</Body>
-      </View>
-
+      <AppInput
+        icon="account-outline"
+        label="Full Name *"
+        placeholder="e.g. Rahul Sharma"
+        value={landlordName}
+        onChangeText={setLandlordName}
+      />
+      <AppInput
+        icon="phone-outline"
+        keyboardType="phone-pad"
+        label="WhatsApp Mobile Number (optional)"
+        placeholder="e.g. +91 98765 43210"
+        value={landlordPhone}
+        onChangeText={setLandlordPhone}
+      />
+      <AppInput
+        icon="currency-inr"
+        editable={false}
+        label="Ledger Currency"
+        value="INR (₹ - Indian Rupee)"
+      />
+      <InfoNote>
+        These details will appear on tenant PDF receipts and WhatsApp payment
+        reminder messages.
+      </InfoNote>
       <AppButton
-        icon={<AppIcon color={authColors.background} name="arrow-right" size={19} />}
-        title="Save and continue"
+        icon={<AppIcon color={colors.surface} name="arrow-right" size={20} />}
+        title={saving ? 'Saving…' : 'Save and continue'}
+        disabled={saving}
         onPress={save}
-        style={styles.button}
       />
     </Screen>
   );
 }
-
 const styles = StyleSheet.create({
-  button: { backgroundColor: authColors.primary, marginTop: 4 },
-  card: {
-    ...authShadow,
-    backgroundColor: authColors.background,
-    borderColor: authColors.border,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    gap: 14,
-    padding: 20,
-  },
-  header: { alignItems: 'center', gap: 8, paddingVertical: 8 },
-  iconWrap: {
+  profile: { alignItems: 'center', paddingVertical: 12, gap: 10 },
+  photo: {
+    width: 92,
+    height: 92,
+    borderRadius: 46,
+    backgroundColor: colors.lavender,
     alignItems: 'center',
-    backgroundColor: authColors.primarySoft,
-    borderRadius: radius.md,
-    height: 56,
     justifyContent: 'center',
-    width: 56,
+    borderWidth: 2,
+    borderColor: colors.surfaceMuted,
   },
-  privacy: {
-    color: authColors.muted,
-    fontFamily,
-    fontSize: 12,
+  initials: {
+    color: colors.primaryDark,
+    fontSize: 30,
+    lineHeight: 38,
+    fontWeight: '700',
   },
-  privacyRow: { alignItems: 'center', flexDirection: 'row', gap: 5, justifyContent: 'center' },
-  screen: { flexGrow: 1, gap: 20, paddingHorizontal: 24 },
-  stepActive: {
-    backgroundColor: authColors.primary,
-    borderRadius: 4,
-    flex: 1,
-    height: 5,
-  },
-  stepDone: {
-    backgroundColor: authColors.primarySoft,
-    borderRadius: 4,
-    flex: 1,
-    height: 5,
-  },
-  stepLabel: { color: authColors.muted, fontSize: 12, textAlign: 'center', marginTop: -12 },
-  steps: { flexDirection: 'row', gap: 6, marginTop: 8 },
-  subtitle: { color: authColors.muted, fontSize: 14, lineHeight: 21, textAlign: 'center' },
-  title: { color: authColors.ink, fontSize: 24, fontWeight: '800', lineHeight: 30, marginTop: 4 },
+  caption: { fontSize: 11 },
 });

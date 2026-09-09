@@ -92,9 +92,13 @@ export const runMigrations = async (db: any) => {
         name TEXT NOT NULL,
         phone TEXT NOT NULL,
         monthly_rent REAL NOT NULL DEFAULT 0,
+        electricity_amount REAL NOT NULL DEFAULT 0,
         due_day INTEGER NOT NULL DEFAULT 1,
         move_in_date TEXT NOT NULL,
         security_deposit REAL NOT NULL DEFAULT 0,
+        id_proof_name TEXT,
+        id_proof_storage_path TEXT,
+        id_proof_mime_type TEXT,
         status TEXT NOT NULL DEFAULT 'active',
         notes TEXT,
         created_at TEXT NOT NULL,
@@ -110,6 +114,8 @@ export const runMigrations = async (db: any) => {
         month INTEGER NOT NULL,
         year INTEGER NOT NULL,
         rent_amount REAL NOT NULL DEFAULT 0,
+        electricity_amount REAL NOT NULL DEFAULT 0,
+        total_payable REAL NOT NULL DEFAULT 0,
         due_date TEXT NOT NULL,
         total_paid REAL NOT NULL DEFAULT 0,
         balance REAL NOT NULL DEFAULT 0,
@@ -150,8 +156,24 @@ export const runMigrations = async (db: any) => {
       await addColumnIfMissing(db, table, column, definition);
     }
   }
+  const needsChargeBackfill = !(await tableHasColumn(db, 'rent_cycles', 'total_payable'));
+  await addColumnIfMissing(db, 'tenants', 'electricity_amount', 'REAL NOT NULL DEFAULT 0');
+  await addColumnIfMissing(db, 'tenants', 'id_proof_name', 'TEXT');
+  await addColumnIfMissing(db, 'tenants', 'id_proof_storage_path', 'TEXT');
+  await addColumnIfMissing(db, 'tenants', 'id_proof_mime_type', 'TEXT');
+  await addColumnIfMissing(db, 'rent_cycles', 'electricity_amount', 'REAL NOT NULL DEFAULT 0');
+  await addColumnIfMissing(db, 'rent_cycles', 'total_payable', 'REAL NOT NULL DEFAULT 0');
   await addColumnIfMissing(db, 'payments', 'updated_at', 'TEXT');
   await db.executeSql('UPDATE payments SET updated_at = created_at WHERE updated_at IS NULL');
+  if (needsChargeBackfill) {
+    await db.executeSql(
+      `UPDATE rent_cycles
+       SET total_payable = rent_amount + electricity_amount,
+           balance = rent_amount + electricity_amount - total_paid,
+           updated_at = ?, sync_status = 'pending', version = version + 1`,
+      [new Date().toISOString()],
+    );
+  }
 
   await db.executeSql(`
     CREATE TABLE IF NOT EXISTS sync_queue (

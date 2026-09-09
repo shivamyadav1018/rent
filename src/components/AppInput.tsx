@@ -2,15 +2,17 @@ import React, { useState } from 'react';
 import { StyleSheet, TextInputProps } from 'react-native';
 import { Input } from 'react-native-elements';
 
+import { AppIcon } from './AppIcon';
 import { authColors, colors, fontFamily } from '../theme';
 
 type Props = TextInputProps & {
   label: string;
   error?: string;
+  icon?: string;
   variant?: 'default' | 'auth';
 };
 
-export function AppInput({ label, error, style, variant = 'default', ...props }: Props) {
+export function AppInput({ label, error, icon, style, variant = 'default', ...props }: Props) {
   const [focused, setFocused] = useState(false);
   const isAuth = variant === 'auth';
   const primary = isAuth ? authColors.primary : colors.primary;
@@ -18,6 +20,8 @@ export function AppInput({ label, error, style, variant = 'default', ...props }:
   return (
     <Input
       {...props}
+      leftIcon={icon ? <AppIcon name={icon} color={colors.muted} size={20} /> : undefined}
+      leftIconContainerStyle={styles.leftIcon}
       containerStyle={styles.container}
       errorMessage={error}
       errorStyle={styles.error}
@@ -49,6 +53,7 @@ export function AppInput({ label, error, style, variant = 'default', ...props }:
 
 const styles = StyleSheet.create({
   container: { paddingHorizontal: 0 },
+  leftIcon: { marginLeft: 12 },
   disabledInput: { backgroundColor: colors.surfaceMuted },
   disabledText: { color: colors.muted },
   error: { color: colors.danger, fontFamily, fontSize: 12, margin: 0, marginTop: 4 },
@@ -56,9 +61,9 @@ const styles = StyleSheet.create({
   focused: { borderColor: colors.primary, borderWidth: 1.5 },
   focusedAuth: { borderColor: authColors.primary, borderWidth: 1.5 },
   input: { color: colors.ink, fontFamily, fontSize: 15, minHeight: 48, paddingHorizontal: 14 },
-  inputAuth: { backgroundColor: authColors.background, borderColor: authColors.border, minHeight: 52 },
+  inputAuth: { backgroundColor: colors.primarySoft, borderColor: colors.primarySoft, minHeight: 52 },
   inputAuthText: { color: authColors.ink },
-  inputContainer: { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: 10, borderWidth: 1.25, minHeight: 50 },
+  inputContainer: { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: 12, borderWidth: 1, minHeight: 50 },
   label: { color: colors.ink, fontFamily, fontSize: 13, fontWeight: '600', marginBottom: 7 },
   labelAuth: { color: authColors.ink },
   multiline: { minHeight: 110, paddingTop: 14, textAlignVertical: 'top' },
