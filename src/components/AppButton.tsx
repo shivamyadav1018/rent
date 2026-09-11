@@ -8,6 +8,7 @@ type Props = {
   title: string;
   onPress: () => void;
   variant?: 'primary' | 'secondary' | 'danger' | 'success';
+  size?: 'default' | 'compact';
   style?: ViewStyle;
   icon?: React.ReactNode;
   disabled?: boolean;
@@ -19,6 +20,7 @@ export function AppButton({
   icon,
   title,
   onPress,
+  size = 'default',
   style,
   textStyle,
   variant = 'primary',
@@ -31,6 +33,7 @@ export function AppButton({
     <Button
       buttonStyle={[
         styles.base,
+        size === 'compact' ? styles.compact : null,
         secondary
           ? styles.secondary
           : danger
@@ -62,6 +65,7 @@ export function AppButton({
 
 const styles = {
   base: { borderRadius: radius.md, minHeight: 50, paddingHorizontal: 18 },
+  compact: { minHeight: 42, paddingHorizontal: 12 },
   danger: {
     backgroundColor: colors.dangerSoft,
     borderColor: colors.dangerSoft,
