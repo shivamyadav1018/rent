@@ -1,7 +1,7 @@
 export type PropertyType = 'house' | 'flat' | 'room' | 'shop' | 'PG';
 export type UnitStatus = 'vacant' | 'occupied';
 export type TenantStatus = 'active' | 'inactive';
-export type RentStatus = 'unpaid' | 'partial' | 'paid' | 'overdue';
+export type RentStatus = 'unpaid' | 'partial' | 'paid' | 'overdue' | 'settled';
 export type PaymentMode = 'cash' | 'upi' | 'bank_transfer' | 'cheque' | 'other';
 export type SyncStatus = 'pending' | 'synced' | 'failed';
 
@@ -32,6 +32,7 @@ export type Unit = SyncMetadata & {
 };
 
 export type Tenant = SyncMetadata & {
+  settlement_id?: string | null;
   id: string;
   unit_id: string;
   name: string;
@@ -67,6 +68,16 @@ export type RentCycle = SyncMetadata & {
 };
 
 export type Payment = SyncMetadata & {
+  receipt_rent?: number | null;
+  receipt_electricity?: number | null;
+  receipt_balance?: number | null;
+  receipt_tenant?: string | null;
+  receipt_property?: string | null;
+  receipt_unit?: string | null;
+  receipt_landlord?: string | null;
+  voided_at?: string | null;
+  void_reason?: string | null;
+
   id: string;
   rent_cycle_id: string;
   tenant_id: string;
@@ -80,6 +91,7 @@ export type Payment = SyncMetadata & {
 };
 
 export type LedgerItem = RentCycle & {
+  settlement_id?: string | null;
   tenant_name: string;
   tenant_phone: string;
   unit_name: string;
@@ -91,4 +103,17 @@ export type DashboardSummary = {
   collectedRent: number;
   pendingRent: number;
   overdueCount: number;
+};
+
+export type SettlementStatement = {
+  tenantName: string; propertyName: string; unitName: string; phone: string;
+  moveOutDate: string; deposit: number; finalRent: number; finalElectricity: number;
+  deduction: number; deductionReason: string; previousBalance: number; finalPayments: number;
+  balance: number; bills: { month: number; year: number; rent: number; electricity: number; paid: number }[];
+};
+
+export type Settlement = SyncMetadata & {
+  id: string; tenant_id: string; statement_json: string; balance: number;
+  transfer_date?: string | null; transfer_mode?: PaymentMode | null; transfer_reference?: string | null;
+  created_at: string; updated_at: string;
 };

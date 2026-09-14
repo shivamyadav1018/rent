@@ -1,4 +1,4 @@
-jest.mock('../src/database/repositories/paymentRepo', () => ({ paymentRepo: { totalForCycle: jest.fn(), create: jest.fn() } }));
+jest.mock('../src/database/repositories/paymentRepo', () => ({ paymentRepo: { totalForCycle: jest.fn(), create: jest.fn(), recordAtomic: jest.fn() } }));
 jest.mock('../src/database/repositories/rentRepo', () => ({ rentRepo: { findCycle: jest.fn(), createCycle: jest.fn(), updateCharges: jest.fn(), updateTotals: jest.fn(), ledger: jest.fn() } }));
 jest.mock('../src/database/repositories/tenantRepo', () => ({ tenantRepo: { find: jest.fn(), active: jest.fn() } }));
 
@@ -72,9 +72,9 @@ test('updates a monthly electricity charge before recording a partial payment', 
     year: 2026,
   });
 
-  expect(rentRepo.updateCharges).toHaveBeenCalledWith('cycle', 300, 1300, 1300, 'overdue');
-  expect(paymentRepo.create).toHaveBeenCalledWith(expect.objectContaining({ amount: 500, tenant_id: 'tenant' }));
-  expect(rentRepo.updateTotals).toHaveBeenLastCalledWith('cycle', 500, 800, 'partial');
+  expect(paymentRepo.recordAtomic).toHaveBeenCalledWith(expect.objectContaining({ amount: 500, tenantId: 'tenant', electricityAmount: 300, cycleId: 'cycle' }));
+  expect(rentRepo.updateCharges).not.toHaveBeenCalled();
+  expect(paymentRepo.create).not.toHaveBeenCalled();
 });
 
 test('updates electricity and total payable without requiring a payment', async () => {

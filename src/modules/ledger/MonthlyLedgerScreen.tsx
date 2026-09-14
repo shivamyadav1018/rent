@@ -19,6 +19,7 @@ import { colors } from '../../theme';
 
 const statuses: Array<'all' | RentStatus> = [
   'all',
+  'settled',
   'paid',
   'unpaid',
   'partial',
@@ -197,7 +198,7 @@ export function MonthlyLedgerScreen({ navigation }: any) {
               </View>
               <View style={styles.amountDivider} />
               <View style={styles.amountColumn}>
-                <Muted>Remaining</Muted>
+                <Muted>{item.settlement_id ? 'Transferred to settlement' : 'Remaining'}</Muted>
                 <Body
                   style={
                     item.balance > 0 ? styles.balanceAmount : styles.paidAmount
@@ -213,8 +214,9 @@ export function MonthlyLedgerScreen({ navigation }: any) {
               {formatCurrency(item.total_payable)}
             </Muted>
 
+            {item.settlement_id ? <AppButton title="View final settlement" variant="secondary" onPress={() => navigation.navigate('MoveOut', { tenantId: item.tenant_id })} /> : null}
             <View style={styles.actions}>
-              {item.balance > 0 ? (
+              {!item.settlement_id && item.balance > 0 ? (
                 <View style={styles.actionRow}>
                   <AppButton
                     disabled={saving}
@@ -244,7 +246,7 @@ export function MonthlyLedgerScreen({ navigation }: any) {
                     title="Partial payment"
                     variant="secondary"
                     onPress={() =>
-                      navigation.navigate('RecordPayment', {
+                      navigation.navigate(item.settlement_id ? 'MoveOut' : 'RecordPayment', {
                         tenantId: item.tenant_id,
                         cycleId: item.id,
                       })
@@ -253,7 +255,7 @@ export function MonthlyLedgerScreen({ navigation }: any) {
                 </View>
               ) : null}
               <View style={styles.actionRow}>
-                {item.balance > 0 ? (
+                {!item.settlement_id && item.balance > 0 ? (
                   <AppButton
                     disabled={saving}
                     icon={

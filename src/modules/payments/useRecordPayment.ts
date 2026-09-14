@@ -38,6 +38,7 @@ export function useRecordPayment(params?: { tenantId?: string; cycleId?: string 
   const [loadingCycle, setLoadingCycle] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [cycleError, setCycleError] = useState('');
+  const [savedPaymentId, setSavedPaymentId] = useState<string | null>(null);
   const [savedCycleId, setSavedCycleId] = useState<string | null>(null);
 
   // Refresh after returning from the tenant form so newly created tenants appear immediately.
@@ -110,7 +111,7 @@ export function useRecordPayment(params?: { tenantId?: string; cycleId?: string 
     try {
       // paymentDate stored as plain YYYY-MM-DD (no UTC conversion) consistent with dates.ts fix
       const updated = await rentCycleService.recordPayment({ amount: parsedAmount.data, electricityAmount: parsedElectricity.data, month, notes, paymentDate, paymentMode: mode, referenceNo, tenantId, year });
-      if (updated) { setCycle(updated); setSavedCycleId(updated.id); }
+      if (updated) { setCycle(updated); setSavedCycleId(updated.id); setSavedPaymentId(updated.paymentId); }
       refreshAll().catch(() => undefined);
     } catch (error) {
       Alert.alert('Could not record payment', error instanceof Error ? error.message : 'Please try again.');
@@ -135,6 +136,6 @@ export function useRecordPayment(params?: { tenantId?: string; cycleId?: string 
     electricityAmount, setElectricityAmount,
     paymentDate, setPaymentDate, mode, selectMode, referenceNo, setReferenceNo,
     notes, setNotes, saving, selectionReady, loadingCycle, cycleError, retryCycle,
-    savedCycleId, save,
+    savedCycleId, savedPaymentId, save,
   };
 }

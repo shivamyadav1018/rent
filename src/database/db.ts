@@ -44,6 +44,16 @@ export const executeSql = async <T = any>(sql: string, params: any[] = []): Prom
   return rows;
 };
 
+export type SqlStatement = [string, any[]];
+
+// sqlBatch uses the native transaction queue: every statement commits or rolls back together.
+export const executeBatch = async (statements: SqlStatement[]) => {
+  const db = await getDb();
+  await db.sqlBatch(statements);
+  // A notification failure must never make a committed payment look unsuccessful.
+  try { writeListener?.(); } catch { /* The next sync also discovers queued writes. */ }
+};
+
 export const executeWrite = async (sql: string, params: any[] = []) => {
   const db = await getDb();
   await db.executeSql(sql, params);

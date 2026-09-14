@@ -2,11 +2,15 @@ import { LedgerItem, RentCycle, RentStatus } from '../../types/models';
 import { nowIso } from '../../utils/dates';
 import { executeSql, executeWrite } from '../db';
 
+
+const readLedger = (sql: string, params: any[] = []) => executeSql<LedgerItem>(sql, params)
+  .then(rows => rows.map(row => row.settlement_id ? { ...row, status: 'settled' as const } : row));
+
 export const rentRepo = {
   async findLedgerItem(id: string) {
-    const rows = await executeSql<LedgerItem>(
+    const rows = await readLedger(
       `
-      SELECT rc.*, t.name AS tenant_name, t.phone AS tenant_phone, u.name AS unit_name, p.name AS property_name
+      SELECT rc.*, (SELECT id FROM settlements s WHERE s.tenant_id = t.id AND s.deleted_at IS NULL) AS settlement_id, t.name AS tenant_name, t.phone AS tenant_phone, u.name AS unit_name, p.name AS property_name
       FROM rent_cycles rc
       JOIN tenants t ON t.id = rc.tenant_id
       JOIN units u ON u.id = t.unit_id
@@ -63,17 +67,20 @@ export const rentRepo = {
     const params: any[] = [month, year];
     const filters = ['rc.month = ?', 'rc.year = ?', 'rc.deleted_at IS NULL', 't.deleted_at IS NULL', 'u.deleted_at IS NULL', 'p.deleted_at IS NULL'];
     if (status !== 'all') {
-      filters.push('rc.status = ?');
-      params.push(status);
+      if (status === 'settled') filters.push('EXISTS (SELECT 1 FROM settlements s WHERE s.tenant_id = t.id AND s.deleted_at IS NULL)');
+      else {
+        filters.push('rc.status = ?', 'NOT EXISTS (SELECT 1 FROM settlements s WHERE s.tenant_id = t.id AND s.deleted_at IS NULL)');
+        params.push(status);
+      }
     }
     if (propertyId) {
       filters.push('p.id = ?');
       params.push(propertyId);
     }
 
-    return executeSql<LedgerItem>(
+    return readLedger(
       `
-      SELECT rc.*, t.name AS tenant_name, t.phone AS tenant_phone, u.name AS unit_name, p.name AS property_name
+      SELECT rc.*, (SELECT id FROM settlements s WHERE s.tenant_id = t.id AND s.deleted_at IS NULL) AS settlement_id, t.name AS tenant_name, t.phone AS tenant_phone, u.name AS unit_name, p.name AS property_name
       FROM rent_cycles rc
       JOIN tenants t ON t.id = rc.tenant_id
       JOIN units u ON u.id = t.unit_id
@@ -86,8 +93,8 @@ export const rentRepo = {
   },
 
   recentPaid() {
-    return executeSql<LedgerItem>(`
-      SELECT rc.*, t.name AS tenant_name, t.phone AS tenant_phone, u.name AS unit_name, p.name AS property_name
+    return readLedger(`
+      SELECT rc.*, (SELECT id FROM settlements s WHERE s.tenant_id = t.id AND s.deleted_at IS NULL) AS settlement_id, t.name AS tenant_name, t.phone AS tenant_phone, u.name AS unit_name, p.name AS property_name
       FROM rent_cycles rc
       JOIN tenants t ON t.id = rc.tenant_id
       JOIN units u ON u.id = t.unit_id
@@ -118,7 +125,7 @@ export const rentRepo = {
       `UPDATE rent_cycles
        SET electricity_amount = ?, total_payable = ?, balance = ?, status = ?,
            updated_at = ?, sync_status = 'pending', version = version + 1
-       WHERE id = ?`,
+       WHERE id = ? AND NOT EXISTS (SELECT 1 FROM settlements WHERE tenant_id = rent_cycles.tenant_id AND deleted_at IS NULL)`,
       [electricityAmount, totalPayable, balance, status, nowIso(), id],
     );
   },

@@ -3,7 +3,11 @@ import { collection, doc, getDoc, getDocs, getFirestore, setDoc } from '@react-n
 import { syncEntityConfig, syncRepo, type SyncEntityType, type SyncQueueItem } from '../../database/repositories/syncRepo';
 import { type SyncSession } from './session';
 
-export const entityTypes = Object.keys(syncEntityConfig) as SyncEntityType[];
+// Preserve parent-first ordering while allowing focused tests or lightweight
+// builds to provide only part of the entity configuration.
+export const entityTypes: SyncEntityType[] = (
+  ['property', 'unit', 'tenant', 'rentCycle', 'payment', 'settlement'] as SyncEntityType[]
+).filter(entityType => entityType in syncEntityConfig);
 const profileFields = ['currency', 'landlordName', 'landlordPhone', 'onboardingDone'] as const;
 
 const timestamp = (value: unknown) => typeof value === 'string' ? value : '';
@@ -115,4 +119,3 @@ export const syncProfile = async (session: SyncSession) => {
 
   return false;
 };
-

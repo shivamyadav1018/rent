@@ -25,3 +25,24 @@ test('failed database opens can be retried', async () => {
   await expect(initializeDatabase()).resolves.toBeUndefined();
   expect(SQLite.openDatabase).toHaveBeenCalledTimes(2);
 });
+
+test('batch publishes a change only after commit, and notification failure does not fail a committed save', async () => {
+  const SQLite = require('react-native-sqlite-storage');
+  const { executeBatch, setDatabaseWriteListener } = require('../src/database/db');
+  let commit!: () => void;
+  let started!: () => void;
+  const batchStarted = new Promise<void>(resolve => { started = resolve; });
+  const sqlBatch = jest.fn(() => new Promise<void>(resolve => { commit = resolve; started(); }));
+  SQLite.openDatabase.mockResolvedValue({ sqlBatch });
+  const listener = jest.fn(() => { throw new Error('sync unavailable'); });
+  setDatabaseWriteListener(listener);
+  const saving = executeBatch([['UPDATE payments SET amount = ?', [100]]]);
+  await batchStarted;
+  expect(listener).not.toHaveBeenCalled();
+  commit();
+  await expect(saving).resolves.toBeUndefined();
+  expect(listener).toHaveBeenCalledTimes(1);
+  sqlBatch.mockRejectedValueOnce(new Error('rollback'));
+  await expect(executeBatch([])).rejects.toThrow('rollback');
+  expect(listener).toHaveBeenCalledTimes(1);
+});

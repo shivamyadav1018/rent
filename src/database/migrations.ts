@@ -151,7 +151,20 @@ export const runMigrations = async (db: any) => {
     `);
   });
 
-  for (const table of ['properties', 'units', 'tenants', 'rent_cycles', 'payments']) {
+  await db.executeSql(`CREATE TABLE IF NOT EXISTS settlements (
+    id TEXT PRIMARY KEY NOT NULL,
+    tenant_id TEXT NOT NULL UNIQUE,
+    statement_json TEXT NOT NULL,
+    balance REAL NOT NULL,
+    transfer_date TEXT,
+    transfer_mode TEXT,
+    transfer_reference TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY(tenant_id) REFERENCES tenants(id)
+  )`);
+
+  for (const table of ['properties', 'units', 'tenants', 'rent_cycles', 'payments', 'settlements']) {
     for (const [column, definition] of syncColumns) {
       await addColumnIfMissing(db, table, column, definition);
     }
@@ -164,6 +177,15 @@ export const runMigrations = async (db: any) => {
   await addColumnIfMissing(db, 'rent_cycles', 'electricity_amount', 'REAL NOT NULL DEFAULT 0');
   await addColumnIfMissing(db, 'rent_cycles', 'total_payable', 'REAL NOT NULL DEFAULT 0');
   await addColumnIfMissing(db, 'payments', 'updated_at', 'TEXT');
+  await addColumnIfMissing(db, 'payments', 'receipt_rent', 'REAL');
+  await addColumnIfMissing(db, 'payments', 'receipt_electricity', 'REAL');
+  await addColumnIfMissing(db, 'payments', 'receipt_balance', 'REAL');
+  await addColumnIfMissing(db, 'payments', 'receipt_tenant', 'TEXT');
+  await addColumnIfMissing(db, 'payments', 'receipt_property', 'TEXT');
+  await addColumnIfMissing(db, 'payments', 'receipt_unit', 'TEXT');
+  await addColumnIfMissing(db, 'payments', 'receipt_landlord', 'TEXT');
+  await addColumnIfMissing(db, 'payments', 'voided_at', 'TEXT');
+  await addColumnIfMissing(db, 'payments', 'void_reason', 'TEXT');
   await db.executeSql('UPDATE payments SET updated_at = created_at WHERE updated_at IS NULL');
   if (needsChargeBackfill) {
     await db.executeSql(
@@ -195,6 +217,7 @@ export const runMigrations = async (db: any) => {
     ['tenants', 'tenant'],
     ['rent_cycles', 'rentCycle'],
     ['payments', 'payment'],
+    ['settlements', 'settlement'],
   ] as const;
 
   for (const [table, entityType] of syncTables) {
@@ -209,6 +232,14 @@ export const runMigrations = async (db: any) => {
       WHERE sync_status <> 'synced';
     `);
   }
+
+  await db.executeSql(`CREATE TRIGGER IF NOT EXISTS settled_payment_insert_guard
+    BEFORE INSERT ON payments WHEN NEW.sync_status <> 'synced' AND EXISTS (SELECT 1 FROM settlements WHERE tenant_id = NEW.tenant_id AND deleted_at IS NULL)
+    BEGIN SELECT RAISE(ABORT, 'This tenancy has a final settlement'); END`);
+  await db.executeSql(`CREATE TRIGGER IF NOT EXISTS settled_payment_void_guard
+    BEFORE UPDATE OF voided_at ON payments WHEN NEW.sync_status <> 'synced' AND NEW.voided_at IS NOT OLD.voided_at
+      AND EXISTS (SELECT 1 FROM settlements WHERE tenant_id = NEW.tenant_id AND deleted_at IS NULL)
+    BEGIN SELECT RAISE(ABORT, 'This tenancy has a final settlement'); END`);
 
   await db.executeSql('CREATE INDEX IF NOT EXISTS idx_sync_queue_updated_at ON sync_queue(updated_at)');
 };

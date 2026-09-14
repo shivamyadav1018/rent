@@ -3,6 +3,8 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
+import { MoveOutScreen } from '../modules/settlements/MoveOutScreen';
+import { SettlementsScreen } from '../modules/settlements/SettlementsScreen';
 import { MainTabs } from './MainTabs';
 import { useAppStore } from '../store/appStore';
 import { useAuthStore } from '../store/authStore';
@@ -27,9 +29,11 @@ export type RootStackParamList = {
   AddUnit: { propertyId: string; unitId?: string };
   AddTenant: { tenantId?: string; unitId?: string } | undefined;
   TenantDetail: { tenantId: string };
+  MoveOut: { tenantId: string };
+  Settlements: undefined;
   RecordPayment: { tenantId?: string; cycleId?: string } | undefined;
   ReminderPreview: { cycleId: string };
-  ReceiptPreview: { cycleId: string; amountPaid?: number; paymentMode?: string; paymentDate?: string; referenceNo?: string; notes?: string };
+  ReceiptPreview: { cycleId: string; paymentId?: string; amountPaid?: number; paymentMode?: string; paymentDate?: string; referenceNo?: string; notes?: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -83,6 +87,8 @@ export function AppNavigator() {
             <Stack.Screen name="PropertyDetail" component={PropertyDetailScreen} options={{ title: 'Property Detail' }} />
             <Stack.Screen name="AddUnit" component={AddEditUnitScreen} options={{ title: 'Unit' }} />
             <Stack.Screen name="AddTenant" component={AddEditTenantScreen} options={({ route }) => ({ title: route.params?.tenantId ? 'Edit Tenant' : 'Add New Tenant' })} />
+            <Stack.Screen name="MoveOut" component={MoveOutScreen} options={{ title: 'Move-out settlement' }} />
+            <Stack.Screen name="Settlements" component={SettlementsScreen} options={{ title: 'Settlements' }} />
             <Stack.Screen name="TenantDetail" component={TenantDetailScreen} options={{ title: 'Tenant Detail' }} />
             <Stack.Screen name="RecordPayment" component={RecordPaymentScreen} options={{ title: 'Record Payment' }} />
             <Stack.Screen name="ReminderPreview" component={ReminderPreviewScreen} options={{ title: 'Reminder' }} />

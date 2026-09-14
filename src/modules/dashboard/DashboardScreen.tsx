@@ -33,7 +33,7 @@ export function DashboardScreen({ navigation }: any) {
       refreshAll().catch(() => undefined);
     }, [refreshAll]),
   );
-  const pending = ledger.filter(item => item.balance > 0);
+  const pending = ledger.filter(item => !item.settlement_id && item.balance > 0);
   const paid = ledger
     .filter(item => item.status === 'paid')
     .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
@@ -66,6 +66,7 @@ export function DashboardScreen({ navigation }: any) {
         />
       }
     >
+      <AppButton title="Move-out settlements" variant="secondary" onPress={() => navigation.navigate('Settlements')} />
       <View style={styles.hero}>
         <View style={StyleSheet.absoluteFill} pointerEvents="none">
           <Svg width="100%" height="100%">

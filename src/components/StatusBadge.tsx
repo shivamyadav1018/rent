@@ -5,6 +5,7 @@ import { Badge } from 'react-native-elements';
 import { colors, fontFamily } from '../theme';
 
 const statusColors = {
+  settled: [colors.lavender, colors.primaryDark],
   occupied: [colors.primarySoft, colors.primary],
   overdue:  [colors.dangerSoft, colors.danger],
   paid:     [colors.successSoft, colors.success],

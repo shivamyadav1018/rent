@@ -32,6 +32,22 @@ beforeEach(() => {
 });
 afterEach(() => cleanup());
 
+test('shows an offline escape when Firebase never reports its initial session', async () => {
+  cleanup();
+  jest.useFakeTimers();
+  try {
+    cleanup = useAuthStore.getState().initialize();
+    expect(useAuthStore.getState().status).toBe('loading');
+    jest.advanceTimersByTime(8000);
+    expect(useAuthStore.getState()).toMatchObject({
+      status: 'signedOut',
+      error: 'Cloud sign-in is taking too long. You can continue offline and sync later.',
+    });
+  } finally {
+    jest.useRealTimers();
+  }
+});
+
 test('ignores a sign-in lookup completed after sign-out notification', async () => {
   const owner = deferred<string | null>();
   mockRepo.localOwner.mockReturnValueOnce(owner.promise);

@@ -1,3 +1,4 @@
+import { createId } from '../utils/ids';
 import { statusFor } from './rentStatus';
 import { paymentRepo } from '../database/repositories/paymentRepo';
 import { rentRepo } from '../database/repositories/rentRepo';
@@ -63,6 +64,8 @@ export const rentCycleService = {
     if (!Number.isFinite(electricityAmount) || electricityAmount < 0) {
       throw new Error('Electricity amount cannot be negative');
     }
+    const tenant = await tenantRepo.find(tenantId);
+    if (tenant?.settlement_id) throw new Error('This tenancy has a final settlement.');
     const cycle = await this.ensureCycleForTenant(tenantId, month, year);
     if (!cycle) throw new Error('No rent is due for this tenant in the selected month');
     if (electricityAmount === cycle.electricity_amount) return cycle;
@@ -89,34 +92,14 @@ export const rentCycleService = {
       throw new Error('Electricity amount cannot be negative');
     }
     if (!isValidDate(input.paymentDate)) throw new Error('Enter a valid payment date (YYYY-MM-DD)');
-    let cycle = await this.ensureCycleForTenant(input.tenantId, input.month, input.year);
+    const cycle = await this.ensureCycleForTenant(input.tenantId, input.month, input.year);
     if (!cycle) {
       throw new Error('No rent is due for this tenant in the selected month');
     }
 
-    if (input.electricityAmount !== undefined && input.electricityAmount !== cycle.electricity_amount) {
-      const totalPayable = cycle.rent_amount + input.electricityAmount;
-      const balance = totalPayable - cycle.total_paid;
-      const status = statusFor({ balance, due_date: cycle.due_date, total_paid: cycle.total_paid });
-      await rentRepo.updateCharges(cycle.id, input.electricityAmount, totalPayable, balance, status);
-      cycle = { ...cycle, balance, electricity_amount: input.electricityAmount, status, total_payable: totalPayable };
-    }
-
-    await paymentRepo.create({
-      amount: input.amount,
-      notes: input.notes,
-      payment_date: input.paymentDate,
-      payment_mode: input.paymentMode,
-      reference_no: input.referenceNo,
-      rent_cycle_id: cycle.id,
-      tenant_id: input.tenantId,
-    });
-
-    const totalPaid = await paymentRepo.totalForCycle(cycle.id);
-    const balance = cycle.total_payable - totalPaid;
-    const status = statusFor({ balance, due_date: cycle.due_date, total_paid: totalPaid });
-    await rentRepo.updateTotals(cycle.id, totalPaid, balance, status);
-
-    return rentRepo.findCycle(input.tenantId, input.month, input.year);
+    const paymentId = createId('pay');
+    await paymentRepo.recordAtomic({ ...input, id: paymentId, cycleId: cycle.id });
+    // Return the committed identity without a fallible read after the commit.
+    return { ...cycle, paymentId };
   },
 };

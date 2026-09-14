@@ -20,14 +20,14 @@ export function RecordPaymentScreen({ navigation, route }: any) {
     activeTenants, loadingTenants, tenantError, retryTenants, tenantId, selectTenant,
     cycle, month, year, changeMonth, amount, setAmount, electricityAmount, setElectricityAmount, paymentDate, setPaymentDate,
     mode, selectMode, referenceNo, setReferenceNo, notes, setNotes, saving,
-    selectionReady, loadingCycle, cycleError, retryCycle, savedCycleId, save,
+    selectionReady, loadingCycle, cycleError, retryCycle, savedCycleId, savedPaymentId, save,
   } = useRecordPayment(route.params);
 
   if (savedCycleId) return (
     <Screen>
       <Title>Payment saved</Title>
       <Card><Body>{formatCurrency(Number(amount))} recorded</Body><Muted>{monthLabel(month, year)} | {mode.replace('_', ' ')}</Muted></Card>
-      <AppButton title="Generate / share receipt" onPress={() => navigation.navigate('ReceiptPreview', { amountPaid: Number(amount), cycleId: savedCycleId, notes, paymentDate, paymentMode: mode, referenceNo })} />
+      <AppButton title="Generate / share receipt" onPress={() => navigation.navigate('ReceiptPreview', { cycleId: savedCycleId, paymentId: savedPaymentId })} />
       <AppButton title="Back to dashboard" variant="secondary" onPress={() => navigation.navigate('MainTabs', { screen: 'Dashboard' })} />
     </Screen>
   );

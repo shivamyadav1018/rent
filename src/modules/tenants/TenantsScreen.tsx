@@ -59,6 +59,7 @@ export function TenantsScreen({ navigation }: any) {
         />
       }
     >
+      <AppButton title="Move-out settlements" variant="secondary" onPress={() => navigation.navigate('Settlements')} />
       <View style={styles.heading}>
         <View style={styles.info}>
           <Title>Tenants</Title>

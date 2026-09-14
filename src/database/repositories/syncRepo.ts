@@ -4,7 +4,7 @@ import { nowIso } from '../../utils/dates';
 
 export type SyncQueueItem = {
   id: string;
-  entity_type: 'property' | 'unit' | 'tenant' | 'rentCycle' | 'payment';
+  entity_type: 'property' | 'unit' | 'tenant' | 'rentCycle' | 'payment' | 'settlement';
   entity_id: string;
   operation: 'upsert' | 'delete';
   attempt_count: number;
@@ -14,6 +14,11 @@ export type SyncQueueItem = {
 };
 
 export const syncEntityConfig = {
+  settlement: {
+    collection: 'settlements',
+    columns: ['id', 'tenant_id', 'statement_json', 'balance', 'transfer_date', 'transfer_mode', 'transfer_reference', 'created_at', 'updated_at', 'owner_id', 'deleted_at', 'version'],
+    table: 'settlements',
+  },
   property: {
     collection: 'properties',
     columns: ['id', 'name', 'type', 'address', 'created_at', 'updated_at', 'owner_id', 'deleted_at', 'version'],
@@ -36,7 +41,7 @@ export const syncEntityConfig = {
   },
   payment: {
     collection: 'payments',
-    columns: ['id', 'rent_cycle_id', 'tenant_id', 'amount', 'payment_date', 'payment_mode', 'reference_no', 'notes', 'created_at', 'updated_at', 'owner_id', 'deleted_at', 'version'],
+    columns: ['id', 'rent_cycle_id', 'tenant_id', 'amount', 'payment_date', 'payment_mode', 'reference_no', 'notes', 'receipt_rent', 'receipt_electricity', 'receipt_balance', 'receipt_tenant', 'receipt_property', 'receipt_unit', 'receipt_landlord', 'voided_at', 'void_reason', 'created_at', 'updated_at', 'owner_id', 'deleted_at', 'version'],
     table: 'payments',
   },
 } as const;
@@ -62,7 +67,7 @@ export const syncRepo = {
 
   async claimLocalData(ownerId: string) {
     await executeWrite('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', ['firebaseUserId', ownerId]);
-    for (const table of ['properties', 'units', 'tenants', 'rent_cycles', 'payments']) {
+    for (const table of ['properties', 'units', 'tenants', 'rent_cycles', 'payments', 'settlements']) {
       await executeWrite(`UPDATE ${table} SET owner_id = ? WHERE owner_id IS NULL`, [ownerId]);
     }
   },
@@ -171,7 +176,7 @@ export const syncRepo = {
       SELECT rc.id, rc.rent_amount, rc.total_payable, rc.balance, rc.due_date, rc.status,
              rc.total_paid AS stored_total, COALESCE(SUM(p.amount), 0) AS payment_total
       FROM rent_cycles rc
-      LEFT JOIN payments p ON p.rent_cycle_id = rc.id AND p.deleted_at IS NULL
+      LEFT JOIN payments p ON p.rent_cycle_id = rc.id AND p.deleted_at IS NULL AND p.voided_at IS NULL
       WHERE rc.deleted_at IS NULL
       GROUP BY rc.id
     `);

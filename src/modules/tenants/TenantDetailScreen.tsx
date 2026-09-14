@@ -94,7 +94,7 @@ export function TenantDetailScreen({ navigation, route }: any) {
       </Screen>
     );
   const updateElectricity = async () => {
-    if (!cycle || savingBill) return;
+    if (!cycle || savingBill || tenant.settlement_id) return;
     const amount = Number(electricityDraft);
     if (!Number.isFinite(amount) || amount < 0)
       return Alert.alert(
@@ -219,6 +219,7 @@ export function TenantDetailScreen({ navigation, route }: any) {
             icon={<AppIcon color={colors.surface} name="cash-plus" size={18} />}
             size="compact"
             style={styles.actionButton}
+            disabled={Boolean(tenant.settlement_id)}
             title="Record payment"
             onPress={() =>
               navigation.navigate('RecordPayment', {
@@ -256,46 +257,14 @@ export function TenantDetailScreen({ navigation, route }: any) {
           }
           size="compact"
           style={styles.actionButton}
+          disabled={Boolean(tenant.settlement_id)}
           title="Edit tenant"
           variant="secondary"
           onPress={() => navigation.navigate('AddTenant', { tenantId })}
         />
-        {tenant.status === 'active' ? (
-          <AppButton
-            icon={
-              <AppIcon color={colors.danger} name="exit-to-app" size={18} />
-            }
-            size="compact"
-            style={styles.actionButton}
-            title="Move out"
-            variant="danger"
-            onPress={() =>
-              Alert.alert(
-                'Mark as moved out?',
-                `This will mark ${tenant.name} as inactive and free their unit. This cannot be undone.`,
-                [
-                  { text: 'Cancel', style: 'cancel' },
-                  {
-                    text: 'Move out',
-                    style: 'destructive',
-                    onPress: async () => {
-                      try {
-                        await tenantRepo.deactivate(tenantId);
-                        navigation.goBack();
-                      } catch {
-                        Alert.alert(
-                          'Could not move out tenant',
-                          'Please try again.',
-                        );
-                      }
-                    },
-                  },
-                ],
-              )
-            }
-          />
-        ) : null}
+        <AppButton title={tenant.settlement_id ? 'View settlement' : 'Move out / settle deposit'} variant="secondary" onPress={() => navigation.navigate('MoveOut', { tenantId })} />
       </View>
+      {tenant.settlement_id ? <Muted>This tenancy is closed. Historical rent balances were transferred to its final settlement.</Muted> : null}
       <Body style={styles.heading}>Current rent</Body>
       {cycle ? (
         <Card>
@@ -306,7 +275,7 @@ export function TenantDetailScreen({ navigation, route }: any) {
                 {formatCurrency(cycle.total_payable)}
               </Body>
             </View>
-            <StatusBadge status={cycle.status} />
+            <StatusBadge status={tenant.settlement_id ? 'settled' : cycle.status} />
           </View>
           <Muted>
             Rent {formatCurrency(cycle.rent_amount)} + Electricity{' '}
@@ -377,6 +346,8 @@ export function TenantDetailScreen({ navigation, route }: any) {
                 </Muted>
               </View>
             </View>
+            {payment.voided_at ? <Muted>VOID: {payment.void_reason}</Muted> : null}
+            <AppButton title="View receipt / correct" variant="secondary" onPress={() => navigation.navigate('ReceiptPreview', { cycleId: payment.rent_cycle_id, paymentId: payment.id })} />
           </Card>
         ))
       )}

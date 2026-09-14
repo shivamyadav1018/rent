@@ -10,7 +10,7 @@ export const tenantRepo = {
     const statusFilter = includeInactive ? '' : "AND t.status = 'active'";
     return executeSql<Tenant & { unit_name: string; property_name: string; current_status?: string }>(
       `
-      SELECT t.*, u.name AS unit_name, p.name AS property_name,
+      SELECT t.*, (SELECT id FROM settlements s WHERE s.tenant_id = t.id AND s.deleted_at IS NULL) AS settlement_id, u.name AS unit_name, p.name AS property_name,
         rc.status AS current_status
       FROM tenants t
       JOIN units u ON u.id = t.unit_id
@@ -29,7 +29,7 @@ export const tenantRepo = {
 
   active() {
     return executeSql<Tenant & { unit_name: string; property_name: string }>(
-      `SELECT t.*, u.name AS unit_name, p.name AS property_name
+      `SELECT t.*, (SELECT id FROM settlements s WHERE s.tenant_id = t.id AND s.deleted_at IS NULL) AS settlement_id, u.name AS unit_name, p.name AS property_name
        FROM tenants t
        JOIN units u ON u.id = t.unit_id
        JOIN properties p ON p.id = u.property_id
@@ -42,7 +42,7 @@ export const tenantRepo = {
   async find(id: string) {
     const rows = await executeSql<Tenant & { unit_name: string; property_name: string }>(
       `
-      SELECT t.*, u.name AS unit_name, p.name AS property_name
+      SELECT t.*, (SELECT id FROM settlements s WHERE s.tenant_id = t.id AND s.deleted_at IS NULL) AS settlement_id, u.name AS unit_name, p.name AS property_name
       FROM tenants t
       JOIN units u ON u.id = t.unit_id
       JOIN properties p ON p.id = u.property_id
@@ -69,6 +69,7 @@ export const tenantRepo = {
     const id = input.id ?? createId('tenant');
     const previous = input.id ? await this.find(input.id) : null;
     if (input.id && !previous) throw new Error('Tenant no longer exists. Reopen the tenant list.');
+    if (previous?.settlement_id) throw new Error('This tenancy has a final settlement and cannot be edited.');
     const unit = await unitRepo.find(input.unit_id);
     if (!unit) throw new Error('Selected unit no longer exists');
     if (!previous || previous.status === 'active') {

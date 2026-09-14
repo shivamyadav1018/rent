@@ -53,6 +53,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const subscription = ++sessionGeneration;
     activeSubscription = subscription;
     let disposed = false;
+    let readinessTimer: ReturnType<typeof setTimeout> | undefined;
+    const clearReadinessTimer = () => {
+      if (readinessTimer) clearTimeout(readinessTimer);
+      readinessTimer = undefined;
+    };
     if (!authService.isConfigured) {
       cloudSyncService.stop();
       useAppStore.getState().resetSession();
@@ -61,12 +66,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
 
     set({ error: null, status: 'loading' });
+    // Some Android images never deliver an initial Firebase auth callback when
+    // Google services are unhealthy. Keep local records reachable in that case.
+    readinessTimer = setTimeout(() => {
+      if (disposed || activeSubscription !== subscription || get().status !== 'loading') return;
+      set({
+        error: 'Cloud sign-in is taking too long. You can continue offline and sync later.',
+        status: 'signedOut',
+      });
+    }, 8000);
     try {
       const unsubscribe = authService.subscribe(async firebaseUser => {
         if (disposed || activeSubscription !== subscription) return;
         const generation = ++sessionGeneration;
         const isCurrent = () => !disposed && generation === sessionGeneration;
         if (!firebaseUser) {
+          clearReadinessTimer();
           pushNotificationService.stopForSignOut().catch(() => undefined);
           cloudSyncService.stop();
           useAppStore.getState().resetSession();
@@ -127,16 +142,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
               uid: firebaseUser.uid,
             },
           });
+          clearReadinessTimer();
           pushNotificationService.resume(firebaseUser.uid).catch(() => undefined);
         } catch (error) {
           if (!isCurrent()) return;
           cloudSyncService.stop();
           useAppStore.getState().resetSession();
           set({ error: messageForAuthError(error), status: 'signedOut', user: null });
+          clearReadinessTimer();
         }
       });
       return () => {
         disposed = true;
+        clearReadinessTimer();
         unsubscribe();
         // A newer subscription owns its own sync lifecycle.
         if (activeSubscription === subscription) {
@@ -145,6 +163,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
       };
     } catch (error) {
+      clearReadinessTimer();
       set({ error: messageForAuthError(error), status: 'signedOut', user: null });
       return () => undefined;
     }

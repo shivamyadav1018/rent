@@ -125,18 +125,20 @@ exports.sendScheduledRentReminders = onSchedule(
 
     for (const userDocument of users.docs) {
       const userRef = userDocument.ref;
-      const [tenants, devices] = await Promise.all([
+      const [tenants, devices, settlements] = await Promise.all([
         userRef.collection('tenants').get(),
         userRef.collection('devices').get(),
+        userRef.collection('settlements').get(),
       ]);
       if (devices.empty) continue;
       await ensureCurrentCycles(userRef, userDocument.id, tenants, today);
       const cycles = await userRef.collection('rentCycles').where('month', '==', month).where('year', '==', year).get();
       const tenantMap = new Map(tenants.docs.map(document => [document.id, document.data()]));
 
+      const settledTenants = new Set(settlements.docs.filter(document => !document.data().deleted_at).map(document => document.data().tenant_id));
       for (const cycleDocument of cycles.docs) {
         const cycle = cycleDocument.data();
-        if (cycle.deleted_at || asNumber(cycle.balance) <= 0) continue;
+        if (cycle.deleted_at || settledTenants.has(cycle.tenant_id) || asNumber(cycle.balance) <= 0) continue;
         const tenantData = tenantMap.get(cycle.tenant_id);
         if (!tenantData || tenantData.deleted_at) continue;
         const location = await tenantLocation(userRef, tenantData);

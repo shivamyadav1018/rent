@@ -46,6 +46,8 @@ npm test -- --runInBand
 
 ## Architecture
 
+For a visual explanation of the frontend, backend, data flow, and each major module workflow, see **[Architecture and module workflows](docs/architecture.md)**.
+
 - `src/database`: SQLite schema and repositories
 - `src/services`: rent-cycle, WhatsApp share, receipt PDF, and authentication logic
 - `functions`: the daily Firebase scheduler that creates missing monthly cycles and sends FCM owner reminders
