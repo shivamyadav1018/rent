@@ -4,6 +4,7 @@ import Renderer, { act } from 'react-test-renderer';
 jest.mock('@react-navigation/native', () => ({ useFocusEffect: (callback: () => void) => require('react').useEffect(callback, [callback]) }));
 jest.mock('../src/components/Screen', () => ({ Screen: ({ children }: { children: React.ReactNode }) => children }));
 jest.mock('../src/components/AppIcon', () => ({ AppIcon: () => null }));
+jest.mock('../src/components/AppDatePicker', () => ({ AppDatePicker: () => null }));
 jest.mock('../src/database/repositories/rentRepo', () => ({ rentRepo: { findLedgerItem: jest.fn() } }));
 jest.mock('../src/database/repositories/tenantRepo', () => ({ tenantRepo: { list: jest.fn() } }));
 jest.mock('../src/services/rentCycleService', () => ({ rentCycleService: { ensureCycleForTenant: jest.fn(), recordPayment: jest.fn() } }));
@@ -12,6 +13,7 @@ jest.mock('../src/store/appStore', () => ({ useAppStore: (selector: any) => sele
 
 import { RecordPaymentScreen } from '../src/modules/payments/RecordPaymentScreen';
 import { AppButton } from '../src/components/AppButton';
+import { AppDatePicker } from '../src/components/AppDatePicker';
 import { AppInput } from '../src/components/AppInput';
 import { MonthSelector } from '../src/components/MonthSelector';
 import { rentRepo } from '../src/database/repositories/rentRepo';
@@ -33,6 +35,17 @@ test('opening a cycle still reloads the balance when the user changes months', a
   await act(async () => { renderer.root.findByType(MonthSelector).props.onChange(1); });
   expect(rentCycleService.ensureCycleForTenant).toHaveBeenLastCalledWith('tenant', 7, 2026);
   expect(renderer.root.findAllByType(AppInput).find(input => input.props.label === 'Amount received')?.props.value).toBe('700');
+  await act(async () => renderer.unmount());
+});
+
+test('uses a calendar picker for the payment date', async () => {
+  let renderer!: Renderer.ReactTestRenderer;
+  await act(async () => { renderer = Renderer.create(<RecordPaymentScreen navigation={{ navigate: jest.fn() }} route={{ params: { cycleId: 'cycle' } }} />); });
+  const picker = renderer.root.findByType(AppDatePicker);
+  expect(picker.props.label).toBe('Payment date');
+  expect(picker.props.value).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  expect(picker.props.maximumDate).toBeInstanceOf(Date);
+  expect(renderer.root.findAllByType(AppInput).some(input => input.props.label?.startsWith('Payment date'))).toBe(false);
   await act(async () => renderer.unmount());
 });
 

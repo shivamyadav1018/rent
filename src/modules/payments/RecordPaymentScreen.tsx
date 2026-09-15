@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
 import { AppButton } from '../../components/AppButton';
 import { AppChip } from '../../components/AppChip';
+import { AppDatePicker } from '../../components/AppDatePicker';
 import { AppIcon } from '../../components/AppIcon';
 import { AppInput } from '../../components/AppInput';
 import { Card } from '../../components/Card';
@@ -93,7 +94,12 @@ export function RecordPaymentScreen({ navigation, route }: any) {
       ) : null}
       <AppInput editable={!saving} label="Electricity for this month" keyboardType="numeric" value={electricityAmount} onChangeText={setElectricityAmount} />
       <AppInput editable={!saving} label="Amount received" keyboardType="numeric" value={amount} onChangeText={setAmount} />
-      <AppInput editable={!saving} label="Payment date (YYYY-MM-DD)" value={paymentDate} onChangeText={setPaymentDate} />
+      <AppDatePicker
+        label="Payment date"
+        maximumDate={new Date()}
+        value={paymentDate}
+        onChange={setPaymentDate}
+      />
       <Body style={styles.label}>Payment mode</Body>
       <View style={styles.options}>{paymentModes.map(item => <AppChip key={item} label={item.replace('_', ' ')} selected={mode === item} onPress={() => selectMode(item)} />)}</View>
       <AppInput editable={!saving} label="Reference number (optional)" value={referenceNo} onChangeText={setReferenceNo} />
