@@ -1,6 +1,25 @@
 export type PropertyType = 'house' | 'flat' | 'room' | 'shop' | 'PG';
 export type UnitStatus = 'vacant' | 'occupied';
 export type TenantStatus = 'active' | 'inactive';
+export type TenantInviteStatus = 'active' | 'cancelled' | 'expired' | 'used';
+
+export type TenantInvite = {
+  id: string;
+  code: string;
+  property_id: string;
+  unit_id: string;
+  tenant_name?: string | null;
+  tenant_phone: string;
+  status: TenantInviteStatus;
+  expires_at: string;
+  last_shared_at?: string | null;
+  created_at: string;
+  updated_at: string;
+  owner_id?: string | null;
+  deleted_at?: string | null;
+  sync_status?: SyncStatus;
+  version?: number;
+};
 export type RentStatus = 'unpaid' | 'partial' | 'paid' | 'overdue' | 'settled';
 export type PaymentMode = 'cash' | 'upi' | 'bank_transfer' | 'cheque' | 'other';
 export type SyncStatus = 'pending' | 'synced' | 'failed';

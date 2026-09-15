@@ -1,4 +1,4 @@
-const mockAuth = { isConfigured: true, subscribe: jest.fn(), signOut: jest.fn() };
+const mockAuth = { isConfigured: true, subscribe: jest.fn(), signInAnonymously: jest.fn(), signOut: jest.fn() };
 const mockSync = { start: jest.fn(), stop: jest.fn(), sync: jest.fn() };
 const mockRepo = { localOwner: jest.fn(), claimLocalData: jest.fn() };
 const mockApp = { resetSession: jest.fn(), bootstrap: jest.fn() };
@@ -11,7 +11,9 @@ jest.mock('@react-native-google-signin/google-signin', () => ({ isErrorWithCode:
 
 const { useAuthStore } = require('../src/store/authStore') as typeof import('../src/store/authStore');
 
-const user = { uid: 'owner', email: 'owner@example.com', displayName: null, photoURL: null };
+const user: { uid: string; email: string | null; displayName: string | null; photoURL: string | null; isAnonymous: boolean } = {
+  uid: 'owner', email: 'owner@example.com', displayName: null, photoURL: null, isAnonymous: false,
+};
 let notifyAuth: (value: typeof user | null) => Promise<void>;
 let cleanup: () => void;
 const deferred = <T,>() => {
@@ -24,6 +26,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockAuth.subscribe.mockImplementation(listener => { notifyAuth = listener; return jest.fn(); });
   mockAuth.signOut.mockResolvedValue(undefined);
+  mockAuth.signInAnonymously.mockResolvedValue(undefined);
   mockSync.start.mockResolvedValue(true);
   mockRepo.localOwner.mockResolvedValue(null);
   mockRepo.claimLocalData.mockResolvedValue(undefined);
@@ -78,6 +81,23 @@ test('cloud changes reload settings as well as rent records', async () => {
   await mockSync.start.mock.calls[0][1].onDataChanged();
   expect(mockApp.bootstrap).toHaveBeenCalledTimes(1);
   expect(useAuthStore.getState()).toMatchObject({ status: 'signedIn', user });
+});
+
+test('anonymous authentication enters tenant mode without claiming owner data', async () => {
+  await notifyAuth({ ...user, uid: 'guest', email: null, isAnonymous: true });
+  expect(mockRepo.localOwner).not.toHaveBeenCalled();
+  expect(mockRepo.claimLocalData).not.toHaveBeenCalled();
+  expect(mockSync.start).not.toHaveBeenCalled();
+  expect(useAuthStore.getState()).toMatchObject({
+    role: 'tenant',
+    status: 'signedIn',
+    user: { uid: 'guest', isAnonymous: true },
+  });
+});
+
+test('tenant guest action starts anonymous authentication', async () => {
+  await useAuthStore.getState().startTenantGuest();
+  expect(mockAuth.signInAnonymously).toHaveBeenCalledTimes(1);
 });
 
 test('a delayed sync callback cannot refresh the signed-out session', async () => {

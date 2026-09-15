@@ -15,9 +15,16 @@ import { PropertyDetailScreen } from '../modules/properties/PropertyDetailScreen
 import { AddEditUnitScreen } from '../modules/properties/AddEditUnitScreen';
 import { AddEditTenantScreen } from '../modules/tenants/AddEditTenantScreen';
 import { TenantDetailScreen } from '../modules/tenants/TenantDetailScreen';
+import { CreateTenantInviteScreen } from '../modules/tenants/CreateTenantInviteScreen';
+import { TenantInvitesScreen } from '../modules/tenants/TenantInvitesScreen';
 import { RecordPaymentScreen } from '../modules/payments/RecordPaymentScreen';
 import { ReminderPreviewScreen } from '../modules/reminders/ReminderPreviewScreen';
 import { ReceiptPreviewScreen } from '../modules/receipts/ReceiptPreviewScreen';
+import { TenantInviteCodeScreen } from '../modules/tenantGuest/TenantInviteCodeScreen';
+import { TenantApplicationScreen } from '../modules/tenantGuest/TenantApplicationScreen';
+import { TenantSubmissionScreen } from '../modules/tenantGuest/TenantSubmissionScreen';
+import { TenantApplicationsScreen } from '../modules/tenants/TenantApplicationsScreen';
+import { ReviewTenantApplicationScreen } from '../modules/tenants/ReviewTenantApplicationScreen';
 import { authColors, colors, fontFamily } from '../theme';
 
 export type RootStackParamList = {
@@ -29,6 +36,13 @@ export type RootStackParamList = {
   AddUnit: { propertyId: string; unitId?: string };
   AddTenant: { tenantId?: string; unitId?: string } | undefined;
   TenantDetail: { tenantId: string };
+  TenantInvites: undefined;
+  CreateTenantInvite: { unitId?: string } | undefined;
+  TenantApplications: undefined;
+  ReviewTenantApplication: { applicationId: string };
+  TenantInviteCode: undefined;
+  TenantApplication: { code: string };
+  TenantSubmission: { applicationId?: string } | undefined;
   MoveOut: { tenantId: string };
   Settlements: undefined;
   RecordPayment: { tenantId?: string; cycleId?: string } | undefined;
@@ -42,7 +56,9 @@ export function AppNavigator() {
   const onboardingDone = useAppStore(state => state.onboardingDone);
   const authStatus = useAuthStore(state => state.status);
   const offlineMode = useAuthStore(state => state.offlineMode);
-  const hasAccess = authStatus === 'signedIn' || offlineMode;
+  const role = useAuthStore(state => state.role);
+  const hasOwnerAccess = role === 'owner' && (authStatus === 'signedIn' || offlineMode);
+  const hasTenantAccess = role === 'tenant' && authStatus === 'signedIn';
 
   if (authStatus === 'loading') {
     return (
@@ -52,12 +68,12 @@ export function AppNavigator() {
     );
   }
 
-  const flow = !hasAccess ? 'signedOut' : onboardingDone ? 'app' : 'setup';
+  const flow = hasTenantAccess ? 'tenant' : !hasOwnerAccess ? 'signedOut' : onboardingDone ? 'app' : 'setup';
 
   return (
     <NavigationContainer key={flow}>
       <Stack.Navigator
-        initialRouteName={!hasAccess ? 'Welcome' : onboardingDone ? 'MainTabs' : 'LandlordSetup'}
+        initialRouteName={hasTenantAccess ? 'TenantInviteCode' : !hasOwnerAccess ? 'Welcome' : onboardingDone ? 'MainTabs' : 'LandlordSetup'}
         screenOptions={{
           contentStyle: { backgroundColor: colors.background },
           headerBackTitle: 'Back',
@@ -66,7 +82,13 @@ export function AppNavigator() {
           headerTintColor: colors.ink,
           headerTitleStyle: { fontFamily, fontSize: 18, fontWeight: '700' },
         }}>
-        {!hasAccess ? (
+        {hasTenantAccess ? (
+          <>
+            <Stack.Screen name="TenantInviteCode" component={TenantInviteCodeScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="TenantApplication" component={TenantApplicationScreen} options={{ title: 'Tenant Registration' }} />
+            <Stack.Screen name="TenantSubmission" component={TenantSubmissionScreen} options={{ headerShown: false }} />
+          </>
+        ) : !hasOwnerAccess ? (
           <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
         ) : !onboardingDone ? (
           <Stack.Screen
@@ -90,6 +112,10 @@ export function AppNavigator() {
             <Stack.Screen name="MoveOut" component={MoveOutScreen} options={{ title: 'Move-out settlement' }} />
             <Stack.Screen name="Settlements" component={SettlementsScreen} options={{ title: 'Settlements' }} />
             <Stack.Screen name="TenantDetail" component={TenantDetailScreen} options={{ title: 'Tenant Detail' }} />
+            <Stack.Screen name="TenantInvites" component={TenantInvitesScreen} options={{ title: 'Tenant Invites' }} />
+            <Stack.Screen name="CreateTenantInvite" component={CreateTenantInviteScreen} options={{ title: 'Invite Tenant' }} />
+            <Stack.Screen name="TenantApplications" component={TenantApplicationsScreen} options={{ title: 'Tenant Requests' }} />
+            <Stack.Screen name="ReviewTenantApplication" component={ReviewTenantApplicationScreen} options={{ title: 'Review Request' }} />
             <Stack.Screen name="RecordPayment" component={RecordPaymentScreen} options={{ title: 'Record Payment' }} />
             <Stack.Screen name="ReminderPreview" component={ReminderPreviewScreen} options={{ title: 'Reminder' }} />
             <Stack.Screen name="ReceiptPreview" component={ReceiptPreviewScreen} options={{ title: 'Receipt' }} />

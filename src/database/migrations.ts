@@ -164,7 +164,23 @@ export const runMigrations = async (db: any) => {
     FOREIGN KEY(tenant_id) REFERENCES tenants(id)
   )`);
 
-  for (const table of ['properties', 'units', 'tenants', 'rent_cycles', 'payments', 'settlements']) {
+  await db.executeSql(`CREATE TABLE IF NOT EXISTS tenant_invites (
+    id TEXT PRIMARY KEY NOT NULL,
+    code TEXT NOT NULL UNIQUE,
+    property_id TEXT NOT NULL,
+    unit_id TEXT NOT NULL,
+    tenant_name TEXT,
+    tenant_phone TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'active',
+    expires_at TEXT NOT NULL,
+    last_shared_at TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY(property_id) REFERENCES properties(id),
+    FOREIGN KEY(unit_id) REFERENCES units(id)
+  )`);
+
+  for (const table of ['properties', 'units', 'tenants', 'rent_cycles', 'payments', 'settlements', 'tenant_invites']) {
     for (const [column, definition] of syncColumns) {
       await addColumnIfMissing(db, table, column, definition);
     }
@@ -218,6 +234,7 @@ export const runMigrations = async (db: any) => {
     ['rent_cycles', 'rentCycle'],
     ['payments', 'payment'],
     ['settlements', 'settlement'],
+    ['tenant_invites', 'tenantInvite'],
   ] as const;
 
   for (const [table, entityType] of syncTables) {
@@ -242,4 +259,5 @@ export const runMigrations = async (db: any) => {
     BEGIN SELECT RAISE(ABORT, 'This tenancy has a final settlement'); END`);
 
   await db.executeSql('CREATE INDEX IF NOT EXISTS idx_sync_queue_updated_at ON sync_queue(updated_at)');
+  await db.executeSql('CREATE INDEX IF NOT EXISTS idx_tenant_invites_status ON tenant_invites(status, expires_at)');
 };

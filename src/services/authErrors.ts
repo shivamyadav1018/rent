@@ -18,6 +18,9 @@ export const messageForAuthError = (error: unknown) => {
     if (code === 'auth/operation-not-allowed') {
       return 'This sign-in method is not enabled in Firebase Authentication.';
     }
+    if (code === 'auth/admin-restricted-operation') {
+      return 'Tenant guest access is not enabled yet. Ask the app administrator to enable Anonymous sign-in in Firebase.';
+    }
     if (code === 'auth/invalid-credential') {
       return 'The sign-in credentials are invalid. Please try again.';
     }
@@ -37,4 +40,3 @@ export const messageForAuthError = (error: unknown) => {
   }
   return 'Unable to connect your account. Please try again.';
 };
-

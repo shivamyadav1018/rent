@@ -60,6 +60,12 @@ export function TenantsScreen({ navigation }: any) {
       }
     >
       <AppButton title="Move-out settlements" variant="secondary" onPress={() => navigation.navigate('Settlements')} />
+      <AppButton
+        icon={<AppIcon color={colors.primaryDark} name="whatsapp" size={19} />}
+        title="Invite tenant via WhatsApp"
+        variant="secondary"
+        onPress={() => navigation.navigate('TenantInvites')}
+      />
       <View style={styles.heading}>
         <View style={styles.info}>
           <Title>Tenants</Title>

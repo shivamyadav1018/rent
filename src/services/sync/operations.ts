@@ -6,7 +6,7 @@ import { type SyncSession } from './session';
 // Preserve parent-first ordering while allowing focused tests or lightweight
 // builds to provide only part of the entity configuration.
 export const entityTypes: SyncEntityType[] = (
-  ['property', 'unit', 'tenant', 'rentCycle', 'payment', 'settlement'] as SyncEntityType[]
+  ['property', 'unit', 'tenant', 'rentCycle', 'payment', 'settlement', 'tenantInvite'] as SyncEntityType[]
 ).filter(entityType => entityType in syncEntityConfig);
 const profileFields = ['currency', 'landlordName', 'landlordPhone', 'onboardingDone'] as const;
 

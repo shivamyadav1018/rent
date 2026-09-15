@@ -6,6 +6,7 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signInWithCredential,
+  signInAnonymously,
   signOut,
   type User,
 } from '@react-native-firebase/auth';
@@ -85,6 +86,14 @@ export const authService = {
     }
     configure();
     return createUserWithEmailAndPassword(getAuth(), email.trim(), password);
+  },
+
+  async signInAnonymously() {
+    if (!isFirebaseConfigured) {
+      throw new Error('Firebase configuration is required to use a tenant invite.');
+    }
+    configure();
+    return signInAnonymously(getAuth());
   },
 
   async signOut() {

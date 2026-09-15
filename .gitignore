@@ -51,6 +51,7 @@ android/app/build/outputs/apk/release/*
 #
 node_modules/
 npm-debug.log
+firebase-debug.log
 yarn-error.log
 
 # fastlane

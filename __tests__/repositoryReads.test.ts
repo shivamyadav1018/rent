@@ -25,6 +25,7 @@ import { unitRepo } from '../src/database/repositories/unitRepo';
 import { tenantRepo } from '../src/database/repositories/tenantRepo';
 import { syncRepo } from '../src/database/repositories/syncRepo';
 import { rentRepo } from '../src/database/repositories/rentRepo';
+import { tenantInviteRepo } from '../src/database/repositories/tenantInviteRepo';
 
 beforeEach(async () => {
   mockDatabase = new DatabaseSync(':memory:');
@@ -52,6 +53,31 @@ test('deleted payments are excluded from balances, receipts, history, and counts
   await expect(paymentRepo.latestForCycle('cycle')).resolves.toMatchObject({ id: 'live' });
   await expect(paymentRepo.forTenant('tenant')).resolves.toHaveLength(1);
   await expect(paymentRepo.count()).resolves.toEqual([{ count: 1 }]);
+});
+
+test('tenant invites are stored for vacant units and duplicate active invites are rejected', async () => {
+  mockDatabase.exec("UPDATE units SET status = 'vacant' WHERE id = 'unit'");
+  const created = await tenantInviteRepo.create({
+    expires_in_days: 7,
+    property_id: 'property',
+    tenant_name: 'Rahul',
+    tenant_phone: '9876543210',
+    unit_id: 'unit',
+  });
+  expect(created.code).toMatch(/^[A-Z2-9]{6}$/);
+  await expect(tenantInviteRepo.list()).resolves.toEqual([
+    expect.objectContaining({ code: created.code, property_name: 'Home', status: 'active', unit_name: 'Room' }),
+  ]);
+  await expect(tenantInviteRepo.create({
+    expires_in_days: 7,
+    property_id: 'property',
+    tenant_phone: '9123456780',
+    unit_id: 'unit',
+  })).rejects.toThrow('active invite');
+  await tenantInviteRepo.cancel(created.id);
+  await expect(tenantInviteRepo.list()).resolves.toEqual([
+    expect.objectContaining({ id: created.id, status: 'cancelled' }),
+  ]);
 });
 
 test('a deleted property and its descendants are hidden from lists and the ledger', async () => {

@@ -1,5 +1,17 @@
 # Firebase setup
 
+## Tenant guest registration
+
+The tenant invite flow uses Firebase Anonymous Authentication as an invisible session key. In Firebase Console, open **Authentication > Sign-in method** and enable **Anonymous**. Tenants are not asked for email, password, SMS, or OTP.
+
+If the app shows `Tenant guest access is not enabled yet`, this toggle is still off. Anonymous sign-in is required before an invite can be redeemed.
+
+Deploy the updated `firestore.rules` before testing tenant codes. The rules allow an authenticated guest to fetch one exact invite code and submit one application, while owner data under `users/{ownerId}` remains owner-only.
+
+App Check is already initialized in the mobile app. Register the Android Play Integrity provider (and Apple providers for iOS) before production, then enable Firestore App Check enforcement in Firebase Console. Debug builds require their debug token to be registered.
+
+The no-OTP design deliberately treats tenant phone numbers as unverified. The owner review screen compares the invited and submitted numbers and requires the owner to confirm by WhatsApp or call.
+
 KirayaBahi is offline-first: SQLite remains the on-device source for fast/offline use, and Firestore backs up and restores each signed-in user's records. Local changes are queued automatically, uploaded after edits, retried when the app returns to the foreground, and can also be sent with **Settings > Sync now**. Tenant ID proof files are kept in Firebase Storage rather than SQLite.
 
 ## Firebase Console

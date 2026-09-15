@@ -4,7 +4,7 @@ import { nowIso } from '../../utils/dates';
 
 export type SyncQueueItem = {
   id: string;
-  entity_type: 'property' | 'unit' | 'tenant' | 'rentCycle' | 'payment' | 'settlement';
+  entity_type: 'property' | 'unit' | 'tenant' | 'rentCycle' | 'payment' | 'settlement' | 'tenantInvite';
   entity_id: string;
   operation: 'upsert' | 'delete';
   attempt_count: number;
@@ -14,6 +14,11 @@ export type SyncQueueItem = {
 };
 
 export const syncEntityConfig = {
+  tenantInvite: {
+    collection: 'tenantInvites',
+    columns: ['id', 'code', 'property_id', 'unit_id', 'tenant_name', 'tenant_phone', 'status', 'expires_at', 'last_shared_at', 'created_at', 'updated_at', 'owner_id', 'deleted_at', 'version'],
+    table: 'tenant_invites',
+  },
   settlement: {
     collection: 'settlements',
     columns: ['id', 'tenant_id', 'statement_json', 'balance', 'transfer_date', 'transfer_mode', 'transfer_reference', 'created_at', 'updated_at', 'owner_id', 'deleted_at', 'version'],
@@ -67,7 +72,7 @@ export const syncRepo = {
 
   async claimLocalData(ownerId: string) {
     await executeWrite('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', ['firebaseUserId', ownerId]);
-    for (const table of ['properties', 'units', 'tenants', 'rent_cycles', 'payments', 'settlements']) {
+    for (const table of ['properties', 'units', 'tenants', 'rent_cycles', 'payments', 'settlements', 'tenant_invites']) {
       await executeWrite(`UPDATE ${table} SET owner_id = ? WHERE owner_id IS NULL`, [ownerId]);
     }
   },

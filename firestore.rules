@@ -2,12 +2,71 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function owns(data) {
+      return signedIn() && data.owner_id == request.auth.uid;
+    }
+
     match /users/{userId} {
       allow read, create, update, delete: if request.auth != null && request.auth.uid == userId;
 
       match /{document=**} {
         allow read, create, update, delete: if request.auth != null && request.auth.uid == userId;
       }
+    }
+
+    match /tenantInviteCodes/{code} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if owns(request.resource.data)
+        && request.resource.data.code == code
+        && request.resource.data.status == 'active'
+        && request.resource.data.expires_at_ms > request.time.toMillis();
+      allow update: if owns(resource.data)
+        && request.resource.data.owner_id == resource.data.owner_id
+        && request.resource.data.invite_id == resource.data.invite_id
+        && request.resource.data.code == resource.data.code
+        && (
+          (resource.data.status == 'active' && request.resource.data.status in ['active', 'cancelled', 'expired', 'used'])
+          || request.resource.data.status == resource.data.status
+        );
+      allow delete: if owns(resource.data);
+    }
+
+    match /tenantApplications/{applicationId} {
+      allow create: if signedIn()
+        && request.resource.data.id == applicationId
+        && request.resource.data.invite_id == applicationId
+        && request.resource.data.applicant_id == request.auth.uid
+        && request.resource.data.status == 'submitted'
+        && request.resource.data.tenant_name is string
+        && request.resource.data.tenant_name.size() >= 2
+        && request.resource.data.tenant_name.size() <= 120
+        && request.resource.data.phone is string
+        && request.resource.data.phone.size() >= 10
+        && request.resource.data.phone.size() <= 15
+        && request.resource.data.current_address is string
+        && request.resource.data.current_address.size() >= 5
+        && request.resource.data.current_address.size() <= 500
+        && exists(/databases/$(database)/documents/tenantInviteCodes/$(request.resource.data.invite_code))
+        && get(/databases/$(database)/documents/tenantInviteCodes/$(request.resource.data.invite_code)).data.status == 'active'
+        && get(/databases/$(database)/documents/tenantInviteCodes/$(request.resource.data.invite_code)).data.expires_at_ms > request.time.toMillis()
+        && request.resource.data.invite_id == get(/databases/$(database)/documents/tenantInviteCodes/$(request.resource.data.invite_code)).data.invite_id
+        && request.resource.data.owner_id == get(/databases/$(database)/documents/tenantInviteCodes/$(request.resource.data.invite_code)).data.owner_id
+        && request.resource.data.property_id == get(/databases/$(database)/documents/tenantInviteCodes/$(request.resource.data.invite_code)).data.property_id
+        && request.resource.data.unit_id == get(/databases/$(database)/documents/tenantInviteCodes/$(request.resource.data.invite_code)).data.unit_id;
+      allow read: if signedIn()
+        && (resource.data.applicant_id == request.auth.uid || resource.data.owner_id == request.auth.uid);
+      allow update: if owns(resource.data)
+        && resource.data.status == 'submitted'
+        && request.resource.data.owner_id == resource.data.owner_id
+        && request.resource.data.applicant_id == resource.data.applicant_id
+        && request.resource.data.invite_id == resource.data.invite_id
+        && request.resource.data.status in ['approved', 'rejected'];
+      allow delete: if false;
     }
 
     match /{document=**} {

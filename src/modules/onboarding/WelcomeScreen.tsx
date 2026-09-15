@@ -22,6 +22,7 @@ export function WelcomeScreen({ navigation }: any) {
   const createAccount = useAuthStore(state => state.createAccount);
   const signInWithEmail = useAuthStore(state => state.signInWithEmail);
   const signInWithGoogle = useAuthStore(state => state.signInWithGoogle);
+  const startTenantGuest = useAuthStore(state => state.startTenantGuest);
   const signOut = useAuthStore(state => state.signOut);
   const status = useAuthStore(state => state.status);
   const user = useAuthStore(state => state.user);
@@ -74,6 +75,15 @@ export function WelcomeScreen({ navigation }: any) {
         <Title style={styles.brandName}>KirayaBahi</Title>
         <Muted style={styles.tagline}>Smart rent management for landlords</Muted>
       </View>
+
+      {status !== 'signedIn' && status !== 'loading' && status !== 'disabled' ? (
+        <AppButton
+          icon={<AppIcon color={colors.primaryDark} name="account-key-outline" size={20} />}
+          title="Tenant: Use invite code"
+          variant="secondary"
+          onPress={startTenantGuest}
+        />
+      ) : null}
 
       <View style={styles.form}>
         <Title style={styles.heading}>

@@ -13,13 +13,16 @@ type AuthUser = {
   displayName: string | null;
   email: string | null;
   photoURL: string | null;
+  isAnonymous: boolean;
 };
 
 type AuthStatus = 'disabled' | 'loading' | 'signedOut' | 'signedIn';
+export type AccountRole = 'owner' | 'tenant';
 
 type AuthState = {
   status: AuthStatus;
   user: AuthUser | null;
+  role: AccountRole | null;
   offlineMode: boolean;
   error: string | null;
   syncError: string | null;
@@ -30,6 +33,7 @@ type AuthState = {
   signInWithEmail: (email: string, password: string) => Promise<void>;
   createAccount: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
+  startTenantGuest: () => Promise<void>;
   signOut: () => Promise<void>;
   continueOffline: () => Promise<void>;
   syncNow: () => Promise<void>;
@@ -48,6 +52,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   syncStatus: 'disabled',
   status: authService.isConfigured ? 'loading' : 'disabled',
   user: null,
+  role: null,
 
   initialize() {
     const subscription = ++sessionGeneration;
@@ -61,7 +66,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (!authService.isConfigured) {
       cloudSyncService.stop();
       useAppStore.getState().resetSession();
-      set({ offlineMode: false, status: 'disabled', syncStatus: 'disabled', user: null });
+      set({ offlineMode: false, role: null, status: 'disabled', syncStatus: 'disabled', user: null });
       return () => undefined;
     }
 
@@ -87,12 +92,38 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           useAppStore.getState().resetSession();
           set({
             offlineMode: false,
+            role: null,
             status: 'signedOut',
             syncError: null,
             syncLastCompletedAt: null,
             syncPendingCount: 0,
             syncStatus: 'disabled',
             user: null,
+          });
+          return;
+        }
+
+        if (firebaseUser.isAnonymous) {
+          clearReadinessTimer();
+          pushNotificationService.stopForSignOut().catch(() => undefined);
+          cloudSyncService.stop();
+          useAppStore.getState().resetSession();
+          set({
+            error: null,
+            offlineMode: false,
+            role: 'tenant',
+            status: 'signedIn',
+            syncError: null,
+            syncLastCompletedAt: null,
+            syncPendingCount: 0,
+            syncStatus: 'disabled',
+            user: {
+              displayName: null,
+              email: null,
+              isAnonymous: true,
+              photoURL: null,
+              uid: firebaseUser.uid,
+            },
           });
           return;
         }
@@ -104,6 +135,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             await authService.signOut();
             set({
               error: 'This device data belongs to another account. Sign in with the original account.',
+              role: null,
               status: 'signedOut',
               user: null,
             });
@@ -134,10 +166,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           set({
             error: null,
             offlineMode: false,
+            role: 'owner',
             status: 'signedIn',
             user: {
               displayName: firebaseUser.displayName,
               email: firebaseUser.email,
+              isAnonymous: false,
               photoURL: firebaseUser.photoURL,
               uid: firebaseUser.uid,
             },
@@ -148,7 +182,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           if (!isCurrent()) return;
           cloudSyncService.stop();
           useAppStore.getState().resetSession();
-          set({ error: messageForAuthError(error), status: 'signedOut', user: null });
+          set({ error: messageForAuthError(error), role: null, status: 'signedOut', user: null });
           clearReadinessTimer();
         }
       });
@@ -164,7 +198,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       };
     } catch (error) {
       clearReadinessTimer();
-      set({ error: messageForAuthError(error), status: 'signedOut', user: null });
+      set({ error: messageForAuthError(error), role: null, status: 'signedOut', user: null });
       return () => undefined;
     }
   },
@@ -177,7 +211,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const bootstrapped = await useAppStore.getState().bootstrap();
       if (!bootstrapped || generation !== sessionGeneration) return;
-      set({ offlineMode: true, status: signedOutStatus });
+      set({ offlineMode: true, role: 'owner', status: signedOutStatus });
     } catch (error) {
       if (generation !== sessionGeneration) return;
       useAppStore.getState().resetSession();
@@ -194,6 +228,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
     } catch (error) {
       set({ error: messageForAuthError(error), status: 'signedOut' });
+    }
+  },
+
+  async startTenantGuest() {
+    set({ error: null, offlineMode: false, status: 'loading' });
+    try {
+      await authService.signInAnonymously();
+    } catch (error) {
+      set({ error: messageForAuthError(error), role: null, status: 'signedOut' });
     }
   },
 
@@ -219,7 +262,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const previousGeneration = sessionGeneration;
     const previousStatus = get().status;
     const generation = ++sessionGeneration;
-    set({ error: null, offlineMode: false, status: 'loading' });
+    set({ error: null, offlineMode: false, role: null, status: 'loading' });
     try {
       await pushNotificationService.stopForSignOut(get().user?.uid).catch(() => undefined);
       await authService.signOut();
@@ -227,6 +270,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       useAppStore.getState().resetSession();
       set({
         status: 'signedOut',
+        role: null,
         syncError: null,
         syncLastCompletedAt: null,
         syncPendingCount: 0,
