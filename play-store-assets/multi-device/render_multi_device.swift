@@ -72,8 +72,8 @@ func sanitized(_ original: NSImage, index: Int) -> NSImage {
             rounded(NSRect(x: 80, y: 650, width: 520, height: 92), radius: 8, fill: color("233DB6"))
             text("Hello, Landlord 👋", rect: NSRect(x: 92, y: 659, width: 500, height: 70),
                  size: 46, weight: .bold, color: .white)
-            rounded(NSRect(x: 820, y: 565, width: 190, height: 52), radius: 8, fill: color("1635B4"))
-            text("Up to date", rect: NSRect(x: 830, y: 577, width: 170, height: 30),
+            rounded(NSRect(x: 790, y: 540, width: 240, height: 90), radius: 12, fill: color("1635B4"))
+            text("Up to date", rect: NSRect(x: 810, y: 570, width: 200, height: 32),
                  size: 22, weight: .semibold, color: mint, alignment: .center)
 
             rounded(NSRect(x: 30, y: 1080, width: 1020, height: 590), radius: 28, fill: offWhite)
@@ -91,12 +91,17 @@ func sanitized(_ original: NSImage, index: Int) -> NSImage {
             }
         }
         if index == 2 {
-            rounded(NSRect(x: 630, y: 1690, width: 390, height: 250), radius: 22, fill: color("F1F3FF"))
-            text("Contact saved", rect: NSRect(x: 650, y: 1792, width: 350, height: 48),
-                 size: 28, weight: .semibold, color: primary, alignment: .center)
-            rounded(NSRect(x: 245, y: 1620, width: 430, height: 76), radius: 8, fill: .white)
-            text("Green View PG · Room 2", rect: NSRect(x: 260, y: 1638, width: 400, height: 42),
-                 size: 27, weight: .medium, color: muted)
+            rounded(NSRect(x: 40, y: 1580, width: 1000, height: 420), radius: 28, fill: .white, stroke: border)
+            rounded(NSRect(x: 78, y: 1630, width: 112, height: 112), radius: 56, fill: color("E4E8FF"))
+            text("T1", rect: NSRect(x: 78, y: 1662, width: 112, height: 48), size: 38, weight: .bold, color: primary, alignment: .center)
+            text("Tenant 1", rect: NSRect(x: 225, y: 1618, width: 500, height: 52), size: 36, weight: .bold)
+            text("Green View PG · Room 2", rect: NSRect(x: 225, y: 1680, width: 500, height: 44), size: 27, weight: .medium, color: muted)
+            rounded(NSRect(x: 830, y: 1625, width: 150, height: 70), radius: 20, fill: color("D8F9EE"))
+            text("PAID", rect: NSRect(x: 830, y: 1646, width: 150, height: 34), size: 25, weight: .bold, color: color("006B52"), alignment: .center)
+            text("Monthly rent", rect: NSRect(x: 78, y: 1780, width: 300, height: 40), size: 26, color: muted)
+            text("₹25,000 / month", rect: NSRect(x: 78, y: 1834, width: 420, height: 54), size: 37, weight: .bold)
+            rounded(NSRect(x: 650, y: 1780, width: 330, height: 92), radius: 24, fill: color("F1F3FF"))
+            text("Contact saved", rect: NSRect(x: 650, y: 1807, width: 330, height: 42), size: 27, weight: .semibold, color: primary, alignment: .center)
         }
         if index == 3 {
             rounded(NSRect(x: 35, y: 815, width: 900, height: 365), radius: 12, fill: offWhite)
@@ -110,27 +115,48 @@ func sanitized(_ original: NSImage, index: Int) -> NSImage {
                 text(filter.0, rect: NSRect(x: filter.3, y: 949, width: filter.0 == "All" ? 110 : 210, height: 36),
                      size: 25, weight: .bold, color: filter.2, alignment: .center)
             }
-            rounded(NSRect(x: 40, y: 1100, width: 590, height: 190), radius: 12, fill: .white)
-            text("Tenant 1", rect: NSRect(x: 55, y: 1128, width: 540, height: 44),
-                 size: 31, weight: .bold, color: ink)
-            text("⌂  Green View PG · Room 1", rect: NSRect(x: 55, y: 1190, width: 540, height: 44),
-                 size: 27, weight: .medium, color: muted)
+            rounded(NSRect(x: 40, y: 1090, width: 1000, height: 880), radius: 24, fill: .white, stroke: border)
+            text("Tenant 1", rect: NSRect(x: 65, y: 1130, width: 570, height: 46), size: 31, weight: .bold, color: ink)
+            text("⌂  Green View PG · Room 1", rect: NSRect(x: 65, y: 1190, width: 590, height: 44), size: 27, weight: .medium, color: muted)
+            rounded(NSRect(x: 815, y: 1120, width: 180, height: 70), radius: 18, fill: color("DDE2FF"))
+            text("SETTLED", rect: NSRect(x: 815, y: 1142, width: 180, height: 34), size: 24, weight: .bold, color: primaryDark, alignment: .center)
+            text("▣  Due 01 Sep 2026", rect: NSRect(x: 70, y: 1325, width: 600, height: 50), size: 29, color: muted)
+            rounded(NSRect(x: 70, y: 1410, width: 940, height: 250), radius: 26, fill: color("F1F3FF"))
+            text("Paid", rect: NSRect(x: 105, y: 1450, width: 350, height: 38), size: 26, color: muted)
+            text("₹10,000", rect: NSRect(x: 105, y: 1510, width: 350, height: 58), size: 40, weight: .bold, color: color("006B52"))
+            text("Transferred to settlement", rect: NSRect(x: 550, y: 1450, width: 400, height: 72), size: 27, color: muted)
+            text("₹0", rect: NSRect(x: 550, y: 1540, width: 350, height: 48), size: 35, weight: .bold, color: color("006B52"))
+            text("Rent ₹10,000 + Electricity ₹0 = ₹10,000", rect: NSRect(x: 70, y: 1692, width: 940, height: 46), size: 27, color: muted)
+            rounded(NSRect(x: 70, y: 1780, width: 940, height: 120), radius: 24, fill: color("F1F3FF"))
+            text("View final settlement", rect: NSRect(x: 70, y: 1815, width: 940, height: 52), size: 33, weight: .bold, color: primaryDark, alignment: .center)
         }
         if index == 4 {
-            rounded(NSRect(x: 30, y: 445, width: 1020, height: 1000), radius: 20, fill: offWhite)
-            text("Your properties", rect: NSRect(x: 42, y: 465, width: 500, height: 44),
+            rounded(NSRect(x: 30, y: 365, width: 1020, height: 1650), radius: 20, fill: offWhite)
+            rounded(NSRect(x: 42, y: 390, width: 996, height: 125), radius: 24, fill: primary)
+            text("＋  Add property", rect: NSRect(x: 42, y: 426, width: 996, height: 50), size: 34, weight: .bold, color: .white, alignment: .center)
+            text("Your properties", rect: NSRect(x: 42, y: 560, width: 500, height: 44),
                  size: 29, weight: .bold, color: ink)
             let properties = [("Green View Apartments", "Sector 21 · 4 occupied · 5 units"),
                               ("Shanti PG", "Central Road · 5 occupied · 6 units"),
                               ("Market Road Rooms", "Main Market · 3 occupied · 4 units")]
             for i in 0..<properties.count {
-                let y = 530 + CGFloat(i) * 205
+                let y = 625 + CGFloat(i) * 220
                 rounded(NSRect(x: 42, y: y, width: 996, height: 175), radius: 22, fill: .white, stroke: border)
                 rounded(NSRect(x: 65, y: y + 35, width: 78, height: 78), radius: 16, fill: color("F1F3FF"))
                 text("⌂", rect: NSRect(x: 65, y: y + 48, width: 78, height: 48), size: 38, weight: .bold, color: primary, alignment: .center)
                 text(properties[i].0, rect: NSRect(x: 170, y: y + 28, width: 800, height: 40), size: 29, weight: .bold)
                 text(properties[i].1, rect: NSRect(x: 170, y: y + 82, width: 800, height: 38), size: 24, color: muted)
             }
+            text("Occupancy overview", rect: NSRect(x: 42, y: 1325, width: 500, height: 44), size: 29, weight: .bold, color: ink)
+            rounded(NSRect(x: 42, y: 1390, width: 996, height: 250), radius: 24, fill: .white, stroke: border)
+            let metrics = [("15", "TOTAL UNITS"), ("12", "OCCUPIED"), ("3", "AVAILABLE")]
+            for i in 0..<metrics.count {
+                let x = 70 + CGFloat(i) * 318
+                text(metrics[i].0, rect: NSRect(x: x, y: 1440, width: 270, height: 60), size: 44, weight: .heavy, color: i == 2 ? color("006B52") : primaryDark, alignment: .center)
+                text(metrics[i].1, rect: NSRect(x: x, y: 1520, width: 270, height: 38), size: 21, weight: .bold, color: muted, alignment: .center)
+            }
+            rounded(NSRect(x: 42, y: 1685, width: 996, height: 105), radius: 22, fill: color("EEF1FF"))
+            text("Tap a property to manage units and occupancy", rect: NSRect(x: 72, y: 1717, width: 936, height: 44), size: 27, weight: .medium, color: primaryDark, alignment: .center)
         }
     }
     return result
@@ -172,7 +198,7 @@ let sourceScreens: [NSImage] = files.enumerated().map { index, name in
     return sanitized(image, index: index + 1)
 }
 
-for folder in ["phone", "phone-v2", "7-inch-tablet", "10-inch-tablet", "chromebook"] {
+for folder in ["phone", "phone-v2", "phone-v3", "7-inch-tablet", "10-inch-tablet", "chromebook"] {
     try FileManager.default.createDirectory(at: output.appendingPathComponent(folder), withIntermediateDirectories: true)
 }
 
@@ -207,6 +233,40 @@ for index in 0..<sourceScreens.count {
         }
     }
     try save(phoneV2, to: output.appendingPathComponent("phone-v2/\(order)-\(slugs[index])-1080x1920.png"))
+
+    // Phone v3 prioritizes legibility: a short benefit-led heading and an
+    // almost full-width, authentic in-app view without a decorative device bezel.
+    let v3Headings = ["Rent collection at a glance", "Tenant records, organized", "Monthly rent ledger", "Properties & units together"]
+    let v3Subheads = ["See collected, pending and overdue rent instantly", "Search tenants and check rent status quickly", "Filter paid, partial and overdue rent", "Keep occupancy and property records organized"]
+    let v3Steps = ["1  •  OVERVIEW", "2  •  TENANTS", "3  •  LEDGER", "4  •  PROPERTIES"]
+    let phoneV3 = imageCanvas(width: 1080, height: 1920) {
+        drawFill(phoneV2Background, rect: NSRect(x: 0, y: 0, width: 1080, height: 1920))
+
+        rounded(NSRect(x: 48, y: 38, width: 218, height: 42), radius: 21, fill: primary)
+        text("KIRAYABAHI", rect: NSRect(x: 48, y: 48, width: 218, height: 25),
+             size: 17, weight: .heavy, color: .white, alignment: .center)
+        rounded(NSRect(x: 792, y: 38, width: 240, height: 42), radius: 21, fill: color("EEF1FF"), stroke: border)
+        text(v3Steps[index], rect: NSRect(x: 792, y: 49, width: 240, height: 24),
+             size: 16, weight: .bold, color: primary, alignment: .center)
+
+        text(v3Headings[index], rect: NSRect(x: 48, y: 102, width: 984, height: 68),
+             size: 50, weight: .heavy, color: primaryDark)
+        text(v3Subheads[index], rect: NSRect(x: 52, y: 183, width: 976, height: 38),
+             size: 25, weight: .medium, color: muted)
+
+        let card = NSRect(x: 36, y: 258, width: 1008, height: 1626)
+        NSGraphicsContext.saveGraphicsState()
+        let cardShadow = NSShadow()
+        cardShadow.shadowColor = color("001F94", 0.16)
+        cardShadow.shadowBlurRadius = 28
+        cardShadow.shadowOffset = NSSize(width: 0, height: 12)
+        cardShadow.set()
+        rounded(card, radius: 34, fill: .white)
+        NSGraphicsContext.restoreGraphicsState()
+        rounded(card, radius: 34, fill: .clear, stroke: color("DCE3FF"), width: 5)
+        drawCroppedScreen(screen, in: card.insetBy(dx: 8, dy: 8), cropTop: 135, cropBottom: 485)
+    }
+    try save(phoneV3, to: output.appendingPathComponent("phone-v3/\(order)-\(slugs[index])-1080x1920.png"))
 
     let seven = imageCanvas(width: 1440, height: 2560) {
         drawFill(portraitBackground, rect: NSRect(x: 0, y: 0, width: 1440, height: 2560))
@@ -253,4 +313,4 @@ for index in 0..<sourceScreens.count {
     try save(chromebook, to: output.appendingPathComponent("chromebook/\(order)-\(slugs[index])-2560x1440.png"))
 }
 
-print("Rendered 16 multi-device Google Play screenshots")
+print("Rendered multi-device Google Play screenshots, including phone v3")
