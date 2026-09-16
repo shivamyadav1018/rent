@@ -4,6 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
 import { AppButton } from '../../components/AppButton';
+import { AdBanner } from '../../components/AdBanner';
 import { AppIcon } from '../../components/AppIcon';
 import { BrandHeader, initials } from '../../components/BrandHeader';
 import { Card } from '../../components/Card';
@@ -198,6 +199,7 @@ export function DashboardScreen({ navigation }: any) {
           </Pressable>
         ))}
       </View>
+      <AdBanner />
       <View style={styles.row}>
         <Body style={styles.sectionTitle}>
           Due this month{' '}

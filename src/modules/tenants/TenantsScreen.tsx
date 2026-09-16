@@ -2,6 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { AppButton } from '../../components/AppButton';
+import { AdBanner } from '../../components/AdBanner';
 import { AppChip } from '../../components/AppChip';
 import { AppIcon } from '../../components/AppIcon';
 import { AppInput } from '../../components/AppInput';
@@ -115,6 +116,7 @@ export function TenantsScreen({ navigation }: any) {
       <InfoNote>
         Tap a tenant to view lease details, payment history and ledger.
       </InfoNote>
+      <AdBanner />
       {error ? (
         <>
           <Muted>
