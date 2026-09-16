@@ -1,7 +1,8 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Avatar } from 'react-native-elements';
+import { useRewardedAd } from 'react-native-google-mobile-ads';
 
 import { AppButton } from '../../components/AppButton';
 import { AppIcon } from '../../components/AppIcon';
@@ -9,7 +10,9 @@ import { Card } from '../../components/Card';
 import { AppInput } from '../../components/AppInput';
 import { Screen } from '../../components/Screen';
 import { Body, Muted, Title } from '../../components/Typography';
+import { adConfig } from '../../config/ads';
 import { settingsRepo } from '../../database/repositories/settingsRepo';
+import { adMobService } from '../../services/adMobService';
 import { pushNotificationService } from '../../services/pushNotificationService';
 import { useAppStore } from '../../store/appStore';
 import { useAuthStore } from '../../store/authStore';
@@ -20,8 +23,19 @@ export function SettingsScreen() {
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [adsReady, setAdsReady] = useState(false);
   const [remindersEnabled, setRemindersEnabled] = useState(false);
   const [reminderWorking, setReminderWorking] = useState(false);
+  const rewarded = useRewardedAd(adsReady ? adConfig.rewardedUnitId : null);
+  const {
+    error: rewardedError,
+    isClosed: rewardedClosed,
+    isEarnedReward,
+    isLoaded: rewardedLoaded,
+    isShowing: rewardedShowing,
+    load: loadRewarded,
+    show: showRewarded,
+  } = rewarded;
   const bootstrap = useAppStore(state => state.bootstrap);
   const authError = useAuthStore(state => state.error);
   const authStatus = useAuthStore(state => state.status);
@@ -33,6 +47,36 @@ export function SettingsScreen() {
   const signInWithGoogle = useAuthStore(state => state.signInWithGoogle);
   const signOut = useAuthStore(state => state.signOut);
   const syncNow = useAuthStore(state => state.syncNow);
+
+  useEffect(() => {
+    let active = true;
+    adMobService.initialize()
+      .then(canRequestAds => {
+        if (active) setAdsReady(canRequestAds);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (adsReady && !rewardedLoaded) {
+      loadRewarded();
+    }
+  }, [adsReady, loadRewarded, rewardedLoaded]);
+
+  useEffect(() => {
+    if (isEarnedReward) {
+      Alert.alert('Thanks for the support', 'Rewarded ad completed.');
+    }
+  }, [isEarnedReward]);
+
+  useEffect(() => {
+    if (rewardedClosed || rewardedError) {
+      loadRewarded();
+    }
+  }, [loadRewarded, rewardedClosed, rewardedError]);
 
   useFocusEffect(useCallback(() => {
     let isActive = true;
@@ -88,6 +132,15 @@ export function SettingsScreen() {
     } finally {
       setReminderWorking(false);
     }
+  };
+
+  const showRewardedAd = () => {
+    if (rewardedLoaded) {
+      showRewarded();
+      return;
+    }
+    loadRewarded();
+    Alert.alert('Ad is loading', 'Please try again in a moment.');
   };
 
   return (
@@ -174,6 +227,22 @@ export function SettingsScreen() {
             variant="secondary"
           />
         )}
+      </Card>
+      <Card>
+        <View style={styles.cloudHeader}>
+          <View style={styles.cloudIcon}><AppIcon color={authColors.primary} name="play-circle-outline" size={23} /></View>
+          <View style={styles.cloudText}>
+            <Body style={styles.cloudTitle}>Support KirayaBahi</Body>
+            <Muted>Watch an optional rewarded ad to support continued development.</Muted>
+          </View>
+        </View>
+        <AppButton
+          disabled={!adsReady || rewardedShowing}
+          icon={<AppIcon color={authColors.primary} name="gift-outline" size={19} />}
+          title={rewardedShowing ? 'Showing ad...' : rewardedLoaded ? 'Watch rewarded ad' : 'Load rewarded ad'}
+          variant="secondary"
+          onPress={showRewardedAd}
+        />
       </Card>
       <Card>
         <View style={styles.cloudHeader}>

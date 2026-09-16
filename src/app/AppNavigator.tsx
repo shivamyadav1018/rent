@@ -25,6 +25,7 @@ import { TenantApplicationScreen } from '../modules/tenantGuest/TenantApplicatio
 import { TenantSubmissionScreen } from '../modules/tenantGuest/TenantSubmissionScreen';
 import { TenantApplicationsScreen } from '../modules/tenants/TenantApplicationsScreen';
 import { ReviewTenantApplicationScreen } from '../modules/tenants/ReviewTenantApplicationScreen';
+import { AppOpenAdGate } from '../components/AppOpenAdGate';
 import { authColors, colors, fontFamily } from '../theme';
 
 export type RootStackParamList = {
@@ -104,24 +105,29 @@ export function AppNavigator() {
           />
         ) : (
           <>
-            <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
-            <Stack.Screen name="AddProperty" component={AddEditPropertyScreen} options={({ route }) => ({ title: route.params?.propertyId ? 'Edit Property' : 'Add Property' })} />
-            <Stack.Screen name="PropertyDetail" component={PropertyDetailScreen} options={{ title: 'Property Detail' }} />
-            <Stack.Screen name="AddUnit" component={AddEditUnitScreen} options={{ title: 'Unit' }} />
-            <Stack.Screen name="AddTenant" component={AddEditTenantScreen} options={({ route }) => ({ title: route.params?.tenantId ? 'Edit Tenant' : 'Add New Tenant' })} />
-            <Stack.Screen name="MoveOut" component={MoveOutScreen} options={{ title: 'Move-out settlement' }} />
-            <Stack.Screen name="Settlements" component={SettlementsScreen} options={{ title: 'Settlements' }} />
-            <Stack.Screen name="TenantDetail" component={TenantDetailScreen} options={{ title: 'Tenant Detail' }} />
-            <Stack.Screen name="TenantInvites" component={TenantInvitesScreen} options={{ title: 'Tenant Invites' }} />
-            <Stack.Screen name="CreateTenantInvite" component={CreateTenantInviteScreen} options={{ title: 'Invite Tenant' }} />
-            <Stack.Screen name="TenantApplications" component={TenantApplicationsScreen} options={{ title: 'Tenant Requests' }} />
-            <Stack.Screen name="ReviewTenantApplication" component={ReviewTenantApplicationScreen} options={{ title: 'Review Request' }} />
-            <Stack.Screen name="RecordPayment" component={RecordPaymentScreen} options={{ title: 'Record Payment' }} />
-            <Stack.Screen name="ReminderPreview" component={ReminderPreviewScreen} options={{ title: 'Reminder' }} />
-            <Stack.Screen name="ReceiptPreview" component={ReceiptPreviewScreen} options={{ title: 'Receipt' }} />
+            <Stack.Group screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="MainTabs" component={MainTabs} />
+            </Stack.Group>
+            <Stack.Group>
+              <Stack.Screen name="AddProperty" component={AddEditPropertyScreen} options={({ route }) => ({ title: route.params?.propertyId ? 'Edit Property' : 'Add Property' })} />
+              <Stack.Screen name="PropertyDetail" component={PropertyDetailScreen} options={{ title: 'Property Detail' }} />
+              <Stack.Screen name="AddUnit" component={AddEditUnitScreen} options={{ title: 'Unit' }} />
+              <Stack.Screen name="AddTenant" component={AddEditTenantScreen} options={({ route }) => ({ title: route.params?.tenantId ? 'Edit Tenant' : 'Add New Tenant' })} />
+              <Stack.Screen name="MoveOut" component={MoveOutScreen} options={{ title: 'Move-out settlement' }} />
+              <Stack.Screen name="Settlements" component={SettlementsScreen} options={{ title: 'Settlements' }} />
+              <Stack.Screen name="TenantDetail" component={TenantDetailScreen} options={{ title: 'Tenant Detail' }} />
+              <Stack.Screen name="TenantInvites" component={TenantInvitesScreen} options={{ title: 'Tenant Invites' }} />
+              <Stack.Screen name="CreateTenantInvite" component={CreateTenantInviteScreen} options={{ title: 'Invite Tenant' }} />
+              <Stack.Screen name="TenantApplications" component={TenantApplicationsScreen} options={{ title: 'Tenant Requests' }} />
+              <Stack.Screen name="ReviewTenantApplication" component={ReviewTenantApplicationScreen} options={{ title: 'Review Request' }} />
+              <Stack.Screen name="RecordPayment" component={RecordPaymentScreen} options={{ title: 'Record Payment' }} />
+              <Stack.Screen name="ReminderPreview" component={ReminderPreviewScreen} options={{ title: 'Reminder' }} />
+              <Stack.Screen name="ReceiptPreview" component={ReceiptPreviewScreen} options={{ title: 'Receipt' }} />
+            </Stack.Group>
           </>
         )}
       </Stack.Navigator>
+      {flow === 'app' ? <AppOpenAdGate /> : null}
     </NavigationContainer>
   );
 }
