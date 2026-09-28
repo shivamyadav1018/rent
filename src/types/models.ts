@@ -34,6 +34,8 @@ export type Tenant = {
   security_deposit: number;
   status: TenantStatus;
   notes?: string | null;
+  lease_start?: string | null;
+  lease_end?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -76,4 +78,17 @@ export type DashboardSummary = {
   collectedRent: number;
   pendingRent: number;
   overdueCount: number;
+};
+
+export type ExpenseCategory = 'repair' | 'maintenance' | 'cleaning' | 'tax' | 'insurance' | 'other';
+
+export type Expense = {
+  id: string;
+  property_id: string;
+  amount: number;
+  category: ExpenseCategory;
+  description?: string | null;
+  expense_date: string;
+  created_at: string;
+  updated_at: string;
 };

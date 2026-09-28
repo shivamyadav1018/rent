@@ -33,6 +33,7 @@ export function PropertyDetailScreen({ navigation, route }: any) {
       <View style={styles.actions}>
         <AppButton title="Add unit" onPress={() => navigation.navigate('AddUnit', { propertyId })} />
         <AppButton title="Edit property" variant="secondary" onPress={() => navigation.navigate('AddProperty', { propertyId })} />
+        <AppButton title="Expenses" variant="secondary" onPress={() => navigation.navigate('Expenses', { propertyId, propertyName: property.name })} />
       </View>
       <Body style={styles.heading}>Units</Body>
       {units.length === 0 ? <Muted>No units yet.</Muted> : units.map(unit => (

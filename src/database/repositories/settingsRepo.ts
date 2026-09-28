@@ -1,4 +1,5 @@
 import { executeSql, executeWrite } from '../db';
+import type { Locale } from '../../utils/i18n';
 
 export const settingsRepo = {
   async get(key: string) {
@@ -20,5 +21,24 @@ export const settingsRepo = {
 
   async setMany(values: Record<string, string>) {
     await Promise.all(Object.entries(values).map(([key, value]) => this.set(key, value)));
+  },
+
+  // Improvement 7: UPI VPA
+  async getUpiVpa(): Promise<string | null> {
+    return this.get('upiVpa');
+  },
+
+  async setUpiVpa(vpa: string): Promise<void> {
+    return this.set('upiVpa', vpa);
+  },
+
+  // Improvement 14: language
+  async getLanguage(): Promise<Locale> {
+    const lang = await this.get('language');
+    return (lang === 'hi' ? 'hi' : 'en') as Locale;
+  },
+
+  async setLanguage(locale: Locale): Promise<void> {
+    return this.set('language', locale);
   },
 };

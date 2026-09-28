@@ -22,8 +22,10 @@ const schema = z.object({
   phone: z.string().trim().min(7, 'Enter a valid phone number'),
   securityDeposit: z.coerce.number().min(0),
   unitId: z.string().min(1, 'Select a unit'),
+  leaseStart: z.string().optional(),
+  leaseEnd: z.string().optional(),
 });
-type FormData = { dueDay: string; monthlyRent: string; moveInDate: string; name: string; notes: string; phone: string; securityDeposit: string; unitId: string };
+type FormData = { dueDay: string; monthlyRent: string; moveInDate: string; name: string; notes: string; phone: string; securityDeposit: string; unitId: string; leaseStart: string; leaseEnd: string };
 
 export function AddEditTenantScreen({ navigation, route }: any) {
   const tenantId = route.params?.tenantId as string | undefined;
@@ -31,7 +33,7 @@ export function AddEditTenantScreen({ navigation, route }: any) {
   const units = useAppStore(state => state.units);
   const refreshAll = useAppStore(state => state.refreshAll);
   const { control, handleSubmit, reset, setValue, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
-    defaultValues: { dueDay: '5', monthlyRent: '', moveInDate: new Date().toISOString().slice(0, 10), name: '', notes: '', phone: '', securityDeposit: '0', unitId: initialUnitId ?? '' },
+    defaultValues: { dueDay: '5', monthlyRent: '', moveInDate: new Date().toISOString().slice(0, 10), name: '', notes: '', phone: '', securityDeposit: '0', unitId: initialUnitId ?? '', leaseStart: '', leaseEnd: '' },
   });
   const unitId = watch('unitId');
   const availableUnits = useMemo(() => units.filter(unit => unit.status === 'vacant' || unit.id === unitId), [unitId, units]);
@@ -40,7 +42,7 @@ export function AddEditTenantScreen({ navigation, route }: any) {
   useEffect(() => {
     if (!tenantId) return;
     tenantRepo.find(tenantId).then(tenant => {
-      if (tenant) reset({ dueDay: String(tenant.due_day), monthlyRent: String(tenant.monthly_rent), moveInDate: tenant.move_in_date.slice(0, 10), name: tenant.name, notes: tenant.notes ?? '', phone: tenant.phone, securityDeposit: String(tenant.security_deposit), unitId: tenant.unit_id });
+      if (tenant) reset({ dueDay: String(tenant.due_day), monthlyRent: String(tenant.monthly_rent), moveInDate: tenant.move_in_date.slice(0, 10), name: tenant.name, notes: tenant.notes ?? '', phone: tenant.phone, securityDeposit: String(tenant.security_deposit), unitId: tenant.unit_id, leaseStart: tenant.lease_start?.slice(0, 10) ?? '', leaseEnd: tenant.lease_end?.slice(0, 10) ?? '' });
     });
   }, [reset, tenantId]);
 
@@ -59,6 +61,8 @@ export function AddEditTenantScreen({ navigation, route }: any) {
         move_in_date: new Date(`${parsed.data.moveInDate}T00:00:00`).toISOString(), name: parsed.data.name,
         notes: parsed.data.notes, phone: parsed.data.phone, security_deposit: parsed.data.securityDeposit,
         unit_id: parsed.data.unitId,
+        lease_start: parsed.data.leaseStart || undefined,
+        lease_end: parsed.data.leaseEnd || undefined,
       });
       await rentCycleService.ensureCurrentCycleForTenant(id);
       await refreshAll();
@@ -82,6 +86,8 @@ export function AddEditTenantScreen({ navigation, route }: any) {
       <Controller control={control} name="moveInDate" render={({ field }) => <AppInput label="Move-in date (YYYY-MM-DD)" value={field.value} onChangeText={field.onChange} />} />
       <Controller control={control} name="securityDeposit" render={({ field }) => <AppInput label="Security deposit" keyboardType="numeric" value={field.value} onChangeText={field.onChange} />} />
       <Controller control={control} name="notes" render={({ field }) => <AppInput label="Notes (optional)" value={field.value} onChangeText={field.onChange} multiline />} />
+      <Controller control={control} name="leaseStart" render={({ field }) => <AppInput label="Lease Start Date (YYYY-MM-DD, optional)" value={field.value} onChangeText={field.onChange} />} />
+      <Controller control={control} name="leaseEnd" render={({ field }) => <AppInput label="Lease End Date (YYYY-MM-DD, optional)" value={field.value} onChangeText={field.onChange} />} />
       <AppButton title={isSubmitting ? 'Saving...' : 'Save tenant'} onPress={save} />
     </Screen>
   );

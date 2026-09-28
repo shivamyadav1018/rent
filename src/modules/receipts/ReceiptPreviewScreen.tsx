@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, StyleSheet } from 'react-native';
+import { Alert, Linking, StyleSheet } from 'react-native';
+import Clipboard from '@react-native-clipboard/clipboard';
 
 import { AppButton } from '../../components/AppButton';
 import { Card } from '../../components/Card';
@@ -22,10 +23,11 @@ export function ReceiptPreviewScreen({ route }: any) {
   const [landlordName, setLandlordName] = useState('Landlord');
   const [filePath, setFilePath] = useState<string | null>(null);
   const [working, setWorking] = useState(false);
+  const [upiVpa, setUpiVpa] = useState<string | null>(null);
 
   useEffect(() => {
-    Promise.all([rentRepo.findLedgerItem(route.params.cycleId), paymentRepo.latestForCycle(route.params.cycleId), settingsRepo.getAll()]).then(([nextCycle, payment, settings]) => {
-      setCycle(nextCycle); setLandlordName(settings.landlordName ?? 'Landlord');
+    Promise.all([rentRepo.findLedgerItem(route.params.cycleId), paymentRepo.latestForCycle(route.params.cycleId), settingsRepo.getAll(), settingsRepo.getUpiVpa()]).then(([nextCycle, payment, settings, vpa]) => {
+      setCycle(nextCycle); setLandlordName(settings.landlordName ?? 'Landlord'); setUpiVpa(vpa);
       const paymentMode = route.params.paymentMode as PaymentMode | undefined;
       if (route.params.amountPaid || payment) setData({ amountPaid: route.params.amountPaid ?? payment?.amount ?? 0, notes: route.params.notes ?? payment?.notes ?? undefined, paymentDate: route.params.paymentDate ?? payment?.payment_date ?? new Date().toISOString(), paymentMode: paymentMode ?? payment?.payment_mode ?? 'cash', referenceNo: route.params.referenceNo ?? payment?.reference_no ?? undefined });
     });
@@ -51,6 +53,11 @@ export function ReceiptPreviewScreen({ route }: any) {
 
   if (!cycle) return <Screen><Muted>Loading receipt...</Muted></Screen>;
   if (!data) return <Screen><Title>Receipt preview</Title><Muted>No payment exists for this rent cycle yet.</Muted></Screen>;
+
+  const upiLink = upiVpa
+    ? `upi://pay?pa=${encodeURIComponent(upiVpa)}&pn=${encodeURIComponent(landlordName)}&am=${cycle.balance}&tn=${encodeURIComponent('Rent ' + cycle.id.slice(0, 8))}&cu=INR`
+    : null;
+
   return (
     <Screen>
       <Title>Receipt preview</Title>
@@ -67,6 +74,14 @@ export function ReceiptPreviewScreen({ route }: any) {
         <Muted>Reference: {data.referenceNo || '-'}</Muted>
         <Muted>Notes: {data.notes || '-'}</Muted>
       </Card>
+      {upiLink && cycle.balance > 0 ? (
+        <Card>
+          <Body style={styles.heading}>Pay via UPI</Body>
+          <Muted>Balance: {formatCurrency(cycle.balance)}</Muted>
+          <AppButton title="Open UPI App (PhonePe / GPay)" onPress={() => Linking.openURL(upiLink).catch(() => Alert.alert('No UPI app found'))} />
+          <AppButton title="Copy UPI Link" variant="secondary" onPress={() => { Clipboard.setString(upiLink); Alert.alert('Copied', 'UPI link copied to clipboard.'); }} />
+        </Card>
+      ) : null}
       {filePath ? <Muted>Saved locally: {filePath}</Muted> : null}
       <AppButton title={working ? 'Generating...' : 'Generate PDF'} onPress={buildAndGenerate} />
       <AppButton title="Share PDF" variant="secondary" onPress={share} />

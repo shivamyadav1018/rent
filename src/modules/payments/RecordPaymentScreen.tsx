@@ -7,6 +7,8 @@ import { AppInput } from '../../components/AppInput';
 import { Card } from '../../components/Card';
 import { Screen } from '../../components/Screen';
 import { Body, Muted, Title } from '../../components/Typography';
+import { paymentRepo } from '../../database/repositories/paymentRepo';
+import { settingsRepo } from '../../database/repositories/settingsRepo';
 import { rentRepo } from '../../database/repositories/rentRepo';
 import { rentCycleService } from '../../services/rentCycleService';
 import { useAppStore } from '../../store/appStore';
@@ -63,6 +65,21 @@ export function RecordPaymentScreen({ navigation, route }: any) {
       const updated = await rentCycleService.recordPayment({ amount: parsedAmount.data, month, notes, paymentDate: new Date(`${paymentDate}T12:00:00`).toISOString(), paymentMode: mode, referenceNo, tenantId, year });
       await refreshAll();
       if (updated) { setCycle(updated); setSavedCycleId(updated.id); }
+      // Improvement 13: in-app review after 3rd payment
+      try {
+        const countRows = await paymentRepo.count();
+        const count = countRows[0]?.count ?? 0;
+        const prompted = await settingsRepo.get('reviewPrompted');
+        if (count >= 3 && prompted !== 'true') {
+          await settingsRepo.set('reviewPrompted', 'true');
+          try {
+            const InAppReview = require('react-native-in-app-review');
+            if (InAppReview.isAvailable()) {
+              InAppReview.RequestInAppReview();
+            }
+          } catch { /* package not installed */ }
+        }
+      } catch { /* non-critical */ }
     } catch (error) {
       Alert.alert('Could not record payment', error instanceof Error ? error.message : 'Please try again.');
     } finally { setSaving(false); }

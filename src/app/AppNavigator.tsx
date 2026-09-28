@@ -14,6 +14,8 @@ import { TenantDetailScreen } from '../modules/tenants/TenantDetailScreen';
 import { RecordPaymentScreen } from '../modules/payments/RecordPaymentScreen';
 import { ReminderPreviewScreen } from '../modules/reminders/ReminderPreviewScreen';
 import { ReceiptPreviewScreen } from '../modules/receipts/ReceiptPreviewScreen';
+import { AnnualReportScreen } from '../modules/reports/AnnualReportScreen';
+import { ExpensesScreen } from '../modules/properties/ExpensesScreen';
 import { colors, fontFamily } from '../theme';
 
 export type RootStackParamList = {
@@ -28,6 +30,8 @@ export type RootStackParamList = {
   RecordPayment: { tenantId?: string; cycleId?: string } | undefined;
   ReminderPreview: { cycleId: string };
   ReceiptPreview: { cycleId: string; amountPaid?: number; paymentMode?: string; paymentDate?: string; referenceNo?: string; notes?: string };
+  AnnualReport: undefined;
+  Expenses: { propertyId: string; propertyName?: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -62,6 +66,8 @@ export function AppNavigator() {
         <Stack.Screen name="RecordPayment" component={RecordPaymentScreen} options={{ title: 'Record Payment' }} />
         <Stack.Screen name="ReminderPreview" component={ReminderPreviewScreen} options={{ title: 'Reminder' }} />
         <Stack.Screen name="ReceiptPreview" component={ReceiptPreviewScreen} options={{ title: 'Receipt' }} />
+        <Stack.Screen name="AnnualReport" component={AnnualReportScreen} options={{ title: 'Annual Report' }} />
+        <Stack.Screen name="Expenses" component={ExpensesScreen} options={{ title: 'Expenses' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

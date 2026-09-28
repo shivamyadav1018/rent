@@ -1,3 +1,17 @@
+const tableHasColumn = async (db: any, table: string, column: string) => {
+  const [result] = await db.executeSql(`PRAGMA table_info(${table})`);
+  for (let i = 0; i < result.rows.length; i++) {
+    if (result.rows.item(i).name === column) return true;
+  }
+  return false;
+};
+
+const addColumnIfMissing = async (db: any, table: string, column: string, definition: string) => {
+  if (!(await tableHasColumn(db, table, column))) {
+    await db.executeSql(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+  }
+};
+
 export const runMigrations = async (db: any) => {
   await db.transaction((tx: any) => {
     tx.executeSql(`
@@ -83,4 +97,21 @@ export const runMigrations = async (db: any) => {
       );
     `);
   });
+
+  // Improvement 4: lease date columns
+  await addColumnIfMissing(db, 'tenants', 'lease_start', 'TEXT');
+  await addColumnIfMissing(db, 'tenants', 'lease_end', 'TEXT');
+
+  // Improvement 12: expenses table
+  await db.executeSql(`CREATE TABLE IF NOT EXISTS expenses (
+    id TEXT PRIMARY KEY NOT NULL,
+    property_id TEXT NOT NULL,
+    amount REAL NOT NULL,
+    category TEXT NOT NULL DEFAULT 'other',
+    description TEXT,
+    expense_date TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY(property_id) REFERENCES properties(id)
+  )`);
 };
