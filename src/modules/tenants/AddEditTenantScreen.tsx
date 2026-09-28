@@ -42,7 +42,10 @@ const schema = z.object({
   phone: z.string().trim().min(7, 'Enter a valid phone number'),
   securityDeposit: z.coerce.number().min(0),
   unitId: z.string().min(1, 'Select a unit'),
+  leaseStart: z.string().optional(),
+  leaseEnd: z.string().optional(),
 });
+<<<<<<< HEAD
 type FormData = {
   dueDay: string;
   electricityAmount: string;
@@ -54,6 +57,9 @@ type FormData = {
   securityDeposit: string;
   unitId: string;
 };
+=======
+type FormData = { dueDay: string; monthlyRent: string; moveInDate: string; name: string; notes: string; phone: string; securityDeposit: string; unitId: string; leaseStart: string; leaseEnd: string };
+>>>>>>> feature/improvements-16
 
 export function AddEditTenantScreen({ navigation, route }: any) {
   const tenantId = route.params?.tenantId as string | undefined;
@@ -61,6 +67,7 @@ export function AddEditTenantScreen({ navigation, route }: any) {
   const properties = useAppStore(state => state.properties);
   const units = useAppStore(state => state.units);
   const refreshAll = useAppStore(state => state.refreshAll);
+<<<<<<< HEAD
   const authStatus = useAuthStore(state => state.status);
   const [loadingRecord, setLoadingRecord] = useState(Boolean(tenantId));
   const [loadError, setLoadError] = useState('');
@@ -94,6 +101,10 @@ export function AddEditTenantScreen({ navigation, route }: any) {
       securityDeposit: '0',
       unitId: initialUnitId ?? '',
     },
+=======
+  const { control, handleSubmit, reset, setValue, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
+    defaultValues: { dueDay: '5', monthlyRent: '', moveInDate: new Date().toISOString().slice(0, 10), name: '', notes: '', phone: '', securityDeposit: '0', unitId: initialUnitId ?? '', leaseStart: '', leaseEnd: '' },
+>>>>>>> feature/improvements-16
   });
   const unitId = watch('unitId');
   const dueDay = watch('dueDay');
@@ -124,6 +135,7 @@ export function AddEditTenantScreen({ navigation, route }: any) {
   );
   useEffect(() => {
     if (!tenantId) return;
+<<<<<<< HEAD
     let isActive = true;
     setLoadingRecord(true);
     setLoadError('');
@@ -169,6 +181,12 @@ export function AddEditTenantScreen({ navigation, route }: any) {
       isActive = false;
     };
   }, [reset, tenantId, loadAttempt]);
+=======
+    tenantRepo.find(tenantId).then(tenant => {
+      if (tenant) reset({ dueDay: String(tenant.due_day), monthlyRent: String(tenant.monthly_rent), moveInDate: tenant.move_in_date.slice(0, 10), name: tenant.name, notes: tenant.notes ?? '', phone: tenant.phone, securityDeposit: String(tenant.security_deposit), unitId: tenant.unit_id, leaseStart: tenant.lease_start?.slice(0, 10) ?? '', leaseEnd: tenant.lease_end?.slice(0, 10) ?? '' });
+    });
+  }, [reset, tenantId]);
+>>>>>>> feature/improvements-16
 
   const chooseUnit = (id: string) => {
     setValue('unitId', id, { shouldValidate: true });
@@ -205,6 +223,8 @@ export function AddEditTenantScreen({ navigation, route }: any) {
         phone: parsed.data.phone,
         security_deposit: parsed.data.securityDeposit,
         unit_id: parsed.data.unitId,
+        lease_start: parsed.data.leaseStart || undefined,
+        lease_end: parsed.data.leaseEnd || undefined,
       });
       let proofWarning = '';
       let newlyUploadedPath = '';
@@ -290,6 +310,7 @@ export function AddEditTenantScreen({ navigation, route }: any) {
 
   return (
     <Screen>
+<<<<<<< HEAD
       <FormStep
         title="Unit & Tenant Setup"
         detail={tenantId ? 'Edit agreement' : 'New agreement'}
@@ -604,6 +625,23 @@ export function AddEditTenantScreen({ navigation, route }: any) {
         }
         onPress={save}
       />
+=======
+      <Title>{tenantId ? 'Edit tenant' : 'New tenant'}</Title>
+      {units.length === 0 ? <><Body>Create a property and unit first.</Body><AppButton title="Add property" onPress={() => navigation.navigate('AddProperty')} /></> : null}
+      <Controller control={control} name="name" render={({ field }) => <AppInput label="Tenant name" value={field.value} onChangeText={field.onChange} error={errors.name?.message} />} />
+      <Controller control={control} name="phone" render={({ field }) => <AppInput label="Phone number" keyboardType="phone-pad" value={field.value} onChangeText={field.onChange} error={errors.phone?.message} />} />
+      <Text style={styles.label}>Property / unit</Text>
+      <View style={styles.units}>{availableUnits.map(unit => <Pressable key={unit.id} onPress={() => chooseUnit(unit.id)} style={[styles.unit, unitId === unit.id && styles.selected]}><Text style={unitId === unit.id ? styles.selectedText : styles.unitText}>{unit.property_name} / {unit.name}</Text></Pressable>)}</View>
+      {errors.unitId?.message ? <Muted style={styles.error}>{errors.unitId.message}</Muted> : null}
+      <Controller control={control} name="monthlyRent" render={({ field }) => <AppInput label="Monthly rent" keyboardType="numeric" value={field.value} onChangeText={field.onChange} />} />
+      <Controller control={control} name="dueDay" render={({ field }) => <AppInput label="Due day (1-31)" keyboardType="number-pad" value={field.value} onChangeText={field.onChange} />} />
+      <Controller control={control} name="moveInDate" render={({ field }) => <AppInput label="Move-in date (YYYY-MM-DD)" value={field.value} onChangeText={field.onChange} />} />
+      <Controller control={control} name="securityDeposit" render={({ field }) => <AppInput label="Security deposit" keyboardType="numeric" value={field.value} onChangeText={field.onChange} />} />
+      <Controller control={control} name="notes" render={({ field }) => <AppInput label="Notes (optional)" value={field.value} onChangeText={field.onChange} multiline />} />
+      <Controller control={control} name="leaseStart" render={({ field }) => <AppInput label="Lease Start Date (YYYY-MM-DD, optional)" value={field.value} onChangeText={field.onChange} />} />
+      <Controller control={control} name="leaseEnd" render={({ field }) => <AppInput label="Lease End Date (YYYY-MM-DD, optional)" value={field.value} onChangeText={field.onChange} />} />
+      <AppButton title={isSubmitting ? 'Saving...' : 'Save tenant'} onPress={save} />
+>>>>>>> feature/improvements-16
     </Screen>
   );
 }

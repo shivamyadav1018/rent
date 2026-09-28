@@ -10,19 +10,94 @@ import { Card } from '../../components/Card';
 import { MonthSelector } from '../../components/MonthSelector';
 import { Screen } from '../../components/Screen';
 import { Body, Muted, Title } from '../../components/Typography';
+<<<<<<< HEAD
 import { colors, radius } from '../../theme';
+=======
+import { paymentRepo } from '../../database/repositories/paymentRepo';
+import { settingsRepo } from '../../database/repositories/settingsRepo';
+import { rentRepo } from '../../database/repositories/rentRepo';
+import { rentCycleService } from '../../services/rentCycleService';
+import { useAppStore } from '../../store/appStore';
+import { PaymentMode, RentCycle } from '../../types/models';
+>>>>>>> feature/improvements-16
 import { formatCurrency } from '../../utils/currency';
 import { monthLabel } from '../../utils/dates';
 
 import { paymentModes, useRecordPayment } from './useRecordPayment';
 
 export function RecordPaymentScreen({ navigation, route }: any) {
+<<<<<<< HEAD
   const {
     activeTenants, loadingTenants, tenantError, retryTenants, tenantId, selectTenant,
     cycle, month, year, changeMonth, amount, setAmount, electricityAmount, setElectricityAmount, paymentDate, setPaymentDate,
     mode, selectMode, referenceNo, setReferenceNo, notes, setNotes, saving,
     selectionReady, loadingCycle, cycleError, retryCycle, savedCycleId, savedPaymentId, save,
   } = useRecordPayment(route.params);
+=======
+  const current = currentMonthYear();
+  const tenants = useAppStore(state => state.tenants);
+  const refreshAll = useAppStore(state => state.refreshAll);
+  const [tenantId, setTenantId] = useState(route.params?.tenantId ?? '');
+  const [cycle, setCycle] = useState<RentCycle | null>(null);
+  const [month, setMonth] = useState(current.month);
+  const [year, setYear] = useState(current.year);
+  const [amount, setAmount] = useState('');
+  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().slice(0, 10));
+  const [mode, setMode] = useState<PaymentMode>('cash');
+  const [referenceNo, setReferenceNo] = useState('');
+  const [notes, setNotes] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [savedCycleId, setSavedCycleId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const cycleId = route.params?.cycleId as string | undefined;
+    if (!cycleId) return;
+    rentRepo.findLedgerItem(cycleId).then(item => {
+      if (!item) return;
+      setCycle(item); setTenantId(item.tenant_id); setMonth(item.month); setYear(item.year); setAmount(String(Math.max(item.balance, 0)));
+    });
+  }, [route.params?.cycleId]);
+
+  useEffect(() => {
+    if (!tenantId || route.params?.cycleId) return;
+    rentCycleService.ensureCycleForTenant(tenantId, month, year).then(next => {
+      setCycle(next); if (next) setAmount(String(Math.max(next.balance, 0)));
+    });
+  }, [month, route.params?.cycleId, tenantId, year]);
+
+  const changeMonth = (delta: number) => {
+    const next = new Date(year, month - 1 + delta, 1); setMonth(next.getMonth() + 1); setYear(next.getFullYear()); setCycle(null);
+  };
+
+  const save = async () => {
+    const parsedAmount = paymentSchema.safeParse(amount);
+    if (!tenantId) return Alert.alert('Select a tenant');
+    if (!parsedAmount.success) return Alert.alert('Check amount', parsedAmount.error.issues[0]?.message);
+    setSaving(true);
+    try {
+      const updated = await rentCycleService.recordPayment({ amount: parsedAmount.data, month, notes, paymentDate: new Date(`${paymentDate}T12:00:00`).toISOString(), paymentMode: mode, referenceNo, tenantId, year });
+      await refreshAll();
+      if (updated) { setCycle(updated); setSavedCycleId(updated.id); }
+      // Improvement 13: in-app review after 3rd payment
+      try {
+        const countRows = await paymentRepo.count();
+        const count = countRows[0]?.count ?? 0;
+        const prompted = await settingsRepo.get('reviewPrompted');
+        if (count >= 3 && prompted !== 'true') {
+          await settingsRepo.set('reviewPrompted', 'true');
+          try {
+            const InAppReview = require('react-native-in-app-review');
+            if (InAppReview.isAvailable()) {
+              InAppReview.RequestInAppReview();
+            }
+          } catch { /* package not installed */ }
+        }
+      } catch { /* non-critical */ }
+    } catch (error) {
+      Alert.alert('Could not record payment', error instanceof Error ? error.message : 'Please try again.');
+    } finally { setSaving(false); }
+  };
+>>>>>>> feature/improvements-16
 
   if (savedCycleId) return (
     <Screen>

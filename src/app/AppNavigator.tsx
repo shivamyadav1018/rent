@@ -20,6 +20,7 @@ import { TenantInvitesScreen } from '../modules/tenants/TenantInvitesScreen';
 import { RecordPaymentScreen } from '../modules/payments/RecordPaymentScreen';
 import { ReminderPreviewScreen } from '../modules/reminders/ReminderPreviewScreen';
 import { ReceiptPreviewScreen } from '../modules/receipts/ReceiptPreviewScreen';
+<<<<<<< HEAD
 import { TenantInviteCodeScreen } from '../modules/tenantGuest/TenantInviteCodeScreen';
 import { TenantApplicationScreen } from '../modules/tenantGuest/TenantApplicationScreen';
 import { TenantSubmissionScreen } from '../modules/tenantGuest/TenantSubmissionScreen';
@@ -27,6 +28,11 @@ import { TenantApplicationsScreen } from '../modules/tenants/TenantApplicationsS
 import { ReviewTenantApplicationScreen } from '../modules/tenants/ReviewTenantApplicationScreen';
 import { AppOpenAdGate } from '../components/AppOpenAdGate';
 import { authColors, colors, fontFamily } from '../theme';
+=======
+import { AnnualReportScreen } from '../modules/reports/AnnualReportScreen';
+import { ExpensesScreen } from '../modules/properties/ExpensesScreen';
+import { colors, fontFamily } from '../theme';
+>>>>>>> feature/improvements-16
 
 export type RootStackParamList = {
   Welcome: undefined;
@@ -48,7 +54,13 @@ export type RootStackParamList = {
   Settlements: undefined;
   RecordPayment: { tenantId?: string; cycleId?: string } | undefined;
   ReminderPreview: { cycleId: string };
+<<<<<<< HEAD
   ReceiptPreview: { cycleId: string; paymentId?: string; amountPaid?: number; paymentMode?: string; paymentDate?: string; referenceNo?: string; notes?: string };
+=======
+  ReceiptPreview: { cycleId: string; amountPaid?: number; paymentMode?: string; paymentDate?: string; referenceNo?: string; notes?: string };
+  AnnualReport: undefined;
+  Expenses: { propertyId: string; propertyName?: string };
+>>>>>>> feature/improvements-16
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -89,6 +101,7 @@ export function AppNavigator() {
             <Stack.Screen name="TenantApplication" component={TenantApplicationScreen} options={{ title: 'Tenant Registration' }} />
             <Stack.Screen name="TenantSubmission" component={TenantSubmissionScreen} options={{ headerShown: false }} />
           </>
+<<<<<<< HEAD
         ) : !hasOwnerAccess ? (
           <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
         ) : !onboardingDone ? (
@@ -126,6 +139,20 @@ export function AppNavigator() {
             </Stack.Group>
           </>
         )}
+=======
+        ) : null}
+        <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
+        <Stack.Screen name="AddProperty" component={AddEditPropertyScreen} options={{ title: 'Property' }} />
+        <Stack.Screen name="PropertyDetail" component={PropertyDetailScreen} options={{ title: 'Property Detail' }} />
+        <Stack.Screen name="AddUnit" component={AddEditUnitScreen} options={{ title: 'Unit' }} />
+        <Stack.Screen name="AddTenant" component={AddEditTenantScreen} options={{ title: 'Tenant' }} />
+        <Stack.Screen name="TenantDetail" component={TenantDetailScreen} options={{ title: 'Tenant Detail' }} />
+        <Stack.Screen name="RecordPayment" component={RecordPaymentScreen} options={{ title: 'Record Payment' }} />
+        <Stack.Screen name="ReminderPreview" component={ReminderPreviewScreen} options={{ title: 'Reminder' }} />
+        <Stack.Screen name="ReceiptPreview" component={ReceiptPreviewScreen} options={{ title: 'Receipt' }} />
+        <Stack.Screen name="AnnualReport" component={AnnualReportScreen} options={{ title: 'Annual Report' }} />
+        <Stack.Screen name="Expenses" component={ExpensesScreen} options={{ title: 'Expenses' }} />
+>>>>>>> feature/improvements-16
       </Stack.Navigator>
       {flow === 'app' ? <AppOpenAdGate /> : null}
     </NavigationContainer>

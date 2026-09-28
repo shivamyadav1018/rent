@@ -59,3 +59,11 @@ export const executeWrite = async (sql: string, params: any[] = []) => {
   await db.executeSql(sql, params);
   writeListener?.();
 };
+
+export type SqlStatement = [string, any[]];
+
+// executeBatch uses the native sqlBatch: all statements commit or roll back together.
+export const executeBatch = async (statements: SqlStatement[]) => {
+  const db = await getDb();
+  await db.sqlBatch(statements);
+};

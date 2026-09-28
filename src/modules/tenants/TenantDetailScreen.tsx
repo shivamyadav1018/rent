@@ -1,5 +1,9 @@
 import React, { useCallback, useState } from 'react';
+<<<<<<< HEAD
 import { Alert, StyleSheet, View } from 'react-native';
+=======
+import { Pressable, StyleSheet, View } from 'react-native';
+>>>>>>> feature/improvements-16
 import { useFocusEffect } from '@react-navigation/native';
 
 import { AppButton } from '../../components/AppButton';
@@ -22,6 +26,17 @@ import { colors } from '../../theme';
 type TenantDetail = Tenant & { unit_name: string; property_name: string };
 type HistoryPayment = Payment & { month: number; year: number };
 
+const getLeaseWarning = (leaseEnd?: string | null): { message: string; expired: boolean } | null => {
+  if (!leaseEnd) return null;
+  const end = new Date(leaseEnd);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const diffDays = Math.floor((end.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  if (diffDays < 0) return { message: `Lease expired on ${leaseEnd.slice(0, 10)}. Update or renew.`, expired: true };
+  if (diffDays <= 30) return { message: `Lease expires on ${leaseEnd.slice(0, 10)}. Renew the agreement.`, expired: false };
+  return null;
+};
+
 export function TenantDetailScreen({ navigation, route }: any) {
   const tenantId = route.params.tenantId as string;
   const [loading, setLoading] = useState(true);
@@ -29,8 +44,12 @@ export function TenantDetailScreen({ navigation, route }: any) {
   const [tenant, setTenant] = useState<TenantDetail | null>(null);
   const [cycle, setCycle] = useState<RentCycle | null>(null);
   const [payments, setPayments] = useState<HistoryPayment[]>([]);
+<<<<<<< HEAD
   const [electricityDraft, setElectricityDraft] = useState('0');
   const [savingBill, setSavingBill] = useState(false);
+=======
+  const [leaseWarningDismissed, setLeaseWarningDismissed] = useState(false);
+>>>>>>> feature/improvements-16
 
   useFocusEffect(
     useCallback(() => {
@@ -80,6 +99,7 @@ export function TenantDetailScreen({ navigation, route }: any) {
     }, [tenantId]),
   );
 
+<<<<<<< HEAD
   if (loading)
     return (
       <Screen>
@@ -139,6 +159,20 @@ export function TenantDetailScreen({ navigation, route }: any) {
         </View>
         {tenant.status === 'inactive' ? <StatusBadge status="vacant" /> : null}
       </View>
+=======
+  if (!tenant) return <Screen><Muted>Loading tenant...</Muted></Screen>;
+  const leaseWarning = getLeaseWarning(tenant.lease_end);
+  return (
+    <Screen>
+      <Title>{tenant.name}</Title>
+      <Muted>{tenant.property_name} / {tenant.unit_name}</Muted>
+      {leaseWarning && !leaseWarningDismissed ? (
+        <View style={[styles.leaseBanner, leaseWarning.expired ? styles.leaseExpired : styles.leaseWarn]}>
+          <Body style={styles.leaseBannerText}>{leaseWarning.message}</Body>
+          <Pressable onPress={() => setLeaseWarningDismissed(true)} style={styles.dismissBtn}><Muted style={styles.dismissText}>✕</Muted></Pressable>
+        </View>
+      ) : null}
+>>>>>>> feature/improvements-16
       <Card>
         <View style={styles.contactRow}>
           <View style={styles.iconTile}>
@@ -356,6 +390,7 @@ export function TenantDetailScreen({ navigation, route }: any) {
 }
 
 const styles = StyleSheet.create({
+<<<<<<< HEAD
   actionButton: { flexBasis: '48%', flexGrow: 1 },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   contactRow: { alignItems: 'center', flexDirection: 'row', gap: 10 },
@@ -408,4 +443,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   total: { fontSize: 18, fontWeight: '800' },
+=======
+  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  heading: { fontWeight: '800', marginTop: 4 },
+  leaseBanner: { borderRadius: 8, flexDirection: 'row', alignItems: 'center', padding: 12, gap: 8 },
+  leaseWarn: { backgroundColor: colors.warningSoft },
+  leaseExpired: { backgroundColor: colors.dangerSoft },
+  leaseBannerText: { flex: 1, fontSize: 13 },
+  dismissBtn: { padding: 4 },
+  dismissText: { fontSize: 16 },
+>>>>>>> feature/improvements-16
 });
