@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Linking, Pressable, StyleSheet, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
@@ -33,17 +33,36 @@ export function DashboardScreen({ navigation }: any) {
   const signedIn = useAuthStore(state => state.status === 'signedIn');
   const [modeBreakdown, setModeBreakdown] = useState<Array<{ payment_mode: string; total: number; count: number }>>([]);
   const [remindIndex, setRemindIndex] = useState<number | null>(null);
+  const overdueAlertShownDate = useRef<string | null>(null);
+
   useFocusEffect(
     useCallback(() => {
       refreshAll().catch(() => undefined);
       paymentRepo.modeBreakdownForMonth(month, year).then(setModeBreakdown).catch(() => undefined);
     }, [month, refreshAll, year]),
   );
+  const properties = useAppStore(state => state.properties);
+  const isNewUser = properties.length === 0;
   const pending = ledger.filter(item => !item.settlement_id && item.balance > 0);
   const paid = ledger
     .filter(item => item.status === 'paid')
     .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
   const overduePending = pending.filter(item => item.status === 'overdue');
+
+  useEffect(() => {
+    if (overduePending.length === 0) return;
+    const today = new Date().toISOString().slice(0, 10);
+    if (overdueAlertShownDate.current === today) return;
+    overdueAlertShownDate.current = today;
+    const names = overduePending.slice(0, 3).map(i => `• ${i.tenant_name} (${formatCurrency(i.balance)})`).join('\n');
+    const more = overduePending.length > 3 ? `\n+${overduePending.length - 3} more` : '';
+    Alert.alert(
+      `${overduePending.length} overdue tenant${overduePending.length === 1 ? '' : 's'}`,
+      `${names}${more}\n\nCollect or send WhatsApp reminders from the dashboard.`,
+      [{ text: 'OK' }],
+    );
+  }, [overduePending]);
+
   const totalBreakdown = modeBreakdown.reduce((sum, item) => sum + item.total, 0);
   const remindAllOverdue = () => {
     if (overduePending.length === 0) return Alert.alert('No overdue tenants right now.');
@@ -92,6 +111,19 @@ export function DashboardScreen({ navigation }: any) {
         />
       }
     >
+      {!signedIn && !isNewUser && (
+        <Pressable
+          accessibilityRole="button"
+          style={styles.backupWarning}
+          onPress={() => navigation.navigate('Settings')}
+        >
+          <AppIcon color="#92400E" name="cloud-off-outline" size={20} />
+          <View style={styles.info}>
+            <Body style={styles.backupWarningTitle}>No cloud backup</Body>
+            <Muted style={styles.backupWarningText}>Your data is only on this device. Tap to connect an account →</Muted>
+          </View>
+        </Pressable>
+      )}
       <AppButton title="Move-out settlements" variant="secondary" onPress={() => navigation.navigate('Settlements')} />
       <View style={styles.hero}>
         <View style={StyleSheet.absoluteFill} pointerEvents="none">
@@ -181,6 +213,31 @@ export function DashboardScreen({ navigation }: any) {
           </View>
         ))}
       </View>
+      {isNewUser && (
+        <View style={styles.onboardCard}>
+          <Body style={styles.onboardTitle}>Welcome to KirayaBahi 🏠</Body>
+          <Muted style={styles.onboardSubtitle}>Get started in 3 simple steps</Muted>
+          {[
+            { step: '1', label: 'Add a property', desc: 'House, flat, shop, or PG', route: 'AddProperty' as const },
+            { step: '2', label: 'Add a unit', desc: 'Room or floor inside your property', route: null },
+            { step: '3', label: 'Add a tenant', desc: 'Assign rent & electricity amounts', route: 'AddTenant' as const },
+          ].map(item => (
+            <View key={item.step} style={styles.onboardStep}>
+              <View style={styles.onboardBadge}>
+                <Body style={styles.onboardBadgeText}>{item.step}</Body>
+              </View>
+              <View style={styles.info}>
+                <Body style={styles.onboardStepLabel}>{item.label}</Body>
+                <Muted style={styles.onboardStepDesc}>{item.desc}</Muted>
+              </View>
+            </View>
+          ))}
+          <AppButton
+            title="Add your first property →"
+            onPress={() => navigation.navigate('AddProperty')}
+          />
+        </View>
+      )}
       <View style={styles.actions}>
         {[
           {
@@ -561,4 +618,38 @@ const styles = StyleSheet.create({
     backgroundColor: colors.successSoft,
   },
   paidAmount: { color: colors.success, fontSize: 17, fontWeight: '700' },
+  onboardCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: 20,
+    gap: 14,
+    borderWidth: 1,
+    borderColor: colors.primarySoft,
+  },
+  onboardTitle: { fontSize: 18, fontWeight: '700' },
+  onboardSubtitle: { fontSize: 13, marginTop: -8 },
+  onboardStep: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  onboardBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  onboardBadgeText: { color: colors.primaryDark, fontWeight: '700', fontSize: 14 },
+  onboardStepLabel: { fontWeight: '600', fontSize: 14 },
+  onboardStepDesc: { fontSize: 12 },
+  backupWarning: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#FEF3C7',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#FCD34D',
+  },
+  backupWarningTitle: { fontSize: 14, fontWeight: '700', color: '#92400E' },
+  backupWarningText: { fontSize: 12, color: '#92400E' },
 });

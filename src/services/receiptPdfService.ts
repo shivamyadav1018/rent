@@ -30,9 +30,21 @@ export const receiptPdfService = {
     const propertyName = escape(payment.receipt_property ?? input.cycle.property_name);
     const unitName = escape(payment.receipt_unit ?? input.cycle.unit_name);
     const mode = escape(payment.payment_mode.replace('_', ' '));
+    const prevReading = input.cycle.meter_prev_reading;
+    const newReading = input.cycle.meter_new_reading;
+    const hasMeterReadings = prevReading != null && newReading != null;
+    const unitsConsumed = hasMeterReadings ? (newReading! - prevReading!) : null;
+    const meterRows = hasMeterReadings
+      ? `<tr><td colspan="2"><div style="border-top: 1px solid #E9EDFF; margin: 5px 0;"></div></td></tr>
+         <tr><td colspan="2" style="padding: 4px 0; color: #687081; font-size: 11px;">ELECTRICITY METER</td></tr>
+         ${row('Previous reading', `${prevReading} units`)}
+         ${row('New reading', `${newReading} units`)}
+         ${row('Units consumed', `${unitsConsumed} units`)}`
+      : '';
     const breakdown = hasSnapshot
       ? `${row('Monthly rent', formatCurrency(rent))}
          ${row('Electricity', formatCurrency(electricity))}
+         ${meterRows}
          <tr><td colspan="2"><div style="border-top: 1px solid #E9EDFF; margin: 5px 0;"></div></td></tr>
          ${row('Total bill', formatCurrency(rent + electricity), true)}
          ${row(payment.receipt_balance! < 0 ? 'Advance balance' : 'Balance remaining', formatCurrency(Math.abs(payment.receipt_balance!)), true)}`

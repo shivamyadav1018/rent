@@ -42,6 +42,7 @@ export function SettingsScreen({ navigation }: any) {
     show: showRewarded,
   } = rewarded;
   const bootstrap = useAppStore(state => state.bootstrap);
+  const setLocale = useAppStore(state => state.setLocale);
   const authError = useAuthStore(state => state.error);
   const authStatus = useAuthStore(state => state.status);
   const authUser = useAuthStore(state => state.user);
@@ -153,7 +154,7 @@ export function SettingsScreen({ navigation }: any) {
 
   const changeLanguage = async (locale: Locale) => {
     setLanguage(locale);
-    i18n.setLocale(locale);
+    setLocale(locale);
     await settingsRepo.setLanguage(locale);
   };
 

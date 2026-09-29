@@ -11,7 +11,9 @@ import { MonthlyLedgerScreen } from '../modules/ledger/MonthlyLedgerScreen';
 import { PropertiesScreen } from '../modules/properties/PropertiesScreen';
 import { SettingsScreen } from '../modules/settings/SettingsScreen';
 import { adMobService } from '../services/adMobService';
+import { useAppStore } from '../store/appStore';
 import { colors, fontFamily } from '../theme';
+import { i18n } from '../utils/i18n';
 
 export type MainTabParamList = {
   Dashboard: undefined;
@@ -99,6 +101,8 @@ function useTabInterstitial() {
 export function MainTabs() {
   const insets = useSafeAreaInsets();
   const maybeShowInterstitial = useTabInterstitial();
+  // Subscribe to locale so tab labels re-render when language changes
+  useAppStore(state => state.locale);
   const listeners = {
     tabPress: maybeShowInterstitial,
   };
@@ -108,11 +112,11 @@ export function MainTabs() {
       const options = screenOptions(props);
       return { ...options, tabBarStyle: { ...options.tabBarStyle, height: 68 + Math.max(insets.bottom, 8), paddingBottom: Math.max(insets.bottom, 8) } };
     }}>
-      <Tab.Screen name="Dashboard" component={DashboardScreen} listeners={listeners} />
-      <Tab.Screen name="Tenants" component={TenantsScreen} listeners={listeners} />
-      <Tab.Screen name="Ledger" component={MonthlyLedgerScreen} listeners={listeners} />
-      <Tab.Screen name="Properties" component={PropertiesScreen} listeners={listeners} />
-      <Tab.Screen name="Settings" component={SettingsScreen} listeners={listeners} />
+      <Tab.Screen name="Dashboard" component={DashboardScreen} listeners={listeners} options={{ tabBarLabel: i18n.t('dashboard') }} />
+      <Tab.Screen name="Tenants" component={TenantsScreen} listeners={listeners} options={{ tabBarLabel: i18n.t('tenants') }} />
+      <Tab.Screen name="Ledger" component={MonthlyLedgerScreen} listeners={listeners} options={{ tabBarLabel: i18n.t('ledger') }} />
+      <Tab.Screen name="Properties" component={PropertiesScreen} listeners={listeners} options={{ tabBarLabel: i18n.t('properties') }} />
+      <Tab.Screen name="Settings" component={SettingsScreen} listeners={listeners} options={{ tabBarLabel: i18n.t('settings') }} />
     </Tab.Navigator>
   );
 }

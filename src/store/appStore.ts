@@ -8,9 +8,12 @@ import { unitRepo } from '../database/repositories/unitRepo';
 import { rentCycleService } from '../services/rentCycleService';
 import { DashboardSummary, LedgerItem, Property, Tenant, Unit } from '../types/models';
 import { currentMonthYear, isPastDue } from '../utils/dates';
+import { i18n, Locale } from '../utils/i18n';
 
 type AppState = {
   settings: Record<string, string>;
+  locale: Locale;
+  setLocale: (locale: Locale) => void;
   onboardingDone: boolean;
   properties: Array<Property & { total_units?: number; occupied_units?: number }>;
   units: Array<Unit & { property_name?: string }>;
@@ -38,6 +41,7 @@ let ledgerRequestId = 0;
 export const useAppStore = create<AppState>((set, get) => ({
   ledger: [],
   dashboardLedger: [],
+  locale: 'en',
   onboardingDone: false,
   properties: [],
   settings: {},
@@ -45,11 +49,18 @@ export const useAppStore = create<AppState>((set, get) => ({
   tenants: [],
   units: [],
 
+  setLocale(locale: Locale) {
+    i18n.setLocale(locale);
+    set({ locale });
+  },
+
   async bootstrap() {
     const generation = sessionGeneration;
     const settings = await settingsRepo.getAll();
     if (generation !== sessionGeneration) return false;
-    set({ onboardingDone: settings.onboardingDone === 'true', settings });
+    const locale: Locale = settings.language === 'hi' ? 'hi' : 'en';
+    i18n.setLocale(locale);
+    set({ onboardingDone: settings.onboardingDone === 'true', settings, locale });
     return get().refreshAll();
   },
 
@@ -60,6 +71,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({
       ledger: [],
       dashboardLedger: [],
+      locale: 'en',
       onboardingDone: false,
       properties: [],
       settings: {},
