@@ -46,7 +46,9 @@ npm test -- --runInBand
 
 ## Architecture
 
-For a visual explanation of the frontend, backend, data flow, and each major module workflow, see **[Architecture and module workflows](docs/architecture.md)**.
+For a concise end-to-end diagram, see **[System flow](docs/system-flow.md)**.
+For the detailed frontend, backend, data flow, and module documentation, see
+**[Architecture and module workflows](docs/architecture.md)**.
 
 - `src/database`: SQLite schema and repositories
 - `src/services`: rent-cycle, WhatsApp share, receipt PDF, and authentication logic

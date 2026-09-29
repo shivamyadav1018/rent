@@ -1,10 +1,5 @@
-<<<<<<< HEAD
-import React, { useCallback } from 'react';
-import { Linking, Pressable, StyleSheet, View } from 'react-native';
-=======
-import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
->>>>>>> feature/improvements-16
+import React, { useCallback, useState } from 'react';
+import { Alert, Linking, Pressable, StyleSheet, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
@@ -33,19 +28,41 @@ export function DashboardScreen({ navigation }: any) {
   const ledger = useAppStore(state => state.dashboardLedger);
   const refreshAll = useAppStore(state => state.refreshAll);
   const settings = useAppStore(state => state.settings);
-<<<<<<< HEAD
   const syncStatus = useAuthStore(state => state.syncStatus);
   const syncPendingCount = useAuthStore(state => state.syncPendingCount);
   const signedIn = useAuthStore(state => state.status === 'signedIn');
+  const [modeBreakdown, setModeBreakdown] = useState<Array<{ payment_mode: string; total: number; count: number }>>([]);
+  const [remindIndex, setRemindIndex] = useState<number | null>(null);
   useFocusEffect(
     useCallback(() => {
       refreshAll().catch(() => undefined);
-    }, [refreshAll]),
+      paymentRepo.modeBreakdownForMonth(month, year).then(setModeBreakdown).catch(() => undefined);
+    }, [month, refreshAll, year]),
   );
   const pending = ledger.filter(item => !item.settlement_id && item.balance > 0);
   const paid = ledger
     .filter(item => item.status === 'paid')
     .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
+  const overduePending = pending.filter(item => item.status === 'overdue');
+  const totalBreakdown = modeBreakdown.reduce((sum, item) => sum + item.total, 0);
+  const remindAllOverdue = () => {
+    if (overduePending.length === 0) return Alert.alert('No overdue tenants right now.');
+    Alert.alert('Send WhatsApp reminders', `Send a reminder to ${overduePending.length} overdue tenant${overduePending.length === 1 ? '' : 's'}?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Start',
+        onPress: async () => {
+          for (let index = 0; index < overduePending.length; index += 1) {
+            setRemindIndex(index);
+            const item = overduePending[index];
+            const message = `Hello ${item.tenant_name}, your rent of ${formatCurrency(item.balance)} for ${monthLabel(item.month, item.year)} is overdue (due ${displayDate(item.due_date)}). Please pay as soon as possible.\n\n- ${settings.landlordName ?? 'Landlord'}`;
+            await whatsappShareService.shareMessage(item.tenant_phone, message).catch(() => undefined);
+          }
+          setRemindIndex(null);
+        },
+      },
+    ]);
+  };
   const percent =
     summary.expectedRent > 0
       ? Math.min(
@@ -66,51 +83,6 @@ export function DashboardScreen({ navigation }: any) {
       : syncStatus === 'synced'
       ? 'Synced'
       : 'Saved locally';
-=======
-  // Improvement 9: payment mode breakdown
-  const [modeBreakdown, setModeBreakdown] = useState<Array<{ payment_mode: string; total: number; count: number }>>([]);
-  // Improvement 8: bulk remind state
-  const [remindIndex, setRemindIndex] = useState<number | null>(null);
-  const overduePending = ledger.filter(item => item.status === 'overdue');
-
-  useFocusEffect(useCallback(() => {
-    refreshAll();
-    paymentRepo.modeBreakdownForMonth(month, year).then(setModeBreakdown).catch(() => undefined);
-  }, [refreshAll, month, year]));
-
-  const due = ledger.filter(item => item.status !== 'paid').slice(0, 5);
-  const paid = ledger.filter(item => item.status === 'paid').slice(0, 5);
-
-  const remindAllOverdue = async () => {
-    if (overduePending.length === 0) {
-      Alert.alert('No overdue tenants right now.');
-      return;
-    }
-    Alert.alert(
-      'Send WhatsApp reminder',
-      `Send WhatsApp reminder to ${overduePending.length} overdue tenant${overduePending.length > 1 ? 's' : ''}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Start',
-          onPress: async () => {
-            for (let i = 0; i < overduePending.length; i++) {
-              setRemindIndex(i);
-              const item = overduePending[i];
-              const landlordName = settings.landlordName ?? 'Landlord';
-              const msg = `Hello ${item.tenant_name}, your rent of ${formatCurrency(item.balance)} for ${monthLabel(item.month, item.year)} is overdue (due ${displayDate(item.due_date)}). Please pay as soon as possible.\n\n- ${landlordName}`;
-              await whatsappShareService.shareMessage(item.tenant_phone, msg).catch(() => undefined);
-            }
-            setRemindIndex(null);
-          },
-        },
-      ],
-    );
-  };
-
-  const totalBreakdown = modeBreakdown.reduce((s, b) => s + b.total, 0);
-
->>>>>>> feature/improvements-16
   return (
     <Screen
       header={
@@ -252,8 +224,17 @@ export function DashboardScreen({ navigation }: any) {
           </Pressable>
         ))}
       </View>
-<<<<<<< HEAD
       <AdBanner />
+      {totalBreakdown > 0 ? (
+        <View style={styles.modeRow}>
+          {modeBreakdown.map(item => (
+            <View key={item.payment_mode} style={styles.modePill}>
+              <Muted style={styles.modeLabel}>{item.payment_mode.replace('_', ' ').toUpperCase()}</Muted>
+              <Body style={styles.modeValue}>{formatCurrency(item.total)}</Body>
+            </View>
+          ))}
+        </View>
+      ) : null}
       <View style={styles.row}>
         <Body style={styles.sectionTitle}>
           Due this month{' '}
@@ -267,6 +248,14 @@ export function DashboardScreen({ navigation }: any) {
           <Muted style={styles.linkText}>View all ›</Muted>
         </Pressable>
       </View>
+      {overduePending.length > 0 ? (
+        <AppButton
+          disabled={remindIndex !== null}
+          title={remindIndex !== null ? `Sending ${remindIndex + 1} of ${overduePending.length}...` : 'Remind all overdue'}
+          variant="secondary"
+          onPress={remindAllOverdue}
+        />
+      ) : null}
       {pending.length === 0 ? (
         <EmptyState message="No pending rent for this month." />
       ) : (
@@ -412,31 +401,6 @@ export function DashboardScreen({ navigation }: any) {
               </View>
             </Pressable>
           ))}
-=======
-      {totalBreakdown > 0 ? (
-        <View style={styles.modeRow}>
-          {modeBreakdown.map(b => (
-            <View key={b.payment_mode} style={styles.modePill}>
-              <Muted style={styles.modeLabel}>{b.payment_mode.replace('_', ' ').toUpperCase()}</Muted>
-              <Body style={styles.modeValue}>{formatCurrency(b.total)}</Body>
-            </View>
-          ))}
-        </View>
-      ) : null}
-      <SectionHeader detail={`${due.length} pending`} title="Due this month" />
-      {overduePending.length > 0 ? (
-        <AppButton
-          title={remindIndex !== null ? `Sending ${remindIndex + 1} of ${overduePending.length}...` : 'Remind all overdue'}
-          variant="secondary"
-          onPress={remindAllOverdue}
-        />
-      ) : null}
-      {due.length === 0 ? <EmptyState message="No pending rent for this month." /> : due.map(item => (
-        <Card key={item.id}>
-          <View style={styles.recordHeader}><View style={styles.recordInfo}><Body style={styles.name}>{item.tenant_name}</Body><Muted>{item.property_name} · {item.unit_name}</Muted></View><StatusBadge status={item.status} /></View>
-          <View style={styles.amountRow}><View><Muted>Balance</Muted><Body style={styles.amount}>{formatCurrency(item.balance)}</Body></View><Muted>Due {displayDate(item.due_date)}</Muted></View>
-          <AppButton icon={<MessageCircle color={colors.primary} size={17} />} title="Send reminder" onPress={() => navigation.navigate('ReminderPreview', { cycleId: item.id })} variant="secondary" />
->>>>>>> feature/improvements-16
         </Card>
       )}
       <InfoNote title="Your khata is available offline">
@@ -448,7 +412,6 @@ export function DashboardScreen({ navigation }: any) {
   );
 }
 const styles = StyleSheet.create({
-<<<<<<< HEAD
   hero: {
     overflow: 'hidden',
     borderRadius: 16,
@@ -509,6 +472,10 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
   metricDetail: { fontSize: 11 },
+  modeLabel: { fontSize: 10, letterSpacing: 0.5 },
+  modePill: { alignItems: 'center', backgroundColor: colors.primarySoft, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
+  modeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  modeValue: { fontSize: 14, fontWeight: '700' },
   actions: { flexDirection: 'row', gap: 8 },
   action: {
     flex: 1,
@@ -594,22 +561,4 @@ const styles = StyleSheet.create({
     backgroundColor: colors.successSoft,
   },
   paidAmount: { color: colors.success, fontSize: 17, fontWeight: '700' },
-=======
-  action: { flexGrow: 1 },
-  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  amount: { fontSize: 18, fontWeight: '700' },
-  amountRow: { alignItems: 'flex-end', flexDirection: 'row', justifyContent: 'space-between' },
-  header: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 },
-  logo: { alignItems: 'center', backgroundColor: colors.primary, borderRadius: 8, height: 44, justifyContent: 'center', width: 44 },
-  modeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  modePill: { backgroundColor: colors.primarySoft, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, alignItems: 'center' },
-  modeLabel: { fontSize: 10, letterSpacing: 0.5 },
-  modeValue: { fontSize: 14, fontWeight: '700' },
-  name: { fontWeight: '700' },
-  paidAmount: { color: colors.primary, fontSize: 18, fontWeight: '700' },
-  paidRow: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
-  recordHeader: { alignItems: 'flex-start', flexDirection: 'row', gap: 12, justifyContent: 'space-between' },
-  recordInfo: { flex: 1 },
-  summaryRow: { flexDirection: 'row', gap: 12 },
->>>>>>> feature/improvements-16
 });

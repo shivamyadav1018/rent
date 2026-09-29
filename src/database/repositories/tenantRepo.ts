@@ -1,7 +1,7 @@
 import { Tenant } from '../../types/models';
 import { nowIso } from '../../utils/dates';
 import { createId } from '../../utils/ids';
-import { executeSql, executeBatch, SqlStatement } from '../db';
+import { executeSql, executeWrite } from '../db';
 import { unitRepo } from './unitRepo';
 
 export const tenantRepo = {
@@ -69,7 +69,6 @@ export const tenantRepo = {
   }) {
     const timestamp = nowIso();
     const id = input.id ?? createId('tenant');
-<<<<<<< HEAD
     const previous = input.id ? await this.find(input.id) : null;
     if (input.id && !previous) throw new Error('Tenant no longer exists. Reopen the tenant list.');
     if (previous?.settlement_id) throw new Error('This tenancy has a final settlement and cannot be edited.');
@@ -84,6 +83,13 @@ export const tenantRepo = {
         throw new Error('This unit is already occupied. Select a vacant unit.');
       }
     }
+    const duplicates = await executeSql<{ id: string }>(
+      "SELECT id FROM tenants WHERE phone = ? AND status = 'active' AND deleted_at IS NULL AND id <> ?",
+      [input.phone, id],
+    );
+    if (duplicates.some(tenant => tenant.id !== id)) {
+      throw new Error('A tenant with this phone number already exists.');
+    }
     let shouldOccupyUnit = true;
     const values = [
       input.unit_id,
@@ -95,6 +101,8 @@ export const tenantRepo = {
       input.move_in_date,
       input.security_deposit,
       input.notes ?? null,
+      input.lease_start ?? null,
+      input.lease_end ?? null,
     ];
     if (input.id) {
       const existing = previous;
@@ -107,7 +115,7 @@ export const tenantRepo = {
         await executeWrite(
           `UPDATE tenants
            SET unit_id = ?, name = ?, phone = ?, monthly_rent = ?, electricity_amount = ?, due_day = ?, move_in_date = ?,
-               security_deposit = ?, notes = ?, updated_at = ?, sync_status = 'pending', version = version + 1
+               security_deposit = ?, notes = ?, lease_start = ?, lease_end = ?, updated_at = ?, sync_status = 'pending', version = version + 1
            WHERE id = ?`,
           [...values, timestamp, id],
         );
@@ -115,16 +123,16 @@ export const tenantRepo = {
         // id was provided but no row found — insert as new
         await executeWrite(
           `INSERT INTO tenants
-           (id, unit_id, name, phone, monthly_rent, electricity_amount, due_day, move_in_date, security_deposit, status, notes, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)`,
+           (id, unit_id, name, phone, monthly_rent, electricity_amount, due_day, move_in_date, security_deposit, status, notes, lease_start, lease_end, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?)`,
           [id, ...values, timestamp, timestamp],
         );
       }
     } else {
       await executeWrite(
         `INSERT INTO tenants
-         (id, unit_id, name, phone, monthly_rent, electricity_amount, due_day, move_in_date, security_deposit, status, notes, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)`,
+         (id, unit_id, name, phone, monthly_rent, electricity_amount, due_day, move_in_date, security_deposit, status, notes, lease_start, lease_end, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?)`,
         [id, ...values, timestamp, timestamp],
       );
     }
@@ -148,58 +156,10 @@ export const tenantRepo = {
     );
   },
 
-=======
-
-    // Improvement 2: duplicate phone check
-    const duplicates = await executeSql<{ id: string }>(
-      "SELECT id FROM tenants WHERE phone = ? AND status = 'active' AND id <> ?",
-      [input.phone, id],
-    );
-    if (duplicates.length > 0) {
-      throw new Error('A tenant with this phone number already exists.');
-    }
-
-    const statements: SqlStatement[] = [];
-
-    // Tenant upsert (Improvement 1: atomic)
-    statements.push([
-      `INSERT OR REPLACE INTO tenants
-       (id, unit_id, name, phone, monthly_rent, due_day, move_in_date, security_deposit, status, notes, lease_start, lease_end, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, COALESCE((SELECT created_at FROM tenants WHERE id = ?), ?), ?)`,
-      [
-        id,
-        input.unit_id,
-        input.name,
-        input.phone,
-        input.monthly_rent,
-        input.due_day,
-        input.move_in_date,
-        input.security_deposit,
-        input.notes ?? null,
-        input.lease_start ?? null,
-        input.lease_end ?? null,
-        id,
-        timestamp,
-        timestamp,
-      ],
-    ]);
-
-    // Unit occupied update (Improvement 1: same batch)
-    statements.push([
-      'UPDATE units SET status = ?, updated_at = ? WHERE id = ?',
-      ['occupied', timestamp, input.unit_id],
-    ]);
-
-    await executeBatch(statements);
-    return id;
-  },
-
->>>>>>> feature/improvements-16
   async deactivate(tenantId: string) {
     const tenant = await this.find(tenantId);
     if (!tenant || tenant.status !== 'active') return;
     const timestamp = nowIso();
-<<<<<<< HEAD
     await executeWrite(
       `UPDATE tenants
        SET status = 'inactive', updated_at = ?, sync_status = 'pending', version = version + 1
@@ -207,12 +167,5 @@ export const tenantRepo = {
       [timestamp, tenantId],
     );
     await unitRepo.markVacant(tenant.unit_id);
-=======
-    // Improvement 1: atomic tenant deactivate + unit vacancy
-    await executeBatch([
-      [`UPDATE tenants SET status = 'inactive', updated_at = ? WHERE id = ?`, [timestamp, tenantId]],
-      ['UPDATE units SET status = ?, updated_at = ? WHERE id = ?', ['vacant', timestamp, tenant.unit_id]],
-    ]);
->>>>>>> feature/improvements-16
   },
 };

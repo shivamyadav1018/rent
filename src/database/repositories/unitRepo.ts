@@ -30,21 +30,11 @@ export const unitRepo = {
     monthly_rent: number;
     status: UnitStatus;
   }) {
-<<<<<<< HEAD
     if (input.id && input.status === 'vacant') {
       const occupants = await executeSql<{ id: string }>(
         "SELECT id FROM tenants WHERE unit_id = ? AND status = 'active' AND deleted_at IS NULL LIMIT 1", [input.id],
       );
       if (occupants.length) throw new Error('Move out the active tenant before marking this unit vacant.');
-=======
-    // Improvement 3: duplicate unit name check
-    const duplicates = await executeSql<{ id: string }>(
-      'SELECT id FROM units WHERE property_id = ? AND LOWER(name) = LOWER(?) AND id <> ?',
-      [input.property_id, input.name, input.id ?? ''],
-    );
-    if (duplicates.length > 0) {
-      throw new Error('A unit with this name already exists in this property.');
->>>>>>> feature/improvements-16
     }
     const timestamp = nowIso();
     const id = input.id ?? createId('unit');

@@ -126,19 +126,6 @@ export type DashboardSummary = {
   overdueCount: number;
 };
 
-<<<<<<< HEAD
-export type SettlementStatement = {
-  tenantName: string; propertyName: string; unitName: string; phone: string;
-  moveOutDate: string; deposit: number; finalRent: number; finalElectricity: number;
-  deduction: number; deductionReason: string; previousBalance: number; finalPayments: number;
-  balance: number; bills: { month: number; year: number; rent: number; electricity: number; paid: number }[];
-};
-
-export type Settlement = SyncMetadata & {
-  id: string; tenant_id: string; statement_json: string; balance: number;
-  transfer_date?: string | null; transfer_mode?: PaymentMode | null; transfer_reference?: string | null;
-  created_at: string; updated_at: string;
-=======
 export type ExpenseCategory = 'repair' | 'maintenance' | 'cleaning' | 'tax' | 'insurance' | 'other';
 
 export type Expense = {
@@ -150,5 +137,17 @@ export type Expense = {
   expense_date: string;
   created_at: string;
   updated_at: string;
->>>>>>> feature/improvements-16
+};
+
+export type SettlementStatement = {
+  tenantName: string; propertyName: string; unitName: string; phone: string;
+  moveOutDate: string; deposit: number; finalRent: number; finalElectricity: number;
+  deduction: number; deductionReason: string; previousBalance: number; finalPayments: number;
+  balance: number; bills: { month: number; year: number; rent: number; electricity: number; paid: number }[];
+};
+
+export type Settlement = SyncMetadata & {
+  id: string; tenant_id: string; statement_json: string; balance: number;
+  transfer_date?: string | null; transfer_mode?: PaymentMode | null; transfer_reference?: string | null;
+  created_at: string; updated_at: string;
 };

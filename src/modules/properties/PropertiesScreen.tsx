@@ -20,42 +20,30 @@ export function PropertiesScreen({ navigation }: any) {
   const refreshAll = useAppStore(state => state.refreshAll);
   const [vacancyStats, setVacancyStats] = useState<VacancyStat[]>([]);
 
-<<<<<<< HEAD
-  useFocusEffect(useCallback(() => { refreshAll().catch(() => undefined); }, [refreshAll]));
-=======
   useFocusEffect(useCallback(() => {
-    refreshAll();
+    refreshAll().catch(() => undefined);
     unitRepo.vacancyStats().then(setVacancyStats).catch(() => undefined);
   }, [refreshAll]));
->>>>>>> feature/improvements-16
 
   return (
     <Screen>
       <Title>Properties</Title>
       <Muted>Homes, shops and rooms in one place</Muted>
-<<<<<<< HEAD
       <AppButton icon={<AppIcon color={colors.surface} name="plus" size={19} />} title="Add property" onPress={() => navigation.navigate('AddProperty')} />
-=======
-      <AppButton icon={<Plus color={colors.surface} size={18} />} title="Add property" onPress={() => navigation.navigate('AddProperty')} />
-
-      {/* Improvement 11: Vacancy overview card */}
       {vacancyStats.length > 0 ? (
         <Card>
-          <Body style={styles.vacancyTitle}>Vacancy Overview</Body>
+          <Body style={styles.vacancyTitle}>Occupancy overview</Body>
           {vacancyStats.map(stat => (
             <View key={stat.property_name} style={styles.vacancyRow}>
-              <Muted style={styles.vacancyName} numberOfLines={1}>{stat.property_name}</Muted>
+              <Muted numberOfLines={1} style={styles.vacancyName}>{stat.property_name}</Muted>
               <View style={styles.vacancyBarWrap}>
-                <View style={[styles.vacancyBar, { flex: stat.total > 0 ? stat.occupied / stat.total : 0 }]} />
-                <View style={{ flex: stat.total > 0 ? stat.vacant / stat.total : 0 }} />
+                <View style={[styles.vacancyBar, { width: `${stat.total ? (stat.occupied / stat.total) * 100 : 0}%` }]} />
               </View>
-              <Muted style={styles.vacancyCount}>{stat.occupied}/{stat.total}</Muted>
+              <Muted style={styles.vacancyCount}>{stat.vacant} free</Muted>
             </View>
           ))}
         </Card>
       ) : null}
-
->>>>>>> feature/improvements-16
       <SectionHeader detail={`${properties.length} total`} title="Your properties" />
       {properties.length === 0 ? <EmptyState message="Your properties will appear here." /> : null}
       {properties.map(property => (

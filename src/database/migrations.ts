@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 const syncColumns = [
   ['owner_id', 'TEXT'],
   ['deleted_at', 'TEXT'],
@@ -12,12 +11,6 @@ const tableHasColumn = async (db: any, table: string, column: string) => {
     if (result.rows.item(index).name === column) {
       return true;
     }
-=======
-const tableHasColumn = async (db: any, table: string, column: string) => {
-  const [result] = await db.executeSql(`PRAGMA table_info(${table})`);
-  for (let i = 0; i < result.rows.length; i++) {
-    if (result.rows.item(i).name === column) return true;
->>>>>>> feature/improvements-16
   }
   return false;
 };
@@ -28,7 +21,6 @@ const addColumnIfMissing = async (db: any, table: string, column: string, defini
   }
 };
 
-<<<<<<< HEAD
 const createSyncTriggers = async (db: any, table: string, entityType: string) => {
   await db.executeSql(`
     CREATE TRIGGER IF NOT EXISTS ${table}_set_owner_after_insert
@@ -67,8 +59,6 @@ const createSyncTriggers = async (db: any, table: string, entityType: string) =>
   `);
 };
 
-=======
->>>>>>> feature/improvements-16
 export const runMigrations = async (db: any) => {
   await db.transaction((tx: any) => {
     tx.executeSql(`
@@ -161,7 +151,6 @@ export const runMigrations = async (db: any) => {
     `);
   });
 
-<<<<<<< HEAD
   await db.executeSql(`CREATE TABLE IF NOT EXISTS settlements (
     id TEXT PRIMARY KEY NOT NULL,
     tenant_id TEXT NOT NULL UNIQUE,
@@ -201,6 +190,8 @@ export const runMigrations = async (db: any) => {
   await addColumnIfMissing(db, 'tenants', 'id_proof_name', 'TEXT');
   await addColumnIfMissing(db, 'tenants', 'id_proof_storage_path', 'TEXT');
   await addColumnIfMissing(db, 'tenants', 'id_proof_mime_type', 'TEXT');
+  await addColumnIfMissing(db, 'tenants', 'lease_start', 'TEXT');
+  await addColumnIfMissing(db, 'tenants', 'lease_end', 'TEXT');
   await addColumnIfMissing(db, 'rent_cycles', 'electricity_amount', 'REAL NOT NULL DEFAULT 0');
   await addColumnIfMissing(db, 'rent_cycles', 'total_payable', 'REAL NOT NULL DEFAULT 0');
   await addColumnIfMissing(db, 'payments', 'updated_at', 'TEXT');
@@ -213,6 +204,17 @@ export const runMigrations = async (db: any) => {
   await addColumnIfMissing(db, 'payments', 'receipt_landlord', 'TEXT');
   await addColumnIfMissing(db, 'payments', 'voided_at', 'TEXT');
   await addColumnIfMissing(db, 'payments', 'void_reason', 'TEXT');
+  await db.executeSql(`CREATE TABLE IF NOT EXISTS expenses (
+    id TEXT PRIMARY KEY NOT NULL,
+    property_id TEXT NOT NULL,
+    amount REAL NOT NULL,
+    category TEXT NOT NULL DEFAULT 'other',
+    description TEXT,
+    expense_date TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY(property_id) REFERENCES properties(id)
+  )`);
   await db.executeSql('UPDATE payments SET updated_at = created_at WHERE updated_at IS NULL');
   if (needsChargeBackfill) {
     await db.executeSql(
@@ -271,22 +273,4 @@ export const runMigrations = async (db: any) => {
 
   await db.executeSql('CREATE INDEX IF NOT EXISTS idx_sync_queue_updated_at ON sync_queue(updated_at)');
   await db.executeSql('CREATE INDEX IF NOT EXISTS idx_tenant_invites_status ON tenant_invites(status, expires_at)');
-=======
-  // Improvement 4: lease date columns
-  await addColumnIfMissing(db, 'tenants', 'lease_start', 'TEXT');
-  await addColumnIfMissing(db, 'tenants', 'lease_end', 'TEXT');
-
-  // Improvement 12: expenses table
-  await db.executeSql(`CREATE TABLE IF NOT EXISTS expenses (
-    id TEXT PRIMARY KEY NOT NULL,
-    property_id TEXT NOT NULL,
-    amount REAL NOT NULL,
-    category TEXT NOT NULL DEFAULT 'other',
-    description TEXT,
-    expense_date TEXT NOT NULL,
-    created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL,
-    FOREIGN KEY(property_id) REFERENCES properties(id)
-  )`);
->>>>>>> feature/improvements-16
 };

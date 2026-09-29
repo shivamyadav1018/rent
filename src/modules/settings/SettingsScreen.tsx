@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, View } from 'react-native';
-=======
-import React, { useCallback, useState } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
->>>>>>> feature/improvements-16
+import { ActivityIndicator, Alert, Pressable, StyleSheet, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Avatar } from 'react-native-elements';
 import { useRewardedAd } from 'react-native-google-mobile-ads';
@@ -15,20 +10,24 @@ import { Card } from '../../components/Card';
 import { AppInput } from '../../components/AppInput';
 import { Screen } from '../../components/Screen';
 import { Body, Muted, Title } from '../../components/Typography';
-<<<<<<< HEAD
 import { adConfig } from '../../config/ads';
 import { settingsRepo } from '../../database/repositories/settingsRepo';
 import { adMobService } from '../../services/adMobService';
 import { pushNotificationService } from '../../services/pushNotificationService';
+import { exportService } from '../../services/exportService';
 import { useAppStore } from '../../store/appStore';
 import { useAuthStore } from '../../store/authStore';
-import { authColors, colors } from '../../theme';
+import { authColors, colors, fontFamily } from '../../theme';
+import { i18n, Locale } from '../../utils/i18n';
 
-export function SettingsScreen() {
+export function SettingsScreen({ navigation }: any) {
   const savingRef = useRef(false);
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [upiVpa, setUpiVpa] = useState('');
+  const [language, setLanguage] = useState<Locale>('en');
+  const [exportingCsv, setExportingCsv] = useState(false);
   const [adsReady, setAdsReady] = useState(false);
   const [remindersEnabled, setRemindersEnabled] = useState(false);
   const [reminderWorking, setReminderWorking] = useState(false);
@@ -42,20 +41,6 @@ export function SettingsScreen() {
     load: loadRewarded,
     show: showRewarded,
   } = rewarded;
-=======
-import { settingsRepo } from '../../database/repositories/settingsRepo';
-import { exportService } from '../../services/exportService';
-import { i18n, Locale } from '../../utils/i18n';
-import { useAppStore } from '../../store/appStore';
-import { colors, fontFamily } from '../../theme';
-
-export function SettingsScreen({ navigation }: any) {
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [upiVpa, setUpiVpa] = useState('');
-  const [language, setLanguage] = useState<Locale>('en');
-  const [exportingCsv, setExportingCsv] = useState(false);
->>>>>>> feature/improvements-16
   const bootstrap = useAppStore(state => state.bootstrap);
   const authError = useAuthStore(state => state.error);
   const authStatus = useAuthStore(state => state.status);
@@ -99,33 +84,26 @@ export function SettingsScreen({ navigation }: any) {
   }, [loadRewarded, rewardedClosed, rewardedError]);
 
   useFocusEffect(useCallback(() => {
-<<<<<<< HEAD
     let isActive = true;
     settingsRepo.getAll().then(settings => {
       if (!isActive) return;
       setName(settings.landlordName ?? '');
       setPhone(settings.landlordPhone ?? '');
+      setUpiVpa(settings.upiVpa ?? '');
+      setLanguage(settings.language === 'hi' ? 'hi' : 'en');
       setRemindersEnabled(settings.remindersEnabled === 'true');
     }).catch(() => { if (isActive) Alert.alert('Could not load settings', 'Reopen Settings to retry.'); });
     return () => { isActive = false; };
-=======
-    settingsRepo.getAll().then(settings => {
-      setName(settings.landlordName ?? '');
-      setPhone(settings.landlordPhone ?? '');
-      setUpiVpa(settings.upiVpa ?? '');
-      setLanguage(settings.language === 'hi' ? 'hi' : 'en');
-    });
->>>>>>> feature/improvements-16
   }, []));
 
   const save = async () => {
     if (savingRef.current) return;
     if (!name.trim()) return Alert.alert('Landlord name is required');
-<<<<<<< HEAD
     savingRef.current = true;
     setSaving(true);
     try {
       await settingsRepo.setMany({ currency: 'INR', landlordName: name.trim(), landlordPhone: phone.trim() });
+      await settingsRepo.setUpiVpa(upiVpa.trim());
       await bootstrap().catch(() => undefined);
       Alert.alert('Settings saved', authStatus === 'signedIn' ? 'Changes are queued for cloud sync.' : undefined);
     } catch (error) {
@@ -171,12 +149,6 @@ export function SettingsScreen({ navigation }: any) {
     }
     loadRewarded();
     Alert.alert('Ad is loading', 'Please try again in a moment.');
-=======
-    await settingsRepo.setMany({ currency: 'INR', landlordName: name.trim(), landlordPhone: phone.trim() });
-    if (upiVpa.trim()) await settingsRepo.setUpiVpa(upiVpa.trim());
-    await bootstrap();
-    Alert.alert('Settings saved');
->>>>>>> feature/improvements-16
   };
 
   const changeLanguage = async (locale: Locale) => {
@@ -317,12 +289,7 @@ export function SettingsScreen({ navigation }: any) {
       <AppInput label="Landlord name" value={name} onChangeText={setName} />
       <AppInput label="Phone number (optional)" keyboardType="phone-pad" value={phone} onChangeText={setPhone} />
       <AppInput label="Currency" editable={false} value="INR" />
-<<<<<<< HEAD
-      <AppButton disabled={saving} title={saving ? 'Saving...' : 'Save settings'} onPress={save} />
-      <Muted>Rent records remain available offline and sync to Firebase when your cloud account is connected.</Muted>
-=======
       <AppInput label="UPI VPA (optional, e.g. yourname@upi)" value={upiVpa} onChangeText={setUpiVpa} />
-
       <Body style={styles.label}>Language / भाषा</Body>
       <View style={styles.langRow}>
         <Pressable onPress={() => changeLanguage('en')} style={[styles.langBtn, language === 'en' && styles.langBtnSelected]}>
@@ -332,26 +299,15 @@ export function SettingsScreen({ navigation }: any) {
           <Body style={[styles.langText, language === 'hi' && styles.langTextSelected]}>हिंदी</Body>
         </Pressable>
       </View>
-
-      <AppButton title="Save settings" onPress={save} />
-      <AppButton
-        title={exportingCsv ? 'Exporting...' : 'Export Payments CSV'}
-        variant="secondary"
-        onPress={exportCsv}
-      />
-      <AppButton
-        title="Annual Report"
-        variant="secondary"
-        onPress={() => navigation.navigate('AnnualReport')}
-      />
-      <Muted>All app data remains on this device.</Muted>
->>>>>>> feature/improvements-16
+      <AppButton disabled={saving} title={saving ? 'Saving...' : 'Save settings'} onPress={save} />
+      <AppButton disabled={exportingCsv} title={exportingCsv ? 'Exporting...' : 'Export Payments CSV'} variant="secondary" onPress={exportCsv} />
+      <AppButton title="Annual Report" variant="secondary" onPress={() => navigation.navigate('AnnualReport')} />
+      <Muted>Rent records remain available offline and sync to Firebase when your cloud account is connected.</Muted>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-<<<<<<< HEAD
   accountDetails: { flex: 1 },
   accountName: { fontWeight: '700' },
   accountRow: { alignItems: 'center', flexDirection: 'row', gap: 12 },
@@ -370,14 +326,12 @@ const styles = StyleSheet.create({
   cloudTitle: { fontWeight: '700' },
   error: { color: colors.danger, fontSize: 13 },
   loading: { alignItems: 'center', flexDirection: 'row', gap: 10, minHeight: 48 },
-  syncLabel: { fontSize: 14, fontWeight: '600' },
-  syncRow: { alignItems: 'center', flexDirection: 'row', gap: 10 },
-=======
   label: { color: colors.ink, fontFamily, fontSize: 13, fontWeight: '600', marginTop: 4 },
   langRow: { flexDirection: 'row', gap: 12, marginBottom: 8 },
-  langBtn: { flex: 1, backgroundColor: colors.surfaceMuted, borderRadius: 8, padding: 12, alignItems: 'center' },
+  langBtn: { alignItems: 'center', backgroundColor: colors.surfaceMuted, borderRadius: 8, flex: 1, padding: 12 },
   langBtnSelected: { backgroundColor: colors.primary },
-  langText: { fontFamily, color: colors.ink },
+  langText: { color: colors.ink, fontFamily },
   langTextSelected: { color: colors.surface, fontWeight: '700' },
->>>>>>> feature/improvements-16
+  syncLabel: { fontSize: 14, fontWeight: '600' },
+  syncRow: { alignItems: 'center', flexDirection: 'row', gap: 10 },
 });

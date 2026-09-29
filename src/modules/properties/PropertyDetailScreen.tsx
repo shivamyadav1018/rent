@@ -29,7 +29,6 @@ export function PropertyDetailScreen({ navigation, route }: any) {
 
   return (
     <Screen>
-<<<<<<< HEAD
       <View style={styles.hero}>
         <View style={styles.propertyIcon}><AppIcon color={colors.surface} name="office-building-outline" size={28} /></View>
         <View style={styles.heroCopy}>
@@ -38,24 +37,6 @@ export function PropertyDetailScreen({ navigation, route }: any) {
           <View style={styles.locationRow}>
             <AppIcon color={colors.muted} name="map-marker-outline" size={16} />
             <Muted style={styles.location}>{property.type}{property.address ? ` · ${property.address}` : ' · Address not added'}</Muted>
-=======
-      <Title>{property.name}</Title>
-      <Muted>{property.type}{property.address ? ` | ${property.address}` : ''}</Muted>
-      <View style={styles.actions}>
-        <AppButton title="Add unit" onPress={() => navigation.navigate('AddUnit', { propertyId })} />
-        <AppButton title="Edit property" variant="secondary" onPress={() => navigation.navigate('AddProperty', { propertyId })} />
-        <AppButton title="Expenses" variant="secondary" onPress={() => navigation.navigate('Expenses', { propertyId, propertyName: property.name })} />
-      </View>
-      <Body style={styles.heading}>Units</Body>
-      {units.length === 0 ? <Muted>No units yet.</Muted> : units.map(unit => (
-        <Card key={unit.id}>
-          <Body style={styles.name}>{unit.name}</Body>
-          <Body>{formatCurrency(unit.monthly_rent)} / month</Body>
-          <StatusBadge status={unit.status} />
-          <View style={styles.actions}>
-            {unit.status === 'vacant' ? <AppButton title="Add tenant" onPress={() => navigation.navigate('AddTenant', { unitId: unit.id })} /> : null}
-            <AppButton title="Edit unit" variant="secondary" onPress={() => navigation.navigate('AddUnit', { propertyId, unitId: unit.id })} />
->>>>>>> feature/improvements-16
           </View>
         </View>
       </View>
@@ -72,6 +53,12 @@ export function PropertyDetailScreen({ navigation, route }: any) {
         <AppButton icon={<AppIcon color={colors.surface} name="plus" size={19} />} style={styles.actionButton} title="Add unit" onPress={() => navigation.navigate('AddUnit', { propertyId })} />
         <AppButton icon={<AppIcon color={colors.primaryDark} name="pencil-outline" size={18} />} style={styles.actionButton} title="Edit property" variant="secondary" onPress={() => navigation.navigate('AddProperty', { propertyId })} />
       </View>
+      <AppButton
+        icon={<AppIcon color={colors.primaryDark} name="receipt-text-outline" size={18} />}
+        title="Property expenses"
+        variant="secondary"
+        onPress={() => navigation.navigate('Expenses', { propertyId, propertyName: property.name })}
+      />
 
       <View style={styles.sectionHeading}>
         <View><Body style={styles.sectionTitle}>Units</Body><Muted>Rooms and rental spaces</Muted></View>
