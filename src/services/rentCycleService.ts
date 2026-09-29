@@ -57,10 +57,10 @@ export const rentCycleService = {
     const tenants = await tenantRepo.active();
     const existing = await rentRepo.ledger(month, year);
     const tenantIds = new Set([...tenants.map(tenant => tenant.id), ...existing.map(cycle => cycle.tenant_id)]);
-    for (const tenantId of tenantIds) await this.ensureCycleForTenant(tenantId, month, year);
+    await Promise.all(Array.from(tenantIds).map(id => this.ensureCycleForTenant(id, month, year)));
   },
 
-  async updateElectricity(tenantId: string, month: number, year: number, electricityAmount: number) {
+  async updateElectricity(tenantId: string, month: number, year: number, electricityAmount: number, meterPrevReading: number | null = null, meterNewReading: number | null = null) {
     if (!Number.isFinite(electricityAmount) || electricityAmount < 0) {
       throw new Error('Electricity amount cannot be negative');
     }
@@ -68,12 +68,13 @@ export const rentCycleService = {
     if (tenant?.settlement_id) throw new Error('This tenancy has a final settlement.');
     const cycle = await this.ensureCycleForTenant(tenantId, month, year);
     if (!cycle) throw new Error('No rent is due for this tenant in the selected month');
-    if (electricityAmount === cycle.electricity_amount) return cycle;
+    const readingsChanged = meterPrevReading !== cycle.meter_prev_reading || meterNewReading !== cycle.meter_new_reading;
+    if (electricityAmount === cycle.electricity_amount && !readingsChanged) return cycle;
     const totalPayable = cycle.rent_amount + electricityAmount;
     const balance = totalPayable - cycle.total_paid;
     const status = statusFor({ balance, due_date: cycle.due_date, total_paid: cycle.total_paid });
-    await rentRepo.updateCharges(cycle.id, electricityAmount, totalPayable, balance, status);
-    return { ...cycle, balance, electricity_amount: electricityAmount, status, total_payable: totalPayable };
+    await rentRepo.updateCharges(cycle.id, electricityAmount, totalPayable, balance, status, meterPrevReading, meterNewReading);
+    return { ...cycle, balance, electricity_amount: electricityAmount, meter_prev_reading: meterPrevReading, meter_new_reading: meterNewReading, status, total_payable: totalPayable };
   },
 
   async recordPayment(input: {
@@ -101,7 +102,8 @@ export const rentCycleService = {
 
     const paymentId = createId('pay');
     await paymentRepo.recordAtomic({ ...input, id: paymentId, cycleId: cycle.id });
-    // Return the committed identity without a fallible read after the commit.
-    return { ...cycle, paymentId };
+    // Re-read so callers get the committed totals, not the pre-payment snapshot.
+    const updated = await rentRepo.findCycle(input.tenantId, input.month, input.year);
+    return { ...(updated ?? cycle), paymentId };
   },
 };

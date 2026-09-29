@@ -3,6 +3,7 @@ import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
 import { AppButton } from '../../components/AppButton';
+import { AppDatePicker } from '../../components/AppDatePicker';
 import { AppInput } from '../../components/AppInput';
 import { Card } from '../../components/Card';
 import { Screen } from '../../components/Screen';
@@ -34,6 +35,7 @@ export function ExpensesScreen({ route }: any) {
   const saveExpense = async () => {
     const amt = Number(amount);
     if (!amt || amt <= 0) return Alert.alert('Enter a valid amount');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(expenseDate)) return Alert.alert('Enter a valid date (YYYY-MM-DD)');
     setSaving(true);
     try {
       await expenseRepo.save({ property_id: propertyId, amount: amt, category, description, expense_date: expenseDate });
@@ -62,7 +64,7 @@ export function ExpensesScreen({ route }: any) {
       {showAdd ? (
         <Card>
           <AppInput label="Amount" keyboardType="numeric" value={amount} onChangeText={setAmount} />
-          <AppInput label="Date (YYYY-MM-DD)" value={expenseDate} onChangeText={setExpenseDate} />
+          <AppDatePicker label="Date" maximumDate={new Date()} value={expenseDate} onChange={setExpenseDate} />
           <AppInput label="Description (optional)" value={description} onChangeText={setDescription} />
           <Body style={styles.label}>Category</Body>
           <View style={styles.cats}>

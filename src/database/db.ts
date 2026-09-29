@@ -57,5 +57,6 @@ export const executeBatch = async (statements: SqlStatement[]) => {
 export const executeWrite = async (sql: string, params: any[] = []) => {
   const db = await getDb();
   await db.executeSql(sql, params);
-  writeListener?.();
+  // Match executeBatch: a notification failure must never surface as a write error.
+  try { writeListener?.(); } catch { /* The next sync also discovers queued writes. */ }
 };

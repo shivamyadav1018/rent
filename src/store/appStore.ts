@@ -73,7 +73,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     const generation = sessionGeneration;
     const requestId = ++allRequestId;
     const { month, year } = currentMonthYear();
-    await rentCycleService.ensureCyclesForMonth(month, year);
+    // A failure here must not leave the dashboard blank — continue with whatever is in the DB.
+    await rentCycleService.ensureCyclesForMonth(month, year).catch(() => undefined);
     if (generation !== sessionGeneration || requestId !== allRequestId) return false;
     const [properties, units, tenants, dashboardLedger] = await Promise.all([
       propertyRepo.listWithCounts(),

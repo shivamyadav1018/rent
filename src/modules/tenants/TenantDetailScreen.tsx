@@ -24,12 +24,15 @@ type HistoryPayment = Payment & { month: number; year: number };
 
 const getLeaseWarning = (leaseEnd?: string | null): { message: string; expired: boolean } | null => {
   if (!leaseEnd) return null;
-  const end = new Date(leaseEnd);
+  const endDate = leaseEnd.slice(0, 10);
+  // Use string comparison to avoid UTC-vs-local midnight off-by-one across time zones.
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const diffDays = Math.floor((end.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-  if (diffDays < 0) return { message: `Lease expired on ${leaseEnd.slice(0, 10)}. Update or renew.`, expired: true };
-  if (diffDays <= 30) return { message: `Lease expires on ${leaseEnd.slice(0, 10)}. Renew the agreement.`, expired: false };
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  if (endDate < todayStr) return { message: `Lease expired on ${endDate}. Update or renew.`, expired: true };
+  // Calculate days remaining using UTC dates to avoid DST jumps.
+  const msPerDay = 1000 * 60 * 60 * 24;
+  const diffDays = Math.round((Date.UTC(...(endDate.split('-').map(Number) as [number, number, number])) - Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())) / msPerDay);
+  if (diffDays <= 30) return { message: `Lease expires on ${endDate}. Renew the agreement.`, expired: false };
   return null;
 };
 
@@ -41,6 +44,27 @@ export function TenantDetailScreen({ navigation, route }: any) {
   const [cycle, setCycle] = useState<RentCycle | null>(null);
   const [payments, setPayments] = useState<HistoryPayment[]>([]);
   const [electricityDraft, setElectricityDraft] = useState('0');
+  const [prevMeterDraft, setPrevMeterDraft] = useState('');
+  const [newMeterDraft, setNewMeterDraft] = useState('');
+
+  const handleNewReading = (val: string) => {
+    setNewMeterDraft(val);
+    const p = parseFloat(prevMeterDraft);
+    const n = parseFloat(val);
+    const rate = tenant?.electricity_rate;
+    if (Number.isFinite(p) && Number.isFinite(n) && n >= p && rate && rate > 0) {
+      setElectricityDraft(String(Math.round((n - p) * rate)));
+    }
+  };
+  const handlePrevReading = (val: string) => {
+    setPrevMeterDraft(val);
+    const p = parseFloat(val);
+    const n = parseFloat(newMeterDraft);
+    const rate = tenant?.electricity_rate;
+    if (Number.isFinite(p) && Number.isFinite(n) && n >= p && rate && rate > 0) {
+      setElectricityDraft(String(Math.round((n - p) * rate)));
+    }
+  };
   const [savingBill, setSavingBill] = useState(false);
   const [leaseWarningDismissed, setLeaseWarningDismissed] = useState(false);
 
@@ -71,8 +95,11 @@ export function TenantDetailScreen({ navigation, route }: any) {
           ]);
           if (!isActive) return;
           setCycle(nextCycle?.deleted_at ? null : nextCycle);
-          if (nextCycle && !nextCycle.deleted_at)
+          if (nextCycle && !nextCycle.deleted_at) {
             setElectricityDraft(String(nextCycle.electricity_amount ?? 0));
+            setPrevMeterDraft(nextCycle.meter_prev_reading != null ? String(nextCycle.meter_prev_reading) : '');
+            setNewMeterDraft(nextCycle.meter_new_reading != null ? String(nextCycle.meter_new_reading) : '');
+          }
           setPayments(nextPayments);
         } catch {
           if (!isActive) return;
@@ -109,10 +136,11 @@ export function TenantDetailScreen({ navigation, route }: any) {
     if (!cycle || savingBill || tenant.settlement_id) return;
     const amount = Number(electricityDraft);
     if (!Number.isFinite(amount) || amount < 0)
-      return Alert.alert(
-        'Check electricity',
-        'Enter an amount of zero or more.',
-      );
+      return Alert.alert('Check electricity', 'Enter an amount of zero or more.');
+    const prev = prevMeterDraft !== '' ? Number(prevMeterDraft) : null;
+    const curr = newMeterDraft !== '' ? Number(newMeterDraft) : null;
+    if (prev !== null && curr !== null && curr < prev)
+      return Alert.alert('Check meter readings', 'New reading must be greater than or equal to previous reading.');
     setSavingBill(true);
     try {
       const updated = await rentCycleService.updateElectricity(
@@ -120,6 +148,8 @@ export function TenantDetailScreen({ navigation, route }: any) {
         cycle.month,
         cycle.year,
         amount,
+        prev,
+        curr,
       );
       setCycle(updated);
       Alert.alert(
@@ -318,10 +348,50 @@ export function TenantDetailScreen({ navigation, route }: any) {
           </View>
           {tenant.status === 'active' ? (
             <>
+              <Body style={styles.meterLabel}>Meter readings</Body>
+              <View style={styles.meterRow}>
+                <View style={styles.meterField}>
+                  <AppInput
+                    editable={!savingBill}
+                    label="Previous reading"
+                    keyboardType="numeric"
+                    value={prevMeterDraft}
+                    onChangeText={handlePrevReading}
+                  />
+                </View>
+                <View style={styles.meterField}>
+                  <AppInput
+                    editable={!savingBill}
+                    label="New reading"
+                    keyboardType="numeric"
+                    value={newMeterDraft}
+                    onChangeText={handleNewReading}
+                  />
+                </View>
+              </View>
+              {(() => {
+                const p = parseFloat(prevMeterDraft);
+                const n = parseFloat(newMeterDraft);
+                const rate = tenant.electricity_rate;
+                if (Number.isFinite(p) && Number.isFinite(n)) {
+                  if (n < p) return <Muted style={styles.meterError}>New reading must be ≥ previous</Muted>;
+                  const units = n - p;
+                  const calculated = rate && rate > 0 ? units * rate : null;
+                  return (
+                    <View style={styles.meterSummary}>
+                      <Muted style={styles.meterUnits}>Units consumed: {units}</Muted>
+                      {calculated !== null
+                        ? <Muted style={styles.meterCalc}>₹{calculated.toFixed(0)} auto-filled ({units} × ₹{rate}/unit)</Muted>
+                        : rate == null ? <Muted>Set a per-unit rate on the tenant to auto-calculate</Muted> : null}
+                    </View>
+                  );
+                }
+                return null;
+              })()}
               <AppInput
                 editable={!savingBill}
                 icon="flash-outline"
-                label="Electricity for this month"
+                label="Electricity amount (₹)"
                 keyboardType="numeric"
                 value={electricityDraft}
                 onChangeText={setElectricityDraft}
@@ -377,6 +447,13 @@ export function TenantDetailScreen({ navigation, route }: any) {
 }
 
 const styles = StyleSheet.create({
+  meterLabel: { fontSize: 13, fontWeight: '600', marginTop: 4 },
+  meterRow: { flexDirection: 'row', gap: 10 },
+  meterField: { flex: 1 },
+  meterSummary: { gap: 2 },
+  meterUnits: { marginTop: -4 },
+  meterCalc: { color: colors.primary, fontWeight: '600' },
+  meterError: { color: colors.danger, marginTop: -4 },
   actionButton: { flexBasis: '48%', flexGrow: 1 },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   contactRow: { alignItems: 'center', flexDirection: 'row', gap: 10 },

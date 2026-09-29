@@ -85,6 +85,6 @@ test('updates electricity and total payable without requiring a payment', async 
     electricity_amount: 350,
     total_payable: 1350,
   });
-  expect(rentRepo.updateCharges).toHaveBeenCalledWith('cycle', 350, 1350, 1350, 'overdue');
+  expect(rentRepo.updateCharges).toHaveBeenCalledWith('cycle', 350, 1350, 1350, 'overdue', null, null);
   expect(paymentRepo.create).not.toHaveBeenCalled();
 });

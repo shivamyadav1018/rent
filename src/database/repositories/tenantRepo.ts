@@ -60,6 +60,7 @@ export const tenantRepo = {
     phone: string;
     monthly_rent: number;
     electricity_amount?: number;
+    electricity_rate?: number | null;
     due_day: number;
     move_in_date: string;
     security_deposit: number;
@@ -97,6 +98,7 @@ export const tenantRepo = {
       input.phone,
       input.monthly_rent,
       input.electricity_amount ?? 0,
+      input.electricity_rate ?? null,
       input.due_day,
       input.move_in_date,
       input.security_deposit,
@@ -114,7 +116,7 @@ export const tenantRepo = {
         }
         await executeWrite(
           `UPDATE tenants
-           SET unit_id = ?, name = ?, phone = ?, monthly_rent = ?, electricity_amount = ?, due_day = ?, move_in_date = ?,
+           SET unit_id = ?, name = ?, phone = ?, monthly_rent = ?, electricity_amount = ?, electricity_rate = ?, due_day = ?, move_in_date = ?,
                security_deposit = ?, notes = ?, lease_start = ?, lease_end = ?, updated_at = ?, sync_status = 'pending', version = version + 1
            WHERE id = ?`,
           [...values, timestamp, id],
@@ -123,16 +125,16 @@ export const tenantRepo = {
         // id was provided but no row found — insert as new
         await executeWrite(
           `INSERT INTO tenants
-           (id, unit_id, name, phone, monthly_rent, electricity_amount, due_day, move_in_date, security_deposit, status, notes, lease_start, lease_end, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?)`,
+           (id, unit_id, name, phone, monthly_rent, electricity_amount, electricity_rate, due_day, move_in_date, security_deposit, status, notes, lease_start, lease_end, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?)`,
           [id, ...values, timestamp, timestamp],
         );
       }
     } else {
       await executeWrite(
         `INSERT INTO tenants
-         (id, unit_id, name, phone, monthly_rent, electricity_amount, due_day, move_in_date, security_deposit, status, notes, lease_start, lease_end, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?)`,
+         (id, unit_id, name, phone, monthly_rent, electricity_amount, electricity_rate, due_day, move_in_date, security_deposit, status, notes, lease_start, lease_end, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?)`,
         [id, ...values, timestamp, timestamp],
       );
     }

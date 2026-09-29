@@ -58,6 +58,7 @@ export type Tenant = SyncMetadata & {
   phone: string;
   monthly_rent: number;
   electricity_amount: number;
+  electricity_rate?: number | null;
   due_day: number;
   move_in_date: string;
   security_deposit: number;

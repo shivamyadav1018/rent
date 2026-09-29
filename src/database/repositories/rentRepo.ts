@@ -120,13 +120,17 @@ export const rentRepo = {
     totalPayable: number,
     balance: number,
     status: RentStatus,
+    meterPrevReading: number | null = null,
+    meterNewReading: number | null = null,
   ) {
     await executeWrite(
       `UPDATE rent_cycles
        SET electricity_amount = ?, total_payable = ?, balance = ?, status = ?,
+           meter_prev_reading = COALESCE(?, meter_prev_reading),
+           meter_new_reading = COALESCE(?, meter_new_reading),
            updated_at = ?, sync_status = 'pending', version = version + 1
        WHERE id = ? AND NOT EXISTS (SELECT 1 FROM settlements WHERE tenant_id = rent_cycles.tenant_id AND deleted_at IS NULL)`,
-      [electricityAmount, totalPayable, balance, status, nowIso(), id],
+      [electricityAmount, totalPayable, balance, status, meterPrevReading, meterNewReading, nowIso(), id],
     );
   },
 };

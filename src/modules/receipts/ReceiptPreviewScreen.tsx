@@ -34,17 +34,17 @@ export function ReceiptPreviewScreen({ route }: any) {
   const [showCorrection, setShowCorrection] = useState(false);
   const refreshAll = useAppStore(state => state.refreshAll);
 
-  const params = route.params;
+  const { cycleId, paymentId } = route.params;
   const resource = useFocusedResource(useCallback(async () => {
     const [cycle, payment, settings] = await Promise.all([
-      rentRepo.findLedgerItem(params.cycleId),
-      params.paymentId ? paymentRepo.find(params.paymentId) : paymentRepo.latestForCycle(params.cycleId),
+      rentRepo.findLedgerItem(cycleId),
+      paymentId ? paymentRepo.find(paymentId) : paymentRepo.latestForCycle(cycleId),
       settingsRepo.getAll(),
     ]);
     if (!cycle) throw new Error('Rent cycle not found.');
     if (payment && payment.rent_cycle_id !== cycle.id) throw new Error('Payment does not belong to this rent cycle');
     return { cycle, data: payment, landlordName: payment?.receipt_landlord ?? settings.landlordName ?? 'Landlord' };
-  }, [params]));
+  }, [cycleId, paymentId]));
   const { cycle, data, landlordName } = resource.data ?? {};
   useEffect(() => { setFilePath(null); }, [resource.data]);
 

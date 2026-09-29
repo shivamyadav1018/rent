@@ -33,6 +33,7 @@ import { formatCurrency } from '../../utils/currency';
 const schema = z.object({
   dueDay: z.coerce.number().int().min(1).max(31),
   electricityAmount: z.coerce.number().min(0),
+  electricityRate: z.coerce.number().min(0).optional(),
   monthlyRent: z.coerce.number().positive(),
   moveInDate: z
     .string()
@@ -42,12 +43,13 @@ const schema = z.object({
   phone: z.string().trim().min(7, 'Enter a valid phone number'),
   securityDeposit: z.coerce.number().min(0),
   unitId: z.string().min(1, 'Select a unit'),
-  leaseStart: z.string().optional(),
-  leaseEnd: z.string().optional(),
+  leaseStart: z.string().refine(v => !v || isValidDate(v), 'Enter a valid lease start date (YYYY-MM-DD)').optional(),
+  leaseEnd: z.string().refine(v => !v || isValidDate(v), 'Enter a valid lease end date (YYYY-MM-DD)').optional(),
 });
 type FormData = {
   dueDay: string;
   electricityAmount: string;
+  electricityRate: string;
   monthlyRent: string;
   moveInDate: string;
   name: string;
@@ -90,6 +92,7 @@ export function AddEditTenantScreen({ navigation, route }: any) {
     defaultValues: {
       dueDay: '5',
       electricityAmount: '0',
+      electricityRate: '',
       monthlyRent: '',
       moveInDate: todayDate(),
       name: '',
@@ -143,6 +146,7 @@ export function AddEditTenantScreen({ navigation, route }: any) {
           reset({
             dueDay: String(tenant.due_day),
             electricityAmount: String(tenant.electricity_amount),
+            electricityRate: tenant.electricity_rate != null ? String(tenant.electricity_rate) : '',
             monthlyRent: String(tenant.monthly_rent),
             moveInDate: tenant.move_in_date.slice(0, 10),
             name: tenant.name,
@@ -205,9 +209,10 @@ export function AddEditTenantScreen({ navigation, route }: any) {
       const id = await tenantRepo.save({
         due_day: parsed.data.dueDay,
         electricity_amount: parsed.data.electricityAmount,
+        electricity_rate: parsed.data.electricityRate ?? null,
         id: tenantId,
         monthly_rent: parsed.data.monthlyRent,
-        move_in_date: parsed.data.moveInDate, // stored as plain YYYY-MM-DD, no UTC conversion
+        move_in_date: parsed.data.moveInDate,
         name: parsed.data.name,
         notes: parsed.data.notes,
         phone: parsed.data.phone,
@@ -456,7 +461,19 @@ export function AddEditTenantScreen({ navigation, route }: any) {
           name="electricityAmount"
           render={({ field }) => (
             <AppInput
-              label="Monthly electricity"
+              label="Default electricity amount (₹)"
+              keyboardType="numeric"
+              value={field.value}
+              onChangeText={field.onChange}
+            />
+          )}
+        />
+        <Controller
+          control={control}
+          name="electricityRate"
+          render={({ field }) => (
+            <AppInput
+              label="Per unit rate (₹/unit, optional)"
               keyboardType="numeric"
               value={field.value}
               onChangeText={field.onChange}
@@ -517,10 +534,10 @@ export function AddEditTenantScreen({ navigation, route }: any) {
           control={control}
           name="leaseStart"
           render={({ field }) => (
-            <AppInput
-              label="Lease start (YYYY-MM-DD, optional)"
+            <AppDatePicker
+              label="Lease start (optional)"
               value={field.value}
-              onChangeText={field.onChange}
+              onChange={field.onChange}
             />
           )}
         />
@@ -528,10 +545,10 @@ export function AddEditTenantScreen({ navigation, route }: any) {
           control={control}
           name="leaseEnd"
           render={({ field }) => (
-            <AppInput
-              label="Lease end (YYYY-MM-DD, optional)"
+            <AppDatePicker
+              label="Lease end (optional)"
               value={field.value}
-              onChangeText={field.onChange}
+              onChange={field.onChange}
             />
           )}
         />
