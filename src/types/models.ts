@@ -84,6 +84,8 @@ export type RentCycle = SyncMetadata & {
   total_paid: number;
   balance: number;
   status: RentStatus;
+  meter_prev_reading?: number | null;
+  meter_new_reading?: number | null;
   created_at: string;
   updated_at: string;
 };

@@ -32,13 +32,19 @@ export const paymentRepo = {
 
   async recordAtomic(input: {
     id: string; cycleId: string; tenantId: string; amount: number; electricityAmount?: number;
+    meterPrevReading?: number | null; meterNewReading?: number | null;
     paymentDate: string; paymentMode: PaymentMode; referenceNo?: string; notes?: string;
   }) {
     const timestamp = nowIso();
     const statements: SqlStatement[] = [];
     if (input.electricityAmount !== undefined) statements.push([
-      `UPDATE rent_cycles SET electricity_amount = ?, total_payable = rent_amount + ? WHERE id = ? AND deleted_at IS NULL`,
-      [input.electricityAmount, input.electricityAmount, input.cycleId],
+      `UPDATE rent_cycles SET electricity_amount = ?, total_payable = rent_amount + ?,
+        meter_prev_reading = COALESCE(?, meter_prev_reading),
+        meter_new_reading = COALESCE(?, meter_new_reading)
+       WHERE id = ? AND deleted_at IS NULL`,
+      [input.electricityAmount, input.electricityAmount,
+       input.meterPrevReading ?? null, input.meterNewReading ?? null,
+       input.cycleId],
     ]);
     statements.push([
       `INSERT INTO payments (id, rent_cycle_id, tenant_id, amount, payment_date, payment_mode, reference_no, notes, created_at, updated_at,

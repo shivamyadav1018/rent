@@ -19,10 +19,16 @@ import { paymentModes, useRecordPayment } from './useRecordPayment';
 export function RecordPaymentScreen({ navigation, route }: any) {
   const {
     activeTenants, loadingTenants, tenantError, retryTenants, tenantId, selectTenant,
-    cycle, month, year, changeMonth, amount, setAmount, electricityAmount, setElectricityAmount, paymentDate, setPaymentDate,
+    cycle, month, year, changeMonth, amount, setAmount, electricityAmount, setElectricityAmount,
+    prevReading, setPrevReading, newReading, setNewReading,
+    paymentDate, setPaymentDate,
     mode, selectMode, referenceNo, setReferenceNo, notes, setNotes, saving,
     selectionReady, loadingCycle, cycleError, retryCycle, savedCycleId, savedPaymentId, save,
   } = useRecordPayment(route.params);
+
+  const prev = parseFloat(prevReading);
+  const next = parseFloat(newReading);
+  const unitsConsumed = Number.isFinite(prev) && Number.isFinite(next) && next >= prev ? next - prev : null;
 
   if (savedCycleId) return (
     <Screen>
@@ -92,7 +98,18 @@ export function RecordPaymentScreen({ navigation, route }: any) {
           <Muted>Already paid {formatCurrency(cycle.total_paid)} | Balance after bill update {formatCurrency(cycle.rent_amount + (Number(electricityAmount) || 0) - cycle.total_paid)}</Muted>
         </Card>
       ) : null}
-      <AppInput editable={!saving} label="Electricity for this month" keyboardType="numeric" value={electricityAmount} onChangeText={setElectricityAmount} />
+      <Body style={styles.label}>Meter readings (optional)</Body>
+      <View style={styles.meterRow}>
+        <View style={styles.meterField}>
+          <AppInput editable={!saving} label="Previous reading" keyboardType="numeric" value={prevReading} onChangeText={setPrevReading} />
+        </View>
+        <View style={styles.meterField}>
+          <AppInput editable={!saving} label="New reading" keyboardType="numeric" value={newReading} onChangeText={setNewReading} />
+        </View>
+      </View>
+      {unitsConsumed !== null ? <Muted style={styles.units}>Units consumed: {unitsConsumed}</Muted> : null}
+      {Number.isFinite(prev) && Number.isFinite(next) && next < prev ? <Muted style={styles.unitsError}>New reading must be greater than previous</Muted> : null}
+      <AppInput editable={!saving} label="Electricity amount for this month" keyboardType="numeric" value={electricityAmount} onChangeText={setElectricityAmount} />
       <AppInput editable={!saving} label="Amount received" keyboardType="numeric" value={amount} onChangeText={setAmount} />
       <AppDatePicker
         label="Payment date"
@@ -131,6 +148,10 @@ const styles = StyleSheet.create({
     padding: 18,
   },
   label: { fontSize: 13, fontWeight: '600' },
+  meterRow: { flexDirection: 'row', gap: 10 },
+  meterField: { flex: 1 },
+  units: { marginTop: -4 },
+  unitsError: { color: colors.danger, marginTop: -4 },
   loadingTenants: {
     alignItems: 'center',
     backgroundColor: colors.surface,

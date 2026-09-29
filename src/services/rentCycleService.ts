@@ -82,6 +82,8 @@ export const rentCycleService = {
     year: number;
     amount: number;
     electricityAmount?: number;
+    meterPrevReading?: number | null;
+    meterNewReading?: number | null;
     paymentDate: string;
     paymentMode: PaymentMode;
     referenceNo?: string;

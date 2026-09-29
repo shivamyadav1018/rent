@@ -194,6 +194,8 @@ export const runMigrations = async (db: any) => {
   await addColumnIfMissing(db, 'tenants', 'lease_end', 'TEXT');
   await addColumnIfMissing(db, 'rent_cycles', 'electricity_amount', 'REAL NOT NULL DEFAULT 0');
   await addColumnIfMissing(db, 'rent_cycles', 'total_payable', 'REAL NOT NULL DEFAULT 0');
+  await addColumnIfMissing(db, 'rent_cycles', 'meter_prev_reading', 'REAL');
+  await addColumnIfMissing(db, 'rent_cycles', 'meter_new_reading', 'REAL');
   await addColumnIfMissing(db, 'payments', 'updated_at', 'TEXT');
   await addColumnIfMissing(db, 'payments', 'receipt_rent', 'REAL');
   await addColumnIfMissing(db, 'payments', 'receipt_electricity', 'REAL');

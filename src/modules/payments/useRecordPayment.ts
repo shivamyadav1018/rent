@@ -28,6 +28,8 @@ export function useRecordPayment(params?: { tenantId?: string; cycleId?: string 
   const [year, setYear] = useState(current.year);
   const [amount, setAmount] = useState('');
   const [electricityAmount, setElectricityAmount] = useState('0');
+  const [prevReading, setPrevReading] = useState('');
+  const [newReading, setNewReading] = useState('');
   const [paymentDate, setPaymentDate] = useState(todayDate());
   const [mode, setMode] = useState<PaymentMode>('cash');
   const [referenceNo, setReferenceNo] = useState('');
@@ -94,6 +96,8 @@ export function useRecordPayment(params?: { tenantId?: string; cycleId?: string 
   const changeMonth = (delta: number) => {
     if (savingRef.current || !selectionReady) return;
     setAmount('');
+    setPrevReading('');
+    setNewReading('');
     const next = new Date(year, month - 1 + delta, 1); setMonth(next.getMonth() + 1); setYear(next.getFullYear()); setCycle(null);
   };
 
@@ -110,7 +114,11 @@ export function useRecordPayment(params?: { tenantId?: string; cycleId?: string 
     setSaving(true);
     try {
       // paymentDate stored as plain YYYY-MM-DD (no UTC conversion) consistent with dates.ts fix
-      const updated = await rentCycleService.recordPayment({ amount: parsedAmount.data, electricityAmount: parsedElectricity.data, month, notes, paymentDate, paymentMode: mode, referenceNo, tenantId, year });
+      const parsedPrev = parseFloat(prevReading);
+      const parsedNew = parseFloat(newReading);
+      const meterPrevReading = Number.isFinite(parsedPrev) ? parsedPrev : null;
+      const meterNewReading = Number.isFinite(parsedNew) ? parsedNew : null;
+      const updated = await rentCycleService.recordPayment({ amount: parsedAmount.data, electricityAmount: parsedElectricity.data, meterPrevReading, meterNewReading, month, notes, paymentDate, paymentMode: mode, referenceNo, tenantId, year });
       if (updated) { setCycle(updated); setSavedCycleId(updated.id); setSavedPaymentId(updated.paymentId); }
       refreshAll().catch(() => undefined);
     } catch (error) {
@@ -123,6 +131,8 @@ export function useRecordPayment(params?: { tenantId?: string; cycleId?: string 
     setTenantId(id);
     setCycle(null);
     setAmount('');
+    setPrevReading('');
+    setNewReading('');
   };
   const selectMode = (value: PaymentMode) => { if (!savingRef.current) setMode(value); };
   const retryCycle = () => {
@@ -134,6 +144,7 @@ export function useRecordPayment(params?: { tenantId?: string; cycleId?: string 
     activeTenants, loadingTenants, tenantError, retryTenants: () => setTenantAttempt(count => count + 1),
     tenantId, selectTenant, cycle, month, year, changeMonth, amount, setAmount,
     electricityAmount, setElectricityAmount,
+    prevReading, setPrevReading, newReading, setNewReading,
     paymentDate, setPaymentDate, mode, selectMode, referenceNo, setReferenceNo,
     notes, setNotes, saving, selectionReady, loadingCycle, cycleError, retryCycle,
     savedCycleId, savedPaymentId, save,
