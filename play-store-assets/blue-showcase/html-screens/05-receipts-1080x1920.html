@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080">
+<title>05 – Share Rent Receipts</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1080px; height: 1920px; overflow: hidden;
+    background: #0873C8;
+    font-family: -apple-system, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+    position: relative;
+  }
+
+  /* Wave backdrop */
+  .wave { position: absolute; bottom: 0; left: 0; width: 100%; height: 900px; pointer-events: none; }
+
+  /* Top branding */
+  .brand {
+    position: absolute; top: 58px; left: 0; right: 0;
+    text-align: center;
+    font-size: 28px; font-weight: 800; letter-spacing: 3px;
+    color: #fff;
+  }
+
+  /* Headline */
+  .headline {
+    position: absolute; top: 130px; left: 60px; right: 60px;
+    text-align: center;
+    font-size: 86px; font-weight: 800; line-height: 1.05;
+    color: #fff;
+  }
+
+  /* Subtitle */
+  .subtitle {
+    position: absolute; top: 420px; left: 65px; right: 65px;
+    text-align: center;
+    font-size: 32px; font-weight: 400; color: #fff; line-height: 1.35;
+  }
+
+  /* Benefit tags */
+  .tags {
+    position: absolute; top: 520px; left: 60px; right: 60px;
+    text-align: center;
+    font-size: 26px; font-weight: 500; color: #D9EEFF;
+  }
+
+  /* Phone panel */
+  .panel-wrap {
+    position: absolute;
+    top: 613px; left: 143px; right: 143px; height: 1288px;
+    border-radius: 34px;
+    box-shadow: 0 12px 60px rgba(0,47,107,0.45);
+    background: #FAF8FF;
+    overflow: hidden;
+  }
+
+  /* App content inside panel */
+  .app {
+    padding: 36px 28px 28px;
+    display: flex; flex-direction: column; gap: 16px;
+    height: 100%;
+    background: #FAF8FF;
+    font-size: 26px;
+  }
+
+  /* Page header */
+  .page-header {
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .eyebrow {
+    font-size: 20px; font-weight: 800; letter-spacing: 1.5px;
+    color: #263BAA; margin-bottom: 4px;
+  }
+  .page-title { font-size: 38px; font-weight: 800; color: #151B2A; line-height: 1.1; }
+  .header-icon {
+    width: 72px; height: 72px; border-radius: 36px;
+    background: #EDFBF4;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 34px;
+  }
+
+  /* Receipt card */
+  .receipt-card {
+    background: #fff;
+    border: 1.5px solid #E9EDFF;
+    border-radius: 30px;
+    overflow: hidden;
+    display: flex; flex-direction: column; gap: 0;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    flex: 1;
+  }
+
+  .status-band {
+    display: flex; align-items: center; justify-content: center;
+    gap: 10px;
+    background: #EDFBF4;
+    padding: 16px;
+    margin: 20px 20px 0;
+    border-radius: 50px;
+    font-size: 22px; font-weight: 800; letter-spacing: 0.8px;
+    color: #1A9E5F;
+  }
+  .status-dot { width: 14px; height: 14px; background: #1A9E5F; border-radius: 50%; }
+
+  .amount-block {
+    text-align: center;
+    padding: 22px 20px 16px;
+    display: flex; flex-direction: column; gap: 5px;
+  }
+  .amount-label { font-size: 22px; color: #454653; }
+  .amount-value { font-size: 72px; font-weight: 800; color: #151B2A; letter-spacing: -2px; line-height: 1; }
+  .amount-meta { font-size: 22px; color: #454653; }
+
+  .dashed { border-top: 2px dashed #E9EDFF; margin: 0 20px; }
+
+  .identity-block {
+    display: flex; align-items: center; gap: 18px;
+    padding: 18px 20px;
+  }
+  .avatar {
+    width: 72px; height: 72px; border-radius: 36px;
+    background: #EEF1FF;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 30px; font-weight: 800; color: #263BAA;
+    flex-shrink: 0;
+  }
+  .identity-text { display: flex; flex-direction: column; gap: 3px; }
+  .recv-from { font-size: 20px; color: #454653; }
+  .tenant-name { font-size: 30px; font-weight: 700; color: #151B2A; }
+  .property-name { font-size: 20px; color: #454653; }
+
+  .section { padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+  .section-title { font-size: 24px; font-weight: 700; color: #151B2A; margin-bottom: 4px; }
+  .detail-row { display: flex; justify-content: space-between; align-items: flex-start; }
+  .detail-label { font-size: 22px; color: #454653; }
+  .detail-value { font-size: 22px; color: #151B2A; text-align: right; }
+  .detail-strong { font-weight: 700; }
+  .thin-rule { background: #E9EDFF; height: 1px; }
+
+  .receipt-footer {
+    background: #EEF1FF;
+    margin: 0 16px 16px;
+    border-radius: 14px;
+    padding: 16px;
+    text-align: center;
+    display: flex; flex-direction: column; gap: 5px;
+  }
+  .receipt-label { font-size: 17px; font-weight: 800; color: #263BAA; letter-spacing: 1.5px; }
+  .receipt-number { font-size: 20px; font-weight: 700; color: #001F94; }
+  .brand-line { font-size: 17px; color: #454653; }
+
+  /* Buttons */
+  .actions { display: flex; gap: 14px; padding: 20px 20px 24px; }
+  .btn-primary {
+    flex: 1.15; background: #263BAA; border-radius: 16px;
+    padding: 22px 18px;
+    font-size: 25px; font-weight: 700; color: #fff;
+    text-align: center; border: none;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  .btn-secondary {
+    flex: 0.85; background: #FAF8FF; border: 2px solid #E9EDFF; border-radius: 16px;
+    padding: 22px 18px;
+    font-size: 25px; font-weight: 700; color: #263BAA;
+    text-align: center;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+</style>
+</head>
+<body>
+
+<!-- Wave SVG background -->
+<svg class="wave" viewBox="0 0 1080 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+  <path d="M0,200 C200,100 400,300 600,200 C800,100 1000,250 1080,180 L1080,900 L0,900 Z" fill="rgba(0,60,140,0.35)"/>
+  <path d="M0,350 C150,280 350,420 550,340 C750,260 950,380 1080,310 L1080,900 L0,900 Z" fill="rgba(0,80,160,0.25)"/>
+  <path d="M0,500 C200,440 380,560 580,490 C780,420 980,520 1080,460 L1080,900 L0,900 Z" fill="rgba(0,100,180,0.18)"/>
+</svg>
+
+<div class="brand">KIRAYABAHI</div>
+
+<div class="headline">Share rent receipts<br>in one tap</div>
+
+<div class="subtitle">Professional proof of payment,<br>delivered instantly</div>
+
+<div class="tags">PDF · WhatsApp · Save to Device</div>
+
+<div class="panel-wrap">
+  <div class="app">
+
+    <!-- Page header -->
+    <div class="page-header">
+      <div>
+        <div class="eyebrow">PAYMENT RECEIPT</div>
+        <div class="page-title">Receipt details</div>
+      </div>
+      <div class="header-icon">✓</div>
+    </div>
+
+    <!-- Receipt card -->
+    <div class="receipt-card">
+      <div class="status-band">
+        <div class="status-dot"></div>
+        PAYMENT RECEIVED
+      </div>
+
+      <div class="amount-block">
+        <div class="amount-label">Amount received</div>
+        <div class="amount-value">₹12,000</div>
+        <div class="amount-meta">01 Sep 2026 · UPI</div>
+      </div>
+
+      <div class="dashed"></div>
+
+      <div class="identity-block">
+        <div class="avatar">R</div>
+        <div class="identity-text">
+          <div class="recv-from">Received from</div>
+          <div class="tenant-name">Raj Kumar</div>
+          <div class="property-name">Green View PG · Room 1</div>
+        </div>
+      </div>
+
+      <div class="dashed"></div>
+
+      <div class="section">
+        <div class="section-title">Payment breakdown</div>
+        <div class="detail-row">
+          <div class="detail-label">Monthly rent</div>
+          <div class="detail-value">₹12,000</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">Electricity</div>
+          <div class="detail-value">₹0</div>
+        </div>
+        <div class="thin-rule"></div>
+        <div class="detail-row">
+          <div class="detail-label">Total bill</div>
+          <div class="detail-value detail-strong">₹12,000</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">Balance remaining</div>
+          <div class="detail-value detail-strong">₹0</div>
+        </div>
+      </div>
+
+      <div class="dashed"></div>
+
+      <div class="section">
+        <div class="detail-row">
+          <div class="detail-label">Rent period</div>
+          <div class="detail-value">September 2026</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">Landlord</div>
+          <div class="detail-value">Ramesh Kumar</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">Reference no.</div>
+          <div class="detail-value">UPI2026090112</div>
+        </div>
+      </div>
+
+      <div class="receipt-footer">
+        <div class="receipt-label">RECEIPT NUMBER</div>
+        <div class="receipt-number">RCP-2026-09-RK001</div>
+        <div class="brand-line">Recorded securely with KirayaBahi</div>
+      </div>
+    </div>
+
+    <!-- Action buttons -->
+    <div class="actions">
+      <div class="btn-primary">⬆ Share receipt</div>
+      <div class="btn-secondary">📄 Save PDF</div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

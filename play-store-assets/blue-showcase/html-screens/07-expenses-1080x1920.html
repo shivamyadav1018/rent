@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080">
+<title>07 – Track Expenses</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1080px; height: 1920px; overflow: hidden;
+    background: #0873C8;
+    font-family: -apple-system, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+    position: relative;
+  }
+  .wave { position: absolute; bottom: 0; left: 0; width: 100%; height: 900px; pointer-events: none; }
+  .brand { position: absolute; top: 58px; left: 0; right: 0; text-align: center; font-size: 28px; font-weight: 800; letter-spacing: 3px; color: #fff; }
+  .headline { position: absolute; top: 130px; left: 60px; right: 60px; text-align: center; font-size: 82px; font-weight: 800; line-height: 1.05; color: #fff; }
+  .subtitle { position: absolute; top: 410px; left: 65px; right: 65px; text-align: center; font-size: 32px; font-weight: 400; color: #fff; line-height: 1.35; }
+  .tags { position: absolute; top: 515px; left: 60px; right: 60px; text-align: center; font-size: 26px; font-weight: 500; color: #D9EEFF; }
+  .panel-wrap {
+    position: absolute; top: 613px; left: 143px; right: 143px; height: 1288px;
+    border-radius: 34px; box-shadow: 0 12px 60px rgba(0,47,107,0.45);
+    background: #FAF8FF; overflow: hidden;
+  }
+  .app { padding: 36px 28px 28px; display: flex; flex-direction: column; gap: 16px; height: 100%; background: #FAF8FF; }
+
+  .page-title { font-size: 42px; font-weight: 800; color: #151B2A; }
+  .page-sub { font-size: 22px; color: #454653; }
+
+  /* Total summary */
+  .total-row {
+    display: flex; gap: 14px;
+  }
+  .total-card {
+    flex: 1; background: #fff; border: 1.5px solid #E9EDFF; border-radius: 18px;
+    padding: 18px 20px; display: flex; flex-direction: column; gap: 5px;
+  }
+  .total-card.green { border-color: #B8F0D8; background: #F0FBF6; }
+  .total-card-label { font-size: 20px; color: #454653; }
+  .total-card-value { font-size: 32px; font-weight: 800; color: #151B2A; }
+  .total-card.green .total-card-value { color: #1A9E5F; }
+
+  /* Add button */
+  .add-btn {
+    background: #263BAA; border-radius: 16px;
+    padding: 22px 18px; font-size: 26px; font-weight: 700; color: #fff;
+    text-align: center;
+  }
+
+  /* Category chips */
+  .cats-label { font-size: 22px; font-weight: 700; color: #151B2A; }
+  .cats { display: flex; flex-wrap: wrap; gap: 10px; }
+  .cat {
+    background: #F0F1FF; border-radius: 12px;
+    padding: 10px 18px; font-size: 22px; font-weight: 600; color: #454653;
+    text-transform: capitalize;
+  }
+  .cat.selected { background: #263BAA; color: #fff; }
+
+  /* Expense items */
+  .exp-list { display: flex; flex-direction: column; gap: 12px; flex: 1; }
+  .exp-item {
+    background: #fff; border: 1.5px solid #E9EDFF; border-radius: 18px;
+    padding: 20px 22px; display: flex; align-items: center; gap: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .exp-icon {
+    width: 58px; height: 58px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; flex-shrink: 0;
+  }
+  .exp-icon.repair { background: #FFF0F0; }
+  .exp-icon.maintenance { background: #FFF4E0; }
+  .exp-icon.cleaning { background: #F0FBF6; }
+  .exp-icon.tax { background: #EEF1FF; }
+  .exp-info { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+  .exp-amount { font-size: 28px; font-weight: 800; color: #151B2A; }
+  .exp-meta { font-size: 20px; color: #454653; }
+  .exp-desc { font-size: 20px; color: #454653; }
+  .exp-delete {
+    font-size: 20px; color: #E04040; font-weight: 600;
+    background: #FFF0F0; border-radius: 10px; padding: 8px 14px;
+  }
+</style>
+</head>
+<body>
+
+<svg class="wave" viewBox="0 0 1080 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+  <path d="M0,200 C200,100 400,300 600,200 C800,100 1000,250 1080,180 L1080,900 L0,900 Z" fill="rgba(0,60,140,0.35)"/>
+  <path d="M0,350 C150,280 350,420 550,340 C750,260 950,380 1080,310 L1080,900 L0,900 Z" fill="rgba(0,80,160,0.25)"/>
+  <path d="M0,500 C200,440 380,560 580,490 C780,420 980,520 1080,460 L1080,900 L0,900 Z" fill="rgba(0,100,180,0.18)"/>
+</svg>
+
+<div class="brand">KIRAYABAHI</div>
+<div class="headline">Track every property<br>expense</div>
+<div class="subtitle">Repairs, maintenance, and more—<br>all in one place</div>
+<div class="tags">Repair · Maintenance · Tax · Insurance</div>
+
+<div class="panel-wrap">
+  <div class="app">
+
+    <div>
+      <div class="page-title">Expenses</div>
+      <div class="page-sub">Green View PG</div>
+    </div>
+
+    <!-- Totals -->
+    <div class="total-row">
+      <div class="total-card">
+        <div class="total-card-label">This month</div>
+        <div class="total-card-value">₹8,500</div>
+      </div>
+      <div class="total-card green">
+        <div class="total-card-label">Total recorded</div>
+        <div class="total-card-value">₹24,200</div>
+      </div>
+    </div>
+
+    <!-- Add button -->
+    <div class="add-btn">+ Add Expense</div>
+
+    <!-- Category filter -->
+    <div>
+      <div class="cats-label" style="margin-bottom:10px">Category</div>
+      <div class="cats">
+        <div class="cat selected">repair</div>
+        <div class="cat">maintenance</div>
+        <div class="cat">cleaning</div>
+        <div class="cat">tax</div>
+        <div class="cat">insurance</div>
+        <div class="cat">other</div>
+      </div>
+    </div>
+
+    <!-- Expense list -->
+    <div class="exp-list">
+      <div class="exp-item">
+        <div class="exp-icon repair">🔧</div>
+        <div class="exp-info">
+          <div class="exp-amount">₹5,000</div>
+          <div class="exp-meta">repair · 15 Sep 2026</div>
+          <div class="exp-desc">Plumbing leak fix — Room 3</div>
+        </div>
+        <div class="exp-delete">Delete</div>
+      </div>
+
+      <div class="exp-item">
+        <div class="exp-icon maintenance">🎨</div>
+        <div class="exp-info">
+          <div class="exp-amount">₹2,000</div>
+          <div class="exp-meta">maintenance · 10 Sep 2026</div>
+          <div class="exp-desc">Wall painting — common area</div>
+        </div>
+        <div class="exp-delete">Delete</div>
+      </div>
+
+      <div class="exp-item">
+        <div class="exp-icon cleaning">🧹</div>
+        <div class="exp-info">
+          <div class="exp-amount">₹1,500</div>
+          <div class="exp-meta">cleaning · 05 Sep 2026</div>
+          <div class="exp-desc">Deep cleaning — terrace</div>
+        </div>
+        <div class="exp-delete">Delete</div>
+      </div>
+
+      <div class="exp-item">
+        <div class="exp-icon tax">📄</div>
+        <div class="exp-info">
+          <div class="exp-amount">₹3,200</div>
+          <div class="exp-meta">tax · 01 Aug 2026</div>
+          <div class="exp-desc">Property tax Q2</div>
+        </div>
+        <div class="exp-delete">Delete</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>
