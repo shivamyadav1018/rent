@@ -1,3 +1,4 @@
+import { Platform, Share as RNShare } from 'react-native';
 import Share from 'react-native-share';
 
 import { paymentRepo } from '../database/repositories/paymentRepo';
@@ -34,16 +35,23 @@ export const exportService = {
     );
 
     const csv = [header, ...rows].join('\n');
-    // base64-encode using btoa (available in Hermes)
-    // btoa is available in React Native 0.70+ (Hermes); cast to any for TS lib configs
-    const b64 = (globalThis as any).btoa(unescape(encodeURIComponent(csv)));
 
-    await Share.open({
-      filename: `KirayaBahi_Payments_${year}.csv`,
-      message: `KirayaBahi payment records for ${year}`,
-      title: `KirayaBahi_Payments_${year}.csv`,
-      type: 'text/csv',
-      url: `data:text/csv;base64,${b64}`,
-    } as any);
+    if (Platform.OS === 'android') {
+      // react-native-share data: URIs crash on Android (null Uri.getScheme());
+      // use the built-in Share which works with plain text on all Android versions.
+      await RNShare.share({
+        message: csv,
+        title: `KirayaBahi_Payments_${year}.csv`,
+      });
+    } else {
+      const b64 = (globalThis as any).btoa(unescape(encodeURIComponent(csv)));
+      await Share.open({
+        filename: `KirayaBahi_Payments_${year}.csv`,
+        message: `KirayaBahi payment records for ${year}`,
+        title: `KirayaBahi_Payments_${year}.csv`,
+        type: 'text/csv',
+        url: `data:text/csv;base64,${b64}`,
+      } as any);
+    }
   },
 };

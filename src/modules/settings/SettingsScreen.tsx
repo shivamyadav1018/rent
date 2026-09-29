@@ -163,7 +163,10 @@ export function SettingsScreen({ navigation }: any) {
     try {
       await exportService.exportPaymentsCsv(year);
     } catch (error) {
-      Alert.alert('Export failed', error instanceof Error ? error.message : 'Please try again.');
+      // Ignore user cancellation from the share sheet
+      const msg = error instanceof Error ? error.message : '';
+      if (msg.includes('User did not share') || msg.includes('cancel') || msg.includes('dismiss')) return;
+      Alert.alert('Export failed', msg || 'Please try again.');
     } finally {
       setExportingCsv(false);
     }
